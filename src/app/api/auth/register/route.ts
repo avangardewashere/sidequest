@@ -25,11 +25,25 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
-  await UserModel.create({
-    email: parsed.data.email,
-    displayName: parsed.data.displayName,
-    passwordHash,
-  });
+  try {
+    await UserModel.create({
+      email: parsed.data.email,
+      displayName: parsed.data.displayName,
+      passwordHash,
+    });
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: number }).code === 11000
+    ) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    }
+
+    console.error("Register user creation failed", error);
+    return NextResponse.json({ error: "Unable to register user" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
