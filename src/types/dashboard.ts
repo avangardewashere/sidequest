@@ -1,7 +1,9 @@
 export type Quest = {
   _id: string;
   title: string;
+  description: string;
   difficulty: "easy" | "medium" | "hard";
+  category: "work" | "study" | "health" | "personal" | "other";
   xpReward: number;
   status: "active" | "completed";
   isDaily?: boolean;
@@ -28,8 +30,12 @@ export type RegisterPayload = {
 
 export type CreateQuestPayload = {
   title: string;
+  description: string;
   difficulty: Quest["difficulty"];
+  category: Quest["category"];
 };
+
+export type UpdateQuestPayload = CreateQuestPayload;
 
 export type CompleteQuestResponse = {
   xpGained?: number;

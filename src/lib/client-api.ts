@@ -5,6 +5,7 @@ import type {
   Profile,
   Quest,
   RegisterPayload,
+  UpdateQuestPayload,
 } from "@/types/dashboard";
 
 type DashboardData = {
@@ -68,6 +69,34 @@ export async function createQuest(payload: CreateQuestPayload): Promise<boolean>
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+  return response.ok;
+}
+
+export async function getQuestById(questId: string): Promise<Quest | null> {
+  const response = await fetch(`/api/quests/${questId}`);
+  if (!response.ok) {
+    return null;
+  }
+  const data = (await parseJsonSafe(response)) as { quest?: Quest } | null;
+  return data?.quest ?? null;
+}
+
+export async function updateQuestById(
+  questId: string,
+  payload: UpdateQuestPayload,
+): Promise<boolean> {
+  const response = await fetch(`/api/quests/${questId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return response.ok;
+}
+
+export async function deleteQuestById(questId: string): Promise<boolean> {
+  const response = await fetch(`/api/quests/${questId}`, {
+    method: "DELETE",
   });
   return response.ok;
 }

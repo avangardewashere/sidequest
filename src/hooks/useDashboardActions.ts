@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   completeQuestById,
-  createQuest,
   fetchDashboardData,
   loginWithCredentials,
   registerUser,
@@ -21,8 +20,6 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<AuthMode>("login");
 
-  const [title, setTitle] = useState("");
-  const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("easy");
   const [quests, setQuests] = useState<Quest[]>([]);
   const [dailies, setDailies] = useState<Quest[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -75,21 +72,6 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
     setFeedback("Login failed. Check your credentials.");
   }
 
-  async function handleCreateQuest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFeedback("");
-
-    const created = await createQuest({ title, difficulty });
-    if (!created) {
-      setFeedback("Could not create quest.");
-      return;
-    }
-
-    setTitle("");
-    setFeedback("New quest added.");
-    await loadData();
-  }
-
   async function completeQuest(questId: string) {
     setFeedback("");
     const { ok, data } = await completeQuestById(questId);
@@ -111,10 +93,6 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
     setPassword,
     mode,
     setMode,
-    title,
-    setTitle,
-    difficulty,
-    setDifficulty,
     profile,
     dailies,
     activeQuests,
@@ -122,7 +100,6 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
     feedback,
     progressPct,
     handleAuthSubmit,
-    handleCreateQuest,
     completeQuest,
   };
 }

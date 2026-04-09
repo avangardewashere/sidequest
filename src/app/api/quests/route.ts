@@ -7,7 +7,9 @@ import { getXpReward, QuestDifficulty } from "@/lib/xp";
 
 const createQuestSchema = z.object({
   title: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(1).max(500),
   difficulty: z.enum(["easy", "medium", "hard"]),
+  category: z.enum(["work", "study", "health", "personal", "other"]),
   dueDate: z.string().datetime().optional().nullable(),
 });
 
@@ -21,6 +23,7 @@ export async function GET() {
   await connectToDatabase();
   const quests = await QuestModel.find({ createdBy: userId }).sort({
     status: 1,
+    category: 1,
     createdAt: -1,
   });
 
@@ -45,7 +48,9 @@ export async function POST(request: Request) {
   const difficulty = parsed.data.difficulty as QuestDifficulty;
   const quest = await QuestModel.create({
     title: parsed.data.title,
+    description: parsed.data.description,
     difficulty,
+    category: parsed.data.category,
     xpReward: getXpReward(difficulty),
     dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
     createdBy: userId,

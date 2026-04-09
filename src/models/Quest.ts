@@ -3,11 +3,18 @@ import mongoose, { InferSchemaType, Model } from "mongoose";
 const questSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    description: { type: String, required: true, default: "" },
     difficulty: {
       type: String,
       enum: ["easy", "medium", "hard"],
       required: true,
       default: "easy",
+    },
+    category: {
+      type: String,
+      enum: ["work", "study", "health", "personal", "other"],
+      required: true,
+      default: "personal",
     },
     xpReward: { type: Number, required: true },
     status: {
@@ -30,6 +37,7 @@ const questSchema = new mongoose.Schema(
 );
 
 questSchema.index({ createdBy: 1, status: 1, createdAt: -1 });
+questSchema.index({ createdBy: 1, category: 1, status: 1, createdAt: -1 });
 questSchema.index({ createdBy: 1, isDaily: 1, dailyKey: 1 });
 questSchema.index(
   { createdBy: 1, dailyKey: 1, title: 1 },

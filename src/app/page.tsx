@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
-import type { Quest } from "@/types/dashboard";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -16,19 +16,10 @@ export default function Home() {
     setPassword,
     mode,
     setMode,
-    title,
-    setTitle,
-    difficulty,
-    setDifficulty,
     profile,
-    dailies,
-    activeQuests,
-    completedQuests,
     feedback,
     progressPct,
     handleAuthSubmit,
-    handleCreateQuest,
-    completeQuest,
   } = useDashboardActions({ isAuthenticated: Boolean(session?.user) });
 
   if (status === "loading") {
@@ -133,124 +124,31 @@ export default function Home() {
       </header>
 
       <section className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-        <h2 className="text-lg font-semibold">Create Quest</h2>
-        <form onSubmit={handleCreateQuest} className="mt-3 flex flex-wrap gap-2">
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Defeat bug dragon"
-            className="min-w-64 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
-            required
-          />
-          <select
-            value={difficulty}
-            onChange={(event) => setDifficulty(event.target.value as Quest["difficulty"])}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+        <h2 className="text-lg font-semibold">Quick Actions</h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <Link
+            href="/quests/view"
+            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
           >
-            <option value="easy">Easy (+10 XP)</option>
-            <option value="medium">Medium (+20 XP)</option>
-            <option value="hard">Hard (+35 XP)</option>
-          </select>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-500 px-4 py-2 font-medium hover:bg-emerald-400"
+            <p className="font-medium">View Quests</p>
+            <p className="text-sm text-zinc-400">Filter, sort, and complete your quest list.</p>
+          </Link>
+          <Link
+            href="/quests/create"
+            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
           >
-            Add Quest
-          </button>
-        </form>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-          <h3 className="text-lg font-semibold">Daily Quests ({dailies.length})</h3>
-          <ul className="mt-3 space-y-2">
-            {dailies.length ? (
-              dailies.map((quest) => (
-                <li
-                  key={quest._id}
-                  className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-3"
-                >
-                  <div>
-                    <p className="font-medium">{quest.title}</p>
-                    <p className="text-xs text-zinc-400">
-                      {quest.difficulty} | +{quest.xpReward} XP |{" "}
-                      {quest.status === "completed" ? "Completed" : "Daily"}
-                    </p>
-                  </div>
-                  {quest.status === "active" ? (
-                    <button
-                      onClick={() => void completeQuest(quest._id)}
-                      className="rounded-md bg-indigo-500 px-3 py-2 text-sm hover:bg-indigo-400"
-                    >
-                      Complete
-                    </button>
-                  ) : (
-                    <span className="rounded-md bg-zinc-800 px-3 py-2 text-xs">Done</span>
-                  )}
-                </li>
-              ))
-            ) : (
-              <li className="text-sm text-zinc-400">Daily quests will appear here.</li>
-            )}
-          </ul>
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-          <h3 className="text-lg font-semibold">Active Quests ({activeQuests.length})</h3>
-          <ul className="mt-3 space-y-2">
-            {activeQuests.length ? (
-              activeQuests.map((quest) => (
-                <li
-                  key={quest._id}
-                  className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 p-3"
-                >
-                  <div>
-                    <p className="font-medium">{quest.title}</p>
-                    <p className="text-xs text-zinc-400">
-                      {quest.difficulty} | +{quest.xpReward} XP
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => void completeQuest(quest._id)}
-                    className="rounded-md bg-indigo-500 px-3 py-2 text-sm hover:bg-indigo-400"
-                  >
-                    Complete
-                  </button>
-                </li>
-              ))
-            ) : (
-              <li className="text-sm text-zinc-400">No active quests yet.</li>
-            )}
-          </ul>
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-          <h3 className="text-lg font-semibold">Completed Quests ({completedQuests.length})</h3>
-          <ul className="mt-3 space-y-2">
-            {completedQuests.length ? (
-              completedQuests.map((quest) => (
-                <li
-                  key={quest._id}
-                  className="rounded-md border border-zinc-800 bg-zinc-900 p-3"
-                >
-                  <p className="font-medium line-through opacity-80">{quest.title}</p>
-                  <p className="text-xs text-zinc-400">
-                    {quest.difficulty} | +{quest.xpReward} XP
-                  </p>
-                </li>
-              ))
-            ) : (
-              <li className="text-sm text-zinc-400">Complete your first quest to gain XP.</li>
-            )}
-          </ul>
+            <p className="font-medium">Create Quest</p>
+            <p className="text-sm text-zinc-400">Add a new quest with category and description.</p>
+          </Link>
+          <Link
+            href="/guild-stats"
+            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
+          >
+            <p className="font-medium">Guild Stats</p>
+            <p className="text-sm text-zinc-400">Review progress trends and performance insights.</p>
+          </Link>
         </div>
       </section>
-
-      {feedback ? (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300">
-          {feedback}
-        </div>
-      ) : null}
     </main>
   );
 }
