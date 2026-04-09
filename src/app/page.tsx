@@ -1,156 +1,35 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
-
-type Quest = {
-  _id: string;
-  title: string;
-  difficulty: "easy" | "medium" | "hard";
-  xpReward: number;
-  status: "active" | "completed";
-  isDaily?: boolean;
-  dailyKey?: string | null;
-};
-
-type Profile = {
-  displayName: string;
-  totalXp: number;
-  level: number;
-  currentStreak: number;
-  longestStreak: number;
-  xpIntoLevel: number;
-  xpForNextLevel: number;
-};
+import { signOut, useSession } from "next-auth/react";
+import { DashboardNav } from "@/components/dashboard-nav";
+import { useDashboardActions } from "@/hooks/useDashboardActions";
+import type { Quest } from "@/types/dashboard";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
-
-  const [title, setTitle] = useState("");
-  const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("easy");
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [dailies, setDailies] = useState<Quest[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [feedback, setFeedback] = useState<string>("");
-
-  const activeQuests = useMemo(
-    () => quests.filter((quest) => quest.status === "active"),
-    [quests],
-  );
-  const completedQuests = useMemo(
-    () => quests.filter((quest) => quest.status === "completed"),
-    [quests],
-  );
-
-  const loadData = useCallback(async () => {
-    if (!session?.user) {
-      return;
-    }
-
-    const [questRes, progressionRes, dailiesRes] = await Promise.all([
-      fetch("/api/quests"),
-      fetch("/api/progression"),
-      fetch("/api/dailies"),
-    ]);
-
-    if (questRes.ok) {
-      const questData = await questRes.json();
-      setQuests(questData.quests ?? []);
-    }
-
-    if (progressionRes.ok) {
-      const progressionData = await progressionRes.json();
-      setProfile(progressionData.profile ?? null);
-    }
-
-    if (dailiesRes.ok) {
-      const dailiesData = await dailiesRes.json();
-      setDailies(dailiesData.dailies ?? []);
-    }
-  }, [session?.user]);
-
-  useEffect(() => {
-    const run = async () => {
-      await loadData();
-    };
-    void run();
-  }, [loadData]);
-
-  async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFeedback("");
-
-    if (mode === "register") {
-      const registerRes = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, displayName, password }),
-      });
-
-      if (!registerRes.ok) {
-        setFeedback("Registration failed. Try a different email.");
-        return;
-      }
-    }
-
-    const loginResult = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    if (loginResult?.ok) {
-      setFeedback(mode === "register" ? "Account created. Welcome!" : "Welcome back!");
-      setPassword("");
-      return;
-    }
-
-    setFeedback("Login failed. Check your credentials.");
-  }
-
-  async function handleCreateQuest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFeedback("");
-
-    const res = await fetch("/api/quests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, difficulty }),
-    });
-    if (!res.ok) {
-      setFeedback("Could not create quest.");
-      return;
-    }
-
-    setTitle("");
-    setFeedback("New quest added.");
-    await loadData();
-  }
-
-  async function completeQuest(questId: string) {
-    setFeedback("");
-    const res = await fetch(`/api/quests/${questId}/complete`, {
-      method: "PATCH",
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setFeedback(data.error ?? "Could not complete quest.");
-      return;
-    }
-
-    if (data.milestoneReward) {
-      setFeedback(
-        `Quest complete! +${data.xpGained} XP | Streak ${data.milestoneReward.streakMilestone} reward: +${data.milestoneReward.bonusXp} bonus XP`,
-      );
-    } else {
-      setFeedback(`Quest complete! +${data.xpGained} XP`);
-    }
-    await loadData();
-  }
+  const {
+    email,
+    setEmail,
+    displayName,
+    setDisplayName,
+    password,
+    setPassword,
+    mode,
+    setMode,
+    title,
+    setTitle,
+    difficulty,
+    setDifficulty,
+    profile,
+    dailies,
+    activeQuests,
+    completedQuests,
+    feedback,
+    progressPct,
+    handleAuthSubmit,
+    handleCreateQuest,
+    completeQuest,
+  } = useDashboardActions({ isAuthenticated: Boolean(session?.user) });
 
   if (status === "loading") {
     return (
@@ -221,27 +100,17 @@ export default function Home() {
     );
   }
 
-  const progressPct = profile
-    ? Math.round((profile.xpIntoLevel / Math.max(profile.xpForNextLevel, 1)) * 100)
-    : 0;
-
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6">
+      <DashboardNav onLogout={() => void signOut({ redirect: false })} />
+
       <header className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">SideQuest Dashboard</h1>
-            <p className="text-sm text-zinc-400">
-              {profile?.displayName ?? session.user.name} | Level {profile?.level ?? 1} |{" "}
-              {profile?.totalXp ?? 0} XP
-            </p>
-          </div>
-          <button
-            onClick={() => void signOut({ redirect: false })}
-            className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
-          >
-            Logout
-          </button>
+        <div>
+          <h1 className="text-2xl font-semibold">SideQuest Dashboard</h1>
+          <p className="text-sm text-zinc-400">
+            {profile?.displayName ?? session.user.name} | Level {profile?.level ?? 1} |{" "}
+            {profile?.totalXp ?? 0} XP
+          </p>
         </div>
         <div className="mt-3">
           <div className="mb-1 flex justify-between text-xs text-zinc-400">

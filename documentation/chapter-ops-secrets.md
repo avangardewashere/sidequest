@@ -51,7 +51,7 @@ This chapter documents secure setup and credential rotation for local and produc
 - User permissions:
   - app user must have read/write to the target DB
 - Database naming:
-  - use stable DB name (`sidequest`) across the app URI and expected collections
+  - use stable DB name with exact casing (`sideQuest`) across the app URI and expected collections
 
 ## Verification script expectations
 
