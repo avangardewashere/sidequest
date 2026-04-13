@@ -12,9 +12,13 @@ import type { AuthMode, Profile, Quest } from "@/types/dashboard";
 
 type UseDashboardActionsParams = {
   isAuthenticated: boolean;
+  onAfterQuestMutation?: () => void | Promise<void>;
 };
 
-export function useDashboardActions({ isAuthenticated }: UseDashboardActionsParams) {
+export function useDashboardActions({
+  isAuthenticated,
+  onAfterQuestMutation,
+}: UseDashboardActionsParams) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +51,15 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
   }, [isAuthenticated]);
 
   useEffect(() => {
-    void loadData();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        void loadData();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
@@ -74,14 +86,15 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
 
   async function completeQuest(questId: string) {
     setFeedback("");
-    const { ok, data } = await completeQuestById(questId);
+    const { ok, data, message } = await completeQuestById(questId);
     if (!ok) {
-      setFeedback(data.error ?? "Could not complete quest.");
+      setFeedback(message ?? data?.error ?? "Could not complete quest right now.");
       return;
     }
 
-    setFeedback(getCompletionFeedback(data));
+    setFeedback(getCompletionFeedback(data ?? {}));
     await loadData();
+    await onAfterQuestMutation?.();
   }
 
   return {

@@ -1,4 +1,5 @@
 import { signIn } from "next-auth/react";
+import type { QuestListQuery } from "@/lib/quest-selectors";
 import type {
   CompleteQuestResponse,
   CreateQuestPayload,
@@ -14,12 +15,98 @@ type DashboardData = {
   dailies: Quest[];
 };
 
+export type ActionResult<T = null> = {
+  ok: boolean;
+  data: T | null;
+  message?: string;
+  errorCode?: "unauthorized" | "validation" | "network" | "server" | "unknown";
+};
+
 async function parseJsonSafe(response: Response) {
   try {
     return await response.json();
   } catch {
     return null;
   }
+}
+
+function mapHttpError(status: number, apiMessage?: string) {
+  if (status === 401) {
+    return {
+      errorCode: "unauthorized" as const,
+      message: "Session expired. Please sign in again.",
+    };
+  }
+  if (status === 400 || status === 409 || status === 422) {
+    return {
+      errorCode: "validation" as const,
+      message: apiMessage ?? "Please check your input and try again.",
+    };
+  }
+  if (status >= 500) {
+    return {
+      errorCode: "server" as const,
+      message: "Something went wrong on our side. Try again.",
+    };
+  }
+  return {
+    errorCode: "unknown" as const,
+    message: apiMessage ?? "Something went wrong. Please try again.",
+  };
+}
+
+async function runAction<T>(
+  request: () => Promise<Response>,
+  successMapper: (json: unknown) => T | null = () => null,
+): Promise<ActionResult<T>> {
+  try {
+    const response = await request();
+    const json = await parseJsonSafe(response);
+    const apiMessage =
+      json && typeof json === "object" && "error" in json && typeof json.error === "string"
+        ? json.error
+        : undefined;
+
+    if (!response.ok) {
+      const mapped = mapHttpError(response.status, apiMessage);
+      return {
+        ok: false,
+        data: null,
+        message: mapped.message,
+        errorCode: mapped.errorCode,
+      };
+    }
+
+    return {
+      ok: true,
+      data: successMapper(json),
+    };
+  } catch {
+    return {
+      ok: false,
+      data: null,
+      errorCode: "network",
+      message: "Network issue. Check your connection and retry.",
+    };
+  }
+}
+
+export async function fetchQuestsList(query: QuestListQuery): Promise<Quest[]> {
+  await fetch("/api/dailies");
+  const params = new URLSearchParams({
+    status: query.status,
+    category: query.category,
+    sort: query.sort,
+  });
+  if (query.limit != null) {
+    params.set("limit", String(query.limit));
+  }
+  const response = await fetch(`/api/quests?${params.toString()}`);
+  if (!response.ok) {
+    return [];
+  }
+  const data = (await parseJsonSafe(response)) as { quests?: Quest[] } | null;
+  return data?.quests ?? [];
 }
 
 export async function fetchDashboardData(): Promise<DashboardData> {
@@ -64,13 +151,16 @@ export async function loginWithCredentials(payload: {
   return Boolean(loginResult?.ok);
 }
 
-export async function createQuest(payload: CreateQuestPayload): Promise<boolean> {
-  const response = await fetch("/api/quests", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return response.ok;
+export async function createQuest(payload: CreateQuestPayload): Promise<ActionResult<Quest>> {
+  return runAction<Quest>(
+    () =>
+      fetch("/api/quests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => (json as { quest?: Quest } | null)?.quest ?? null,
+  );
 }
 
 export async function getQuestById(questId: string): Promise<Quest | null> {
@@ -85,32 +175,39 @@ export async function getQuestById(questId: string): Promise<Quest | null> {
 export async function updateQuestById(
   questId: string,
   payload: UpdateQuestPayload,
-): Promise<boolean> {
-  const response = await fetch(`/api/quests/${questId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return response.ok;
+): Promise<ActionResult<Quest>> {
+  return runAction<Quest>(
+    () =>
+      fetch(`/api/quests/${questId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => (json as { quest?: Quest } | null)?.quest ?? null,
+  );
 }
 
-export async function deleteQuestById(questId: string): Promise<boolean> {
-  const response = await fetch(`/api/quests/${questId}`, {
-    method: "DELETE",
-  });
-  return response.ok;
+export async function deleteQuestById(
+  questId: string,
+  confirmTitle: string,
+): Promise<ActionResult> {
+  return runAction(
+    () =>
+      fetch(`/api/quests/${questId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmTitle }),
+      }),
+    () => null,
+  );
 }
 
-export async function completeQuestById(questId: string): Promise<{
-  ok: boolean;
-  data: CompleteQuestResponse;
-}> {
-  const response = await fetch(`/api/quests/${questId}/complete`, {
-    method: "PATCH",
-  });
-  const data = (await parseJsonSafe(response)) as CompleteQuestResponse | null;
-  return {
-    ok: response.ok,
-    data: data ?? {},
-  };
+export async function completeQuestById(questId: string): Promise<ActionResult<CompleteQuestResponse>> {
+  return runAction<CompleteQuestResponse>(
+    () =>
+      fetch(`/api/quests/${questId}/complete`, {
+        method: "PATCH",
+      }),
+    (json) => (json as CompleteQuestResponse | null) ?? {},
+  );
 }

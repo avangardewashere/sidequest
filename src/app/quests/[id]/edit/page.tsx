@@ -19,6 +19,8 @@ export default function EditQuestPage() {
   const [category, setCategory] = useState<Quest["category"]>("personal");
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savedTitle, setSavedTitle] = useState("");
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
 
   useEffect(() => {
     const run = async () => {
@@ -29,6 +31,7 @@ export default function EditQuestPage() {
         return;
       }
       setTitle(quest.title);
+      setSavedTitle(quest.title);
       setDescription(quest.description);
       setDifficulty(quest.difficulty);
       setCategory(quest.category);
@@ -47,10 +50,12 @@ export default function EditQuestPage() {
       difficulty,
       category,
     });
-    if (!updated) {
-      setFeedback("Could not update quest.");
+    if (!updated.ok) {
+      setFeedback(updated.message ?? "Could not update quest.");
       return;
     }
+    setSavedTitle(title.trim());
+    setDeleteConfirmTitle("");
     setFeedback("Quest updated successfully.");
   }
 
@@ -60,9 +65,14 @@ export default function EditQuestPage() {
       return;
     }
 
-    const deleted = await deleteQuestById(questId);
-    if (!deleted) {
-      setFeedback("Could not delete quest.");
+    if (deleteConfirmTitle.trim() !== savedTitle.trim()) {
+      setFeedback("Type the saved quest title exactly in the box below to confirm deletion.");
+      return;
+    }
+
+    const deleted = await deleteQuestById(questId, deleteConfirmTitle.trim());
+    if (!deleted.ok) {
+      setFeedback(deleted.message ?? "Could not delete quest. Check the title matches exactly.");
       return;
     }
     router.push("/quests/view");
@@ -141,19 +151,36 @@ export default function EditQuestPage() {
         </div>
       ) : null}
 
-      <div className="flex gap-2">
-        <Link
-          href="/quests/view"
-          className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
-        >
-          Back to View Quests
-        </Link>
-        <button
-          onClick={() => void handleDelete()}
-          className="rounded-md bg-red-600 px-3 py-2 text-sm hover:bg-red-500"
-        >
-          Delete Quest
-        </button>
+      <div className="space-y-3">
+        <div>
+          <label htmlFor="delete-confirm-title" className="mb-1 block text-sm text-zinc-300">
+            Type quest title to enable delete
+          </label>
+          <input
+            id="delete-confirm-title"
+            value={deleteConfirmTitle}
+            onChange={(event) => setDeleteConfirmTitle(event.target.value)}
+            placeholder={savedTitle || "Quest title"}
+            className="w-full max-w-md rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+            autoComplete="off"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href="/quests/view"
+            className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
+          >
+            Back to View Quests
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleDelete()}
+            disabled={!savedTitle || deleteConfirmTitle.trim() !== savedTitle.trim()}
+            className="rounded-md bg-red-600 px-3 py-2 text-sm hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Delete Quest
+          </button>
+        </div>
       </div>
     </main>
   );

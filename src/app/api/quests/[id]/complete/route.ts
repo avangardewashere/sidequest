@@ -7,18 +7,22 @@ import { UserModel } from "@/models/User";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
 import { applyQuestCompletion, getMilestoneBonus } from "@/lib/progression";
+import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { levelFromTotalXp } from "@/lib/xp";
 
 class ApiConflictError extends Error {}
 class ApiNotFoundError extends Error {}
 
 export async function PATCH(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const logger = createRequestLogger(request);
+  logger.info("api.request.start", { handler: "quests.id.complete.PATCH" });
   const session = await getAuthSession();
   const userId = session?.user?.id;
   if (!userId) {
+    logger.warn("api.auth.unauthorized", { handler: "quests.id.complete.PATCH" });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -131,24 +135,29 @@ export async function PATCH(
     });
 
     if (!responsePayload) {
+      logger.error("api.quests.complete.empty_response", { questId: id });
       return NextResponse.json(
         { error: "Completion transaction did not produce response" },
         { status: 500 },
       );
     }
 
+    logger.info("api.quests.complete.success", { questId: id });
     return NextResponse.json(responsePayload);
   } catch (error) {
     if (error instanceof ApiNotFoundError) {
+      logger.warn("api.quests.complete.not_found", { questId: id, message: error.message });
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof ApiConflictError) {
+      logger.warn("api.quests.complete.conflict", { questId: id, message: error.message });
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
     if (error && typeof error === "object" && "code" in error) {
       const code = (error as { code?: number }).code;
       if (code === 11000) {
+        logger.warn("api.quests.complete.duplicate", { questId: id });
         return NextResponse.json(
           { error: "Duplicate completion event ignored" },
           { status: 409 },
@@ -156,6 +165,10 @@ export async function PATCH(
       }
     }
 
+    logRequestException(logger, "api.request.exception", error, {
+      handler: "quests.id.complete.PATCH",
+      questId: id,
+    });
     return NextResponse.json(
       { error: "Failed to complete quest due to transient server error" },
       { status: 500 },

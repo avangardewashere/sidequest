@@ -22,8 +22,8 @@ export default function CreateQuestPage() {
     setCreatedQuest(false);
 
     const created = await createQuest({ title, description, difficulty, category });
-    if (!created) {
-      setFeedback("Could not create quest.");
+    if (!created.ok) {
+      setFeedback(created.message ?? "Could not create quest.");
       return;
     }
 

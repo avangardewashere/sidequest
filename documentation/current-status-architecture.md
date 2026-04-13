@@ -18,11 +18,13 @@ This document summarizes the current state of the project and how the system is 
 - Register with email, display name, and password.
 - Login with credentials.
 - Duplicate registration is handled cleanly (`409`) with race-condition fallback.
+- Protected quest routes are enforced centrally through middleware.
 
 Key files:
 - `src/app/api/auth/register/route.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
 - `src/lib/auth.ts`
+- `src/middleware.ts`
 - `src/models/User.ts`
 
 ## Quest Management (Gamified Todo Core)
@@ -32,9 +34,11 @@ Key files:
   - status filter (`all`, `active`, `completed`, `daily`)
   - category filter (`all`, `work`, `study`, `health`, `personal`, `other`)
   - sorting (`newest`, `oldest`, `highest_xp`, `category`)
+- Quest listing now supports server-side query params for filter/sort/limit.
 - Edit existing quest fields (`title`, `description`, `difficulty`, `category`).
-- Delete quest with warning confirmation popup.
+- Delete quest now requires typed title confirmation (`confirmTitle`) end-to-end.
 - Complete active quests from view screen.
+- Quest actions now surface clearer error feedback for auth/validation/network/server failures.
 
 Key files:
 - `src/app/quests/create/page.tsx`
@@ -104,11 +108,11 @@ Auth:
 - `GET|POST /api/auth/[...nextauth]`
 
 Quest:
-- `GET /api/quests`
+- `GET /api/quests?status=&category=&sort=&limit=`
 - `POST /api/quests`
 - `GET /api/quests/:id`
 - `PATCH /api/quests/:id`
-- `DELETE /api/quests/:id`
+- `DELETE /api/quests/:id` (requires `confirmTitle` body field)
 - `PATCH /api/quests/:id/complete`
 
 Progression and retention:
@@ -127,7 +131,7 @@ Progression and retention:
 - **Client API wrappers (`src/lib/client-api.ts`)**
   - Frontend fetch abstraction for route handlers.
 - **Domain utilities (`src/lib/*.ts`)**
-  - XP math, progression logic, dailies, formatting, selectors.
+  - XP math, progression logic, dailies, formatting, selectors, server logger.
 - **Route handlers (`src/app/api/**`)**
   - Validation, authorization, persistence, response shaping.
 - **Models (`src/models/**`)**
@@ -141,15 +145,15 @@ Progression and retention:
 - Dedicated CRUD route for quests supports future expansion.
 - Gamification loop (XP/level/streak/milestones) is already integrated.
 - Shared selectors and API wrappers reduce repeated logic.
+- API observability can be enabled per request via `showlogger=true` with structured JSON logs.
 
 ## Current Gaps / Next Recommended Improvements
 
-- Add server-side filtering/sorting query params for large quest datasets.
-- Add stronger delete safety (optional typed confirmation) for destructive action.
 - Expand Guild Stats with real charts from metrics data.
 - Add automated tests for auth, quest CRUD, and completion/progression endpoints.
-- Improve error surface in UI for network/API failures (user-friendly messages per action).
+- Migrate middleware file convention to Next.js proxy convention to remove deprecation warning.
+- Extend logger correlation (for example tracing IDs across layers) if deeper observability is needed.
 
 ## One-Line Summary
 
-**SideQuest is now a structured, route-based gamified todo platform with working auth, quest CRUD, progression systems, and a scalable architecture foundation for analytics and future social/game features.**
+**SideQuest is now a structured, route-based gamified todo platform with protected quest routes, safer CRUD flows, improved error UX, query-gated API observability, and a scalable foundation for analytics and future social/game features.**

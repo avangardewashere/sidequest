@@ -4,11 +4,14 @@ export type QuestStatusFilter = "all" | "active" | "completed" | "daily";
 export type QuestCategoryFilter = "all" | Quest["category"];
 export type QuestSortOption = "newest" | "oldest" | "highest_xp" | "category";
 
-type QuestQuery = {
+export type QuestListQuery = {
   status: QuestStatusFilter;
   category: QuestCategoryFilter;
   sort: QuestSortOption;
+  limit?: number;
 };
+
+type QuestQuery = QuestListQuery;
 
 function mergeQuestLists(
   dailies: Quest[],

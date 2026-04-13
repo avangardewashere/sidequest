@@ -1,35 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
-import {
+import { fetchQuestsList } from "@/lib/client-api";
+import type {
   QuestCategoryFilter,
   QuestSortOption,
   QuestStatusFilter,
-  selectQuests,
 } from "@/lib/quest-selectors";
+import type { Quest } from "@/types/dashboard";
 
 export default function ViewQuestsPage() {
   const { data: session, status } = useSession();
-  const { dailies, activeQuests, completedQuests, feedback, completeQuest } = useDashboardActions({
-    isAuthenticated: Boolean(session?.user),
-  });
   const [statusFilter, setStatusFilter] = useState<QuestStatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<QuestCategoryFilter>("all");
   const [sortOption, setSortOption] = useState<QuestSortOption>("newest");
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [listLoading, setListLoading] = useState(false);
 
-  const filteredQuests = useMemo(
-    () =>
-      selectQuests(dailies, activeQuests, completedQuests, {
+  const reloadQuestList = useCallback(async () => {
+    if (!session?.user) {
+      return;
+    }
+    setListLoading(true);
+    try {
+      const list = await fetchQuestsList({
         status: statusFilter,
         category: categoryFilter,
         sort: sortOption,
-      }),
-    [dailies, activeQuests, completedQuests, statusFilter, categoryFilter, sortOption],
-  );
+      });
+      setQuests(list);
+    } finally {
+      setListLoading(false);
+    }
+  }, [session?.user, statusFilter, categoryFilter, sortOption]);
+
+  const { feedback, completeQuest } = useDashboardActions({
+    isAuthenticated: Boolean(session?.user),
+    onAfterQuestMutation: reloadQuestList,
+  });
+
+  useEffect(() => {
+    void reloadQuestList();
+  }, [reloadQuestList]);
 
   if (status === "loading") {
     return (
@@ -94,8 +110,12 @@ export default function ViewQuestsPage() {
       </section>
 
       <section className="grid gap-3">
-        {filteredQuests.length ? (
-          filteredQuests.map((quest) => (
+        {listLoading ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+            Loading quests...
+          </div>
+        ) : quests.length ? (
+          quests.map((quest) => (
             <article
               key={quest._id}
               className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"
