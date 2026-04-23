@@ -1,9 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import localFont from "next/font/local";
 import { signOut, useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
+import buttonFrame from "@/assets/images/buttonImage.png";
+
+const clashDisplay = localFont({
+  src: [
+    { path: "../assets/clashDisplay/ClashDisplay-Regular.otf", weight: "400", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Medium.otf", weight: "500", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Semibold.otf", weight: "600", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Bold.otf", weight: "700", style: "normal" },
+  ],
+  display: "swap",
+});
+
+const framedButtonStyle = {
+  backgroundImage: `url(${buttonFrame.src})`,
+  backgroundSize: "100% 100%",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "center",
+};
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -33,20 +52,27 @@ export default function Home() {
   if (!session?.user) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-6 text-zinc-100">
+        <div
+          className={`${clashDisplay.className} w-full max-w-md rounded-xl border border-[#D8C6A5] p-6 text-[#6B4A1E] shadow-[0_12px_28px_rgba(0,0,0,0.18)]`}
+          style={{
+            background: "linear-gradient(to bottom, #F3EADB 0%, #E4D4BE 50%, #D6C2A5 100%)",
+          }}
+        >
           <h1 className="text-2xl font-semibold">SideQuest</h1>
           <p className="mt-1 text-sm text-zinc-400">Turn tasks into XP and levels.</p>
 
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => setMode("login")}
-              className={`rounded-md px-3 py-1 text-sm ${mode === "login" ? "bg-indigo-500 text-white" : "bg-zinc-800"}`}
+              className={`rounded-md px-4 py-2 text-sm text-[#6B4A1E] transition ${mode === "login" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+              style={framedButtonStyle}
             >
               Login
             </button>
             <button
               onClick={() => setMode("register")}
-              className={`rounded-md px-3 py-1 text-sm ${mode === "register" ? "bg-indigo-500 text-white" : "bg-zinc-800"}`}
+              className={`rounded-md px-4 py-2 text-sm text-[#6B4A1E] transition ${mode === "register" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+              style={framedButtonStyle}
             >
               Register
             </button>
@@ -58,7 +84,11 @@ export default function Home() {
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="Display name"
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+                className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+                }}
                 required
               />
             ) : null}
@@ -67,7 +97,11 @@ export default function Home() {
               onChange={(event) => setEmail(event.target.value)}
               type="email"
               placeholder="Email"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+              className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
+              style={{
+                background:
+                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+              }}
               required
             />
             <input
@@ -75,12 +109,17 @@ export default function Home() {
               onChange={(event) => setPassword(event.target.value)}
               type="password"
               placeholder="Password"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+              className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
+              style={{
+                background:
+                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+              }}
               required
             />
             <button
               type="submit"
-              className="w-full rounded-md bg-indigo-500 px-3 py-2 font-medium hover:bg-indigo-400"
+              className="w-full rounded-md h-[48] font-medium text-[#6B4A1E] transition hover:opacity-95"
+              style={framedButtonStyle}
             >
               {mode === "register" ? "Create account" : "Login"}
             </button>
