@@ -118,33 +118,43 @@ export default function ViewQuestsPage() {
           quests.map((quest) => (
             <article
               key={quest._id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"
+              className="rounded-xl border border-white/30 bg-white/10 p-4 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
+              <div
+                className="flex items-start justify-between gap-3 rounded-lg p-3"
+                style={{
+                  background: "linear-gradient(to bottom, #F3EADB 0%, #E4D4BE 50%, #D6C2A5 100%)",
+                  boxShadow:
+                    "inset 0 0 0 2px #D8C6A5, inset 0 2px 0 #EAD9B8, inset 0 -2px 0 #B7A17E",
+                }}
+              >
+                <div
+                  className="space-y-2"
+                  style={{ color: "#6B4A1E", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
+                >
                   <h3
                     className={`text-base font-semibold ${quest.status === "completed" ? "line-through opacity-80" : ""}`}
                   >
                     {quest.title}
                   </h3>
-                  <p className="text-sm text-zinc-300">{quest.description}</p>
+                  <p className="text-sm">{quest.description}</p>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-md bg-zinc-800 px-2 py-1">{quest.category}</span>
-                    <span className="rounded-md bg-zinc-800 px-2 py-1">{quest.difficulty}</span>
-                    <span className="rounded-md bg-indigo-500/20 px-2 py-1 text-indigo-300">
+                    <span className="rounded-md bg-zinc-800 px-2 py-1 text-white">{quest.category}</span>
+                    <span className="rounded-md bg-zinc-800 px-2 py-1 text-white">{quest.difficulty}</span>
+                    <span className="rounded-md bg-indigo-500/20 px-2 py-1 text-white">
                       +{quest.xpReward} XP
                     </span>
                     {quest.isDaily ? (
-                      <span className="rounded-md bg-amber-500/20 px-2 py-1 text-amber-300">
+                      <span className="rounded-md bg-amber-500/20 px-2 py-1 text-white">
                         Daily
                       </span>
                     ) : null}
                     {quest.status === "completed" ? (
-                      <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-emerald-300">
+                      <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-white">
                         Completed
                       </span>
                     ) : (
-                      <span className="rounded-md bg-blue-500/20 px-2 py-1 text-blue-300">
+                      <span className="rounded-md bg-blue-500/20 px-2 py-1 text-white">
                         Active
                       </span>
                     )}
