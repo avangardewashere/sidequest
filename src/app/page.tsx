@@ -87,7 +87,7 @@ export default function Home() {
                 className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
                 style={{
                   background:
-                    "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+                    "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #C9DAF0 100%)",
                 }}
                 required
               />
@@ -100,7 +100,7 @@ export default function Home() {
               className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
               style={{
                 background:
-                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #C9DAF0 100%)",
               }}
               required
             />
@@ -112,7 +112,7 @@ export default function Home() {
               className="w-full rounded-md border border-[#AEB6C2] px-3 py-2 text-[#1f2937]"
               style={{
                 background:
-                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #AEB6C2 100%)",
+                  "linear-gradient(to bottom, #FFFFFF 0%, #E6EBF2 50%, #C9DAF0 100%)",
               }}
               required
             />

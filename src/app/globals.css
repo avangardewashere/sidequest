@@ -1,7 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: linear-gradient(to bottom, #ffffff 0%, #e6ebf2 50%, #aeb6c2 100%);
+  --panel-gradient-silver-start: #ffffff;
+  --panel-gradient-silver-mid: #e6ebf2;
+  --panel-gradient-silver-end: #c9daf0;
+  --background: linear-gradient(
+    to bottom,
+    var(--panel-gradient-silver-start) 0%,
+    var(--panel-gradient-silver-mid) 50%,
+    var(--panel-gradient-silver-end) 100%
+  );
   --foreground: #171717;
 }
 
@@ -14,8 +22,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: linear-gradient(to bottom, #ffffff 0%, #e6ebf2 50%, #aeb6c2 100%);
-    --foreground: #ededed;
+    --foreground: #171717;
   }
 }
 
