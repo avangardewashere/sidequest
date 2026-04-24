@@ -107,6 +107,20 @@ This document reflects the repository's current implementation status.
 
 - **[HomeUI] - tracker** (`documentation/home-ui-tracker.md`)
 - Today/Focus phase plan (`documentation/today-focus-ui-plan.md`)
+- Color scheme rollout plan (`.cursor/plans/color-scheme-rollout-plan_2f6e2ea3.plan.md`)
+
+## UI Theme Status
+
+- The app now uses the Indigo + Ember tokenized color system defined in `src/app/globals.css`.
+- Legacy `--sq-*` compatibility aliases have been retired from source usage and CSS token exports.
+- Home and quest-view surfaces have been migrated to role-based tokens (`--color-primary*`, `--color-secondary*`, `--color-text-*`, `--color-border-*`, semantic tokens).
+
+## Token Usage Rules
+
+- Use `--color-primary*` for progression, CTAs, active states, and XP-related emphasis.
+- Use `--color-secondary` for decorative heat/streak accents and `--color-secondary-strong` for readable ember text.
+- Use semantic tokens (`--color-success*`, `--color-warning*`, `--color-danger*`) only for state/status semantics.
+- Use neutral tiers consistently: `--color-text-primary` (content), `--color-text-secondary` (meta), `--color-text-tertiary` (inactive labels), and matching border tiers.
 
 ## One-Line Summary
 

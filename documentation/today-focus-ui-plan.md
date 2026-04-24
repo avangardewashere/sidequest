@@ -264,37 +264,184 @@ Ship a complete UI-only Home (`Today/Focus`) screen that visually matches the de
 
 ### C) Compose Home Screen
 
-- [ ] Create [src/components/home/today-focus-shell.tsx](src/components/home/today-focus-shell.tsx)
-- [ ] Compose sections in this exact order:
-  - [ ] Header
-  - [ ] XP + stats strip
-  - [ ] Main Quest hero
-  - [ ] `In Progress` section
-  - [ ] `Queued` section
-  - [ ] `Claimed` section
-  - [ ] Floating quick-add button
-  - [ ] Bottom tab bar
-- [ ] Keep all actions presentational (no API calls, no DB mutations)
-- [ ] Validate mobile-first layout and desktop-safe max width behavior
+- [x] Create [src/components/home/today-focus-shell.tsx](src/components/home/today-focus-shell.tsx)
+- [x] Compose sections in this exact order:
+  - [x] Header
+  - [x] XP + stats strip
+  - [x] Main Quest hero
+  - [x] `In Progress` section
+  - [x] `Queued` section
+  - [x] `Claimed` section
+  - [x] Floating quick-add button
+  - [x] Bottom tab bar
+- [x] Keep all actions presentational (no API calls, no DB mutations)
+- [x] Validate mobile-first layout and desktop-safe max width behavior
+
+#### Refined Section C Plan (Execution Ready)
+
+**Objective**
+- Compose a single reusable `TodayFocusShell` that stitches all Section B primitives together using `todayFocusMockData`, with the exact visual hierarchy from the design references.
+
+**Inputs**
+- Data source: [src/components/home/today-focus-mock-data.ts](src/components/home/today-focus-mock-data.ts)
+- Primitives:
+  - [src/components/home/today-focus-header.tsx](src/components/home/today-focus-header.tsx)
+  - [src/components/home/today-focus-xp-stats.tsx](src/components/home/today-focus-xp-stats.tsx)
+  - [src/components/home/today-focus-main-quest.tsx](src/components/home/today-focus-main-quest.tsx)
+  - [src/components/home/today-focus-task-section.tsx](src/components/home/today-focus-task-section.tsx)
+  - [src/components/home/today-focus-fab.tsx](src/components/home/today-focus-fab.tsx)
+  - [src/components/home/today-focus-tab-bar.tsx](src/components/home/today-focus-tab-bar.tsx)
+- Visual reference: [documentation/Design References/sidequest-demo.jsx](documentation/Design References/sidequest-demo.jsx)
+
+**Implementation Steps**
+1. Create [src/components/home/today-focus-shell.tsx](src/components/home/today-focus-shell.tsx) with a mobile-first page wrapper:
+   - centered container with safe max width
+   - bottom padding reserved for fixed tab bar and FAB
+2. Import `todayFocusMockData` and render sections in fixed order:
+   - header -> xp/stats -> main quest -> in progress -> queued -> claimed
+3. Bind section rendering dynamically:
+   - map `todayFocusMockData.sections` into `TodayFocusTaskSection`
+   - preserve order from mock data to avoid hardcoded duplication
+4. Add presentational handlers only:
+   - `onMenuClick`, `onSearchClick`, `onStartFocus`, `onOpenQuest`, `onTaskClick`, `onTabChange`, `onFabClick`
+   - handlers are local no-op/log placeholders, no API calls
+5. Add fixed anchors:
+   - `TodayFocusFab` above tab bar
+   - `TodayFocusTabBar` fixed to bottom with active tab defaulted to `today`
+
+**Layout Rules**
+- Keep Home shell scrollable while preserving fixed bottom controls.
+- Ensure no overlap hides task rows (extra bottom spacing in content area).
+- Keep component spacing consistent (`px-4`, section spacing cadence matching current primitives).
+
+**Quality Checks (Section C)**
+- Shell compiles without type errors.
+- All six content blocks and two anchored controls render.
+- Section ordering matches plan and reference.
+- No backend imports, route handler imports, or API client calls appear in shell.
+
+**Section C Exit Criteria**
+- [x] `today-focus-shell.tsx` exists and fully composes the Home screen.
+- [x] Composition uses typed mock data only.
+- [x] Interactions remain presentational and local.
+- [x] Ready to move directly into Section D route integration.
 
 ### D) Integrate With Route
 
-- [ ] Update [src/app/page.tsx](src/app/page.tsx) authenticated branch to render `TodayFocusShell`
-- [ ] Keep loading branch unchanged
-- [ ] Keep unauthenticated login/register branch unchanged
-- [ ] Remove obsolete authenticated-dashboard-only imports if no longer needed
+- [x] Update [src/app/page.tsx](src/app/page.tsx) authenticated branch to render `TodayFocusShell`
+- [x] Keep loading branch unchanged
+- [x] Keep unauthenticated login/register branch unchanged
+- [x] Remove obsolete authenticated-dashboard-only imports if no longer needed
+
+#### Refined Section D Plan (Execution Ready)
+
+**Objective**
+- Replace only the authenticated Home surface in [src/app/page.tsx](src/app/page.tsx) with `TodayFocusShell`, while preserving existing loading and unauthenticated behavior exactly.
+
+**Target File**
+- [src/app/page.tsx](src/app/page.tsx)
+
+**Primary Integration Rule**
+- Do not change auth/session branching logic; only swap the JSX returned by the authenticated branch.
+
+**Implementation Steps**
+1. Add import:
+   - `TodayFocusShell` from [src/components/home/today-focus-shell.tsx](src/components/home/today-focus-shell.tsx)
+2. Identify the authenticated return block (currently dashboard header + quick actions content).
+3. Replace authenticated block contents with a minimal wrapper that renders `TodayFocusShell`.
+4. Keep these branches untouched:
+   - loading branch (`status === "loading"`)
+   - unauthenticated branch (`!session?.user`)
+5. Remove authenticated-only dead imports no longer used after replacement:
+   - likely `Link`
+   - likely `DashboardNav`
+   - likely `signOut`
+   - keep `useDashboardActions` only if still required by unauthenticated flow fields
+6. Confirm no route changes or navigation side effects are introduced.
+
+**Safeguards**
+- Preserve all existing form handlers/inputs used by unauthenticated auth UI.
+- Do not alter font setup unless required by lint/type cleanup.
+- Do not touch API calls, hooks, or auth config in this section.
+
+**Quality Checks (Section D)**
+- [src/app/page.tsx](src/app/page.tsx) compiles with no unused imports.
+- Loading and unauthenticated states render as before.
+- Authenticated state renders `TodayFocusShell`.
+- No files under `src/app/api`, `src/lib/db.ts`, or `src/models` are changed.
+
+**Section D Exit Criteria**
+- [x] Authenticated branch of `/` renders `TodayFocusShell`.
+- [x] Loading branch remains unchanged in behavior.
+- [x] Unauthenticated branch remains unchanged in behavior.
+- [x] `page.tsx` has no introduced lint/type errors.
+- [x] Ready to proceed to Section E validation checklist.
 
 ### E) Validate Before Sign-Off
 
-- [ ] Run diagnostics/lint for touched files
-- [ ] Fix introduced type/lint issues
+- [x] Run diagnostics/lint for touched files
+- [x] Fix introduced type/lint issues
 - [ ] Visual QA against [documentation/Design References/sidequest-demo.jsx](documentation/Design References/sidequest-demo.jsx):
   - [ ] top app bar hierarchy
   - [ ] xp/stats grouping
   - [ ] main quest emphasis and CTA
   - [ ] section spacing rhythm
   - [ ] FAB + tab bar anchoring
-- [ ] Confirm no backend/API/model files changed
+- [x] Confirm no backend/API/model files changed
+
+#### Refined Section E Plan (Execution Ready)
+
+**Objective**
+- Validate that Phase 1 is functionally stable, visually aligned with references, and still isolated from backend/data-layer changes.
+
+**Validation Scope**
+- Core files:
+  - [src/app/page.tsx](src/app/page.tsx)
+  - [src/components/home/today-focus-shell.tsx](src/components/home/today-focus-shell.tsx)
+  - [src/components/home/today-focus-header.tsx](src/components/home/today-focus-header.tsx)
+  - [src/components/home/today-focus-xp-stats.tsx](src/components/home/today-focus-xp-stats.tsx)
+  - [src/components/home/today-focus-main-quest.tsx](src/components/home/today-focus-main-quest.tsx)
+  - [src/components/home/today-focus-task-row.tsx](src/components/home/today-focus-task-row.tsx)
+  - [src/components/home/today-focus-task-section.tsx](src/components/home/today-focus-task-section.tsx)
+  - [src/components/home/today-focus-fab.tsx](src/components/home/today-focus-fab.tsx)
+  - [src/components/home/today-focus-tab-bar.tsx](src/components/home/today-focus-tab-bar.tsx)
+  - [src/components/home/today-focus-mock-data.ts](src/components/home/today-focus-mock-data.ts)
+- Visual reference:
+  - [documentation/Design References/sidequest-demo.jsx](documentation/Design References/sidequest-demo.jsx)
+
+**Execution Steps**
+1. **Static quality pass**
+   - Run lints/diagnostics for all touched Home files.
+   - Resolve unused imports, dead code, and type issues.
+2. **Branch behavior validation**
+   - Verify loading branch still renders for `status === "loading"`.
+   - Verify unauthenticated branch still renders login/register surface.
+   - Verify authenticated branch renders `TodayFocusShell`.
+3. **Visual parity checks (manual)**
+   - Confirm top app bar hierarchy (day/date/title/actions).
+   - Confirm XP block and stats strip grouping and spacing.
+   - Confirm Main Quest visual prominence and CTA arrangement.
+   - Confirm section rhythm (`In Progress`, `Queued`, `Claimed`) and row readability.
+   - Confirm FAB placement and tab bar anchoring without overlap.
+4. **Layout sanity checks**
+   - Validate narrow mobile viewport behavior.
+   - Validate desktop-safe centered layout (`max width`) and scroll behavior.
+5. **Boundary audit**
+   - Confirm no backend/API/model files were changed in this phase.
+   - Confirm no accidental data fetching was introduced in Home components.
+
+**Evidence To Capture During Validation**
+- Lint status: clean for touched files.
+- File diff scope: includes only `src/app/page.tsx`, `src/components/home/*`, and documentation updates.
+- Visual notes for any mismatches vs reference (if found), with follow-up fixes queued before Phase 1 sign-off.
+
+**Section E Exit Criteria**
+- [x] No lint/type errors in touched Home files.
+- [x] Loading/unauthenticated/authenticated route behavior validated.
+- [ ] Manual visual checks completed for all five focus areas.
+- [ ] Responsive checks completed for mobile + desktop container behavior.
+- [x] No backend/API/model-layer changes included.
+- [ ] Ready to check all Section F Phase 1 exit gate items.
 
 ### F) Phase 1 Exit Gate
 

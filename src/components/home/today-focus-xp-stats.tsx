@@ -22,20 +22,20 @@ export function TodayFocusXpStats({ xp, stats }: TodayFocusXpStatsProps) {
       <div
         className="rounded-xl border p-3"
         style={{
-          borderColor: "var(--sq-border)",
-          background: "linear-gradient(to bottom, var(--sq-surface) 0%, var(--sq-surface-alt) 100%)",
+          borderColor: "var(--color-border-subtle)",
+          background: "var(--color-bg-surface)",
         }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--sq-text-muted)" }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
             {xp.roleLabel} LV. {xp.level}
           </p>
-          <p className="text-xs font-medium" style={{ color: "var(--sq-text-muted)" }}>
+          <p className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>
             {xp.currentXp}/{xp.nextLevelXp} XP
           </p>
         </div>
-        <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--sq-base-mid)" }}>
-          <div className="h-full rounded-full" style={{ width: `${progressPct}%`, background: "var(--sq-accent)" }} />
+        <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--color-primary-subtle)" }}>
+          <div className="h-full rounded-full" style={{ width: `${progressPct}%`, background: "var(--color-primary)" }} />
         </div>
       </div>
 
@@ -44,12 +44,12 @@ export function TodayFocusXpStats({ xp, stats }: TodayFocusXpStatsProps) {
           <article
             key={stat.id}
             className="rounded-lg border px-3 py-2"
-            style={{ borderColor: "var(--sq-border)", background: "var(--sq-surface)" }}
+            style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-surface)" }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--sq-text-muted)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
               {iconByStat[stat.icon]} · {stat.label}
             </p>
-            <p className="mt-1 text-lg font-semibold" style={{ color: "var(--sq-text)" }}>
+            <p className="mt-1 text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
               {stat.value}
             </p>
           </article>

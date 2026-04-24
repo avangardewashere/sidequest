@@ -17,15 +17,15 @@ export function TodayFocusHeader({ data, onMenuClick, onSearchClick }: TodayFocu
           onClick={onMenuClick}
           aria-label="Open menu"
           className="h-9 w-9 rounded-full border text-sm"
-          style={{ borderColor: "var(--sq-border)", background: "var(--sq-surface)" }}
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
         >
           Menu
         </button>
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--sq-text-muted)" }}>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
             {data.dayLabel} · {data.dateLabel}
           </p>
-          <h1 className="text-2xl font-semibold" style={{ color: "var(--sq-text)" }}>
+          <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
             {data.title}
           </h1>
         </div>
@@ -35,7 +35,7 @@ export function TodayFocusHeader({ data, onMenuClick, onSearchClick }: TodayFocu
         onClick={onSearchClick}
         aria-label="Search"
         className="h-9 w-9 rounded-full border text-xs"
-        style={{ borderColor: "var(--sq-border)", background: "var(--sq-surface)" }}
+        style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
       >
         Search
       </button>

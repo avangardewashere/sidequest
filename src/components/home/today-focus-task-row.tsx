@@ -15,6 +15,24 @@ const iconTextByMeta: Record<TaskMetaItem["icon"], string> = {
   note: "Note",
 };
 
+const priorityColorByLevel: Record<NonNullable<TaskRowData["priority"]>, { bg: string; text: string; border: string }> = {
+  P1: {
+    bg: "var(--color-danger-subtle)",
+    text: "var(--color-danger)",
+    border: "var(--color-danger-subtle)",
+  },
+  P2: {
+    bg: "var(--color-warning-subtle)",
+    text: "var(--color-warning)",
+    border: "var(--color-warning-subtle)",
+  },
+  P3: {
+    bg: "var(--color-bg-elevated)",
+    text: "var(--color-text-secondary)",
+    border: "var(--color-border-subtle)",
+  },
+};
+
 export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
   return (
     <button
@@ -22,8 +40,8 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
       onClick={() => onClick?.(task.id)}
       className="w-full rounded-lg border px-3 py-2 text-left"
       style={{
-        borderColor: task.done ? "var(--sq-border)" : "var(--sq-border-strong)",
-        background: "var(--sq-surface)",
+        borderColor: task.done ? "var(--color-border-subtle)" : "var(--color-border-default)",
+        background: "var(--color-bg-surface)",
         opacity: task.done ? 0.75 : 1,
       }}
     >
@@ -33,7 +51,11 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
             {task.priority ? (
               <span
                 className="rounded border px-1.5 py-0.5 text-[10px] font-semibold"
-                style={{ borderColor: "var(--sq-border)", color: "var(--sq-text-muted)" }}
+                style={{
+                  borderColor: priorityColorByLevel[task.priority].border,
+                  color: priorityColorByLevel[task.priority].text,
+                  background: priorityColorByLevel[task.priority].bg,
+                }}
               >
                 {task.priority}
               </span>
@@ -41,7 +63,7 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
             <p
               className="truncate text-sm font-medium"
               style={{
-                color: "var(--sq-text)",
+                color: "var(--color-text-primary)",
                 textDecoration: task.done ? "line-through" : "none",
               }}
             >
@@ -51,7 +73,11 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
           {task.meta?.length ? (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {task.meta.map((item) => (
-                <span key={`${task.id}-${item.icon}-${item.text}`} className="text-[11px]" style={{ color: "var(--sq-text-muted)" }}>
+                <span
+                  key={`${task.id}-${item.icon}-${item.text}`}
+                  className="text-[11px]"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
                   {iconTextByMeta[item.icon]} · {item.text}
                 </span>
               ))}
@@ -61,7 +87,11 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
         {typeof task.xp === "number" ? (
           <span
             className="rounded-full border px-2 py-1 text-[11px] font-semibold"
-            style={{ borderColor: "var(--sq-border)", color: "var(--sq-text-muted)" }}
+            style={{
+              borderColor: "var(--color-primary-subtle)",
+              background: "var(--color-primary-subtle)",
+              color: "var(--color-primary)",
+            }}
           >
             +{task.xp} XP
           </span>

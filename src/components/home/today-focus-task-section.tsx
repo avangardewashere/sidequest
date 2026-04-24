@@ -12,11 +12,11 @@ export function TodayFocusTaskSection({ section, onTaskClick }: TodayFocusTaskSe
   return (
     <section className="px-4 pt-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--sq-text-muted)" }}>
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
           {section.label}
         </p>
         {section.rightLabel ? (
-          <p className="text-xs font-medium" style={{ color: "var(--sq-text-muted)" }}>
+          <p className="text-xs font-medium" style={{ color: "var(--color-text-tertiary)" }}>
             {section.rightLabel}
           </p>
         ) : null}
