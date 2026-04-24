@@ -103,6 +103,11 @@ This document reflects the repository's current implementation status.
 3. Keep Playwright coverage aligned with evolving authenticated quest flows
 4. Monitor and refine CI quality gates as test surface grows
 
+## Documentation Trackers
+
+- **[HomeUI] - tracker** (`documentation/home-ui-tracker.md`)
+- Today/Focus phase plan (`documentation/today-focus-ui-plan.md`)
+
 ## One-Line Summary
 
 **SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic, with analytics UI, testing, and release maturity as the next major steps.**
