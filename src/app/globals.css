@@ -1,21 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --panel-gradient-silver-start: #ffffff;
-  --panel-gradient-silver-mid: #e6ebf2;
-  --panel-gradient-silver-end: #c9daf0;
+  --sq-base-light: #efece3;
+  --sq-base-mid: #8fabd4;
+  --sq-base-dark: #4a70a9;
+  --sq-base-black: #000000;
+  --sq-accent: #faa533;
+  --sq-surface: #f6f3ed;
+  --sq-surface-alt: #dce5f2;
+  --sq-border: #8fabd4;
+  --sq-border-strong: #4a70a9;
+  --sq-text: #000000;
+  --sq-text-muted: #2f4f7d;
+  --sq-button-bg: #4a70a9;
+  --sq-button-bg-hover: #3f6193;
+  --sq-button-text: #efece3;
   --background: linear-gradient(
     to bottom,
-    var(--panel-gradient-silver-start) 0%,
-    var(--panel-gradient-silver-mid) 50%,
-    var(--panel-gradient-silver-end) 100%
+    var(--sq-base-light) 0%,
+    #dce5f2 55%,
+    #c5d5eb 100%
   );
-  --foreground: #171717;
+  --foreground: var(--sq-text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-sq-surface: var(--sq-surface);
+  --color-sq-surface-alt: var(--sq-surface-alt);
+  --color-sq-border: var(--sq-border);
+  --color-sq-border-strong: var(--sq-border-strong);
+  --color-sq-text-muted: var(--sq-text-muted);
+  --color-sq-accent: var(--sq-accent);
+  --color-sq-button: var(--sq-button-bg);
+  --color-sq-button-hover: var(--sq-button-bg-hover);
+  --color-sq-button-text: var(--sq-button-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

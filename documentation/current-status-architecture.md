@@ -1,159 +1,105 @@
 # SideQuest Current Status And Architecture
 
-This document summarizes the current state of the project and how the system is organized.
+This document reflects the repository's current implementation status.
 
 ## Project Snapshot
 
-- **Product type:** Gamified Todo app (quests + XP + levels + streaks)
-- **Frontend:** Next.js App Router with client pages/components
+- **Type:** gamified task app (quests, XP, levels, streaks)
+- **Frontend:** Next.js App Router + React + TypeScript (`src/app/**`)
 - **Backend:** Next.js route handlers (`src/app/api/**`)
-- **Auth:** NextAuth credentials provider
-- **Database:** MongoDB Atlas via Mongoose models
-- **Main value loop:** Create quest -> complete quest -> gain XP -> level/streak progression
+- **Auth:** NextAuth credentials flow with JWT sessions (`src/lib/auth.ts`)
+- **Data store:** MongoDB via Mongoose (`src/lib/db.ts`, `src/models/**`)
+- **Main loop:** create quest -> complete quest -> award XP -> update progression
 
-## Current Feature Status
+## Implemented Application Surfaces
 
-## Authentication
+### Routes (UI)
 
-- Register with email, display name, and password.
-- Login with credentials.
-- Duplicate registration is handled cleanly (`409`) with race-condition fallback.
-- Protected quest routes are enforced centrally through middleware.
+- `/` dashboard + login/register surface (`src/app/page.tsx`)
+- `/quests/create` create quest form (`src/app/quests/create/page.tsx`)
+- `/quests/view` list/filter/sort/complete quests (`src/app/quests/view/page.tsx`)
+- `/quests/[id]/edit` update/delete a quest (`src/app/quests/[id]/edit/page.tsx`)
+- `/guild-stats` placeholder page (not wired to real charts yet) (`src/app/guild-stats/page.tsx`)
 
-Key files:
-- `src/app/api/auth/register/route.ts`
-- `src/app/api/auth/[...nextauth]/route.ts`
-- `src/lib/auth.ts`
-- `src/middleware.ts`
-- `src/models/User.ts`
+### API Endpoints
 
-## Quest Management (Gamified Todo Core)
+- **Auth**
+  - `POST /api/auth/register`
+  - `GET|POST /api/auth/[...nextauth]`
+- **Quests**
+  - `GET /api/quests?status=&category=&sort=&limit=`
+  - `POST /api/quests`
+  - `GET /api/quests/:id`
+  - `PATCH /api/quests/:id`
+  - `DELETE /api/quests/:id` (requires `confirmTitle` in body)
+  - `PATCH /api/quests/:id/complete`
+- **Progression/retention**
+  - `GET /api/progression`
+  - `GET /api/dailies`
+  - `GET /api/metrics/summary`
 
-- Create quests on dedicated route.
-- View quests on dedicated route with:
-  - status filter (`all`, `active`, `completed`, `daily`)
-  - category filter (`all`, `work`, `study`, `health`, `personal`, `other`)
-  - sorting (`newest`, `oldest`, `highest_xp`, `category`)
-- Quest listing now supports server-side query params for filter/sort/limit.
-- Edit existing quest fields (`title`, `description`, `difficulty`, `category`).
-- Delete quest now requires typed title confirmation (`confirmTitle`) end-to-end.
-- Complete active quests from view screen.
-- Quest actions now surface clearer error feedback for auth/validation/network/server failures.
+## Architecture Breakdown
 
-Key files:
-- `src/app/quests/create/page.tsx`
-- `src/app/quests/view/page.tsx`
-- `src/app/quests/[id]/edit/page.tsx`
-- `src/lib/client-api.ts`
-- `src/lib/quest-selectors.ts`
-- `src/app/api/quests/route.ts`
-- `src/app/api/quests/[id]/route.ts`
-- `src/app/api/quests/[id]/complete/route.ts`
+### Presentation Layer
 
-## Progression And Retention
+- Route-level pages under `src/app/**/page.tsx`
+- Shared navigation and session wrapper components in `src/components/**`
+- Client-side behavior orchestration in `src/hooks/useDashboardActions.ts`
 
-- XP rewards based on difficulty.
-- Level progression computed from total XP.
-- Daily quests generated and returned via daily endpoint.
-- Streak tracking with milestone bonus rewards.
-- Completion logs and milestone logs maintained.
+### Application Layer
 
-Key files:
-- `src/lib/xp.ts`
-- `src/lib/progression.ts`
-- `src/lib/dailies.ts`
-- `src/app/api/dailies/route.ts`
-- `src/models/CompletionLog.ts`
-- `src/models/MilestoneRewardLog.ts`
+- Browser fetch wrappers and error mapping in `src/lib/client-api.ts`
+- Query parsing helper for quest list requests in `src/lib/quest-selectors.ts`
+- API request logging utility with opt-in query flag `showlogger=true` in `src/lib/server-logger.ts`
 
-## Dashboard And Navigation
+### Domain Layer
 
-- Home page is cleaner and summary-focused.
-- Quest operations moved to route-specific pages.
-- Navigation includes:
-  - Home
-  - Quest dropdown (`View Quests`, `Create Quest`)
-  - Guild Stats placeholder route
-  - Logout
+- XP and leveling logic in `src/lib/xp.ts`
+- Completion and streak progression in `src/lib/progression.ts`
+- Daily quest generation in `src/lib/dailies.ts`
 
-Key files:
-- `src/app/page.tsx`
-- `src/components/dashboard-nav.tsx`
-- `src/app/guild-stats/page.tsx`
+### Data Layer
 
-## Data Model Overview
+- Shared MongoDB connection helper in `src/lib/db.ts`
+- Mongoose models:
+  - `User` (`src/models/User.ts`)
+  - `Quest` (`src/models/Quest.ts`)
+  - `CompletionLog` (`src/models/CompletionLog.ts`)
+  - `MilestoneRewardLog` (`src/models/MilestoneRewardLog.ts`)
 
-## User
+## Feature Status
 
-- identity: `email`, `passwordHash`, `displayName`
-- progression: `totalXp`, `level`, `currentStreak`, `longestStreak`, `lastCompletedAt`
+### Implemented
 
-## Quest
+- Credential-based register/login flow with protected quest-related routes
+- Full quest CRUD + completion flow
+- Difficulty-based XP rewards and progression profile calculations
+- Daily quest endpoint and milestone/completion log tracking
+- Route-level UI separation (dashboard vs quest workflows)
 
-- content: `title`, `description`
-- game attributes: `difficulty`, `xpReward`, `category`
-- state: `status`, `completedAt`
-- ownership: `createdBy`
-- retention fields: `isDaily`, `dailyKey`
+### Partial / Placeholder
 
-## Log Models
+- Guild Stats UI exists but currently displays placeholder content only
+- Metrics summary endpoint exists, but no current dashboard/chart consumer was found in `src`
 
-- `CompletionLog`: records each completion event.
-- `MilestoneRewardLog`: enforces one-time milestone reward claims.
+### Not Present Yet
 
-## API Surface (Current)
+- End-to-end test suite (Playwright not configured yet)
 
-Auth:
-- `POST /api/auth/register`
-- `GET|POST /api/auth/[...nextauth]`
+## Security And Operational Notes
 
-Quest:
-- `GET /api/quests?status=&category=&sort=&limit=`
-- `POST /api/quests`
-- `GET /api/quests/:id`
-- `PATCH /api/quests/:id`
-- `DELETE /api/quests/:id` (requires `confirmTitle` body field)
-- `PATCH /api/quests/:id/complete`
+- Auth middleware protects `/quests/:path*` and `/guild-stats` (`src/middleware.ts`)
+- `AUTH_SECRET` and `MONGODB_URI` are environment-driven
+- Auth now fails fast when `AUTH_SECRET` is missing (`src/lib/auth.ts`, `src/middleware.ts`)
+- Generated `.next/**` artifacts may appear locally; they are build/dev output, not source architecture
 
-Progression and retention:
-- `GET /api/progression`
-- `GET /api/dailies`
-- `GET /api/metrics/summary`
+## Current Priorities (Recommended)
 
-## Architecture Layers
-
-- **Pages (`src/app/**/page.tsx`)**
-  - Route-level UI and composition.
-- **Components (`src/components/**`)**
-  - Reusable UI blocks (example: navigation).
-- **Hooks (`src/hooks/**`)**
-  - Client interaction/state orchestration (example: dashboard actions).
-- **Client API wrappers (`src/lib/client-api.ts`)**
-  - Frontend fetch abstraction for route handlers.
-- **Domain utilities (`src/lib/*.ts`)**
-  - XP math, progression logic, dailies, formatting, selectors, server logger.
-- **Route handlers (`src/app/api/**`)**
-  - Validation, authorization, persistence, response shaping.
-- **Models (`src/models/**`)**
-  - MongoDB schema and indexing strategy.
-- **Types (`src/types/**`)**
-  - Shared contracts between client and server layers.
-
-## Current Strengths
-
-- Clear separation between dashboard summary and quest workflows.
-- Dedicated CRUD route for quests supports future expansion.
-- Gamification loop (XP/level/streak/milestones) is already integrated.
-- Shared selectors and API wrappers reduce repeated logic.
-- API observability can be enabled per request via `showlogger=true` with structured JSON logs.
-
-## Current Gaps / Next Recommended Improvements
-
-- Expand Guild Stats with real charts from metrics data.
-- Add automated tests for auth, quest CRUD, and completion/progression endpoints.
-- Migrate middleware file convention to Next.js proxy convention to remove deprecation warning.
-- Extend logger correlation (for example tracing IDs across layers) if deeper observability is needed.
+1. Implement real Guild Stats charts backed by `/api/metrics/summary`
+2. Expand integration test coverage for auth, quest CRUD, completion, and progression endpoints
+3. Add Playwright coverage for critical end-to-end flows
+4. Monitor and refine CI quality gates as test surface grows
 
 ## One-Line Summary
 
-**SideQuest is now a structured, route-based gamified todo platform with protected quest routes, safer CRUD flows, improved error UX, query-gated API observability, and a scalable foundation for analytics and future social/game features.**
+**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic, with analytics UI, testing, and release maturity as the next major steps.**

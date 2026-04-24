@@ -15,6 +15,7 @@ npm install
 ```bash
 MONGODB_URI=...
 AUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
 ```
 
 3. Start the app:
@@ -24,6 +25,12 @@ npm run dev
 ```
 
 4. Open [http://localhost:3000](http://localhost:3000)
+
+## Quality Checks
+
+- Run lint: `npm run lint`
+- Run types: `npm run typecheck`
+- Run tests: `npm run test`
 
 ## Implemented v1 APIs
 

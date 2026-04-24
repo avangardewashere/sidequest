@@ -57,10 +57,20 @@ export default function ViewQuestsPage() {
 
   if (!session?.user) {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 p-6 text-zinc-100">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 p-6 text-black">
         <h1 className="text-2xl font-semibold">View Quests</h1>
-        <p className="text-sm text-zinc-400">Please sign in from the dashboard to view your quests.</p>
-        <Link href="/" className="w-fit rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700">
+        <p className="text-sm" style={{ color: "var(--sq-text-muted)" }}>
+          Please sign in from the dashboard to view your quests.
+        </p>
+        <Link
+          href="/"
+          className="w-fit rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+          style={{
+            background: "var(--sq-button-bg)",
+            color: "var(--sq-button-text)",
+            borderColor: "var(--sq-border-strong)",
+          }}
+        >
           Back to Dashboard
         </Link>
       </main>
@@ -68,16 +78,23 @@ export default function ViewQuestsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6 text-zinc-100">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6 text-black">
       <DashboardNav onLogout={() => void signOut({ redirect: false })} />
 
       <h1 className="text-2xl font-semibold">View Quests</h1>
-      <section className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
+      <section
+        className="rounded-xl border p-4"
+        style={{
+          borderColor: "var(--sq-border)",
+          background: "linear-gradient(to bottom, var(--sq-surface) 0%, var(--sq-surface-alt) 100%)",
+        }}
+      >
         <div className="grid gap-3 md:grid-cols-3">
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as QuestStatusFilter)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+            className="rounded-md border bg-white px-3 py-2 text-sm"
+            style={{ borderColor: "var(--sq-border)", color: "var(--sq-text)" }}
           >
             <option value="all">All statuses</option>
             <option value="active">Active</option>
@@ -87,7 +104,8 @@ export default function ViewQuestsPage() {
           <select
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value as QuestCategoryFilter)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+            className="rounded-md border bg-white px-3 py-2 text-sm"
+            style={{ borderColor: "var(--sq-border)", color: "var(--sq-text)" }}
           >
             <option value="all">All categories</option>
             <option value="work">Work</option>
@@ -99,7 +117,8 @@ export default function ViewQuestsPage() {
           <select
             value={sortOption}
             onChange={(event) => setSortOption(event.target.value as QuestSortOption)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+            className="rounded-md border bg-white px-3 py-2 text-sm"
+            style={{ borderColor: "var(--sq-border)", color: "var(--sq-text)" }}
           >
             <option value="newest">Sort: Newest</option>
             <option value="oldest">Sort: Oldest</option>
@@ -111,27 +130,35 @@ export default function ViewQuestsPage() {
 
       <section className="grid gap-3">
         {listLoading ? (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+          <div
+            className="rounded-xl border p-4 text-sm"
+            style={{
+              borderColor: "var(--sq-border)",
+              background: "#ffffffb5",
+              color: "var(--sq-text-muted)",
+            }}
+          >
             Loading quests...
           </div>
         ) : quests.length ? (
           quests.map((quest) => (
             <article
               key={quest._id}
-              className="rounded-xl border border-white/30 bg-white/10 p-4 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md"
+              className="rounded-xl border p-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+              style={{
+                borderColor: "var(--sq-border)",
+                background: "#ffffffb5",
+              }}
             >
               <div
                 className="flex items-start justify-between gap-3 rounded-lg p-3"
                 style={{
-                  background: "linear-gradient(to bottom, #F3EADB 0%, #E4D4BE 50%, #D6C2A5 100%)",
-                  boxShadow:
-                    "inset 0 0 0 2px #D8C6A5, inset 0 2px 0 #EAD9B8, inset 0 -2px 0 #B7A17E",
+                  background:
+                    "linear-gradient(to bottom, var(--sq-base-light) 0%, var(--sq-surface-alt) 100%)",
+                  boxShadow: "inset 0 0 0 2px var(--sq-border)",
                 }}
               >
-                <div
-                  className="space-y-2"
-                  style={{ color: "#6B4A1E", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
-                >
+                <div className="space-y-2" style={{ color: "var(--sq-text)" }}>
                   <h3
                     className={`text-base font-semibold ${quest.status === "completed" ? "line-through opacity-80" : ""}`}
                   >
@@ -139,22 +166,26 @@ export default function ViewQuestsPage() {
                   </h3>
                   <p className="text-sm">{quest.description}</p>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-md bg-zinc-800 px-2 py-1 text-white">{quest.category}</span>
-                    <span className="rounded-md bg-zinc-800 px-2 py-1 text-white">{quest.difficulty}</span>
-                    <span className="rounded-md bg-indigo-500/20 px-2 py-1 text-white">
+                    <span className="rounded-md px-2 py-1" style={{ background: "var(--sq-base-mid)", color: "white" }}>
+                      {quest.category}
+                    </span>
+                    <span className="rounded-md px-2 py-1" style={{ background: "var(--sq-base-dark)", color: "white" }}>
+                      {quest.difficulty}
+                    </span>
+                    <span className="rounded-md px-2 py-1" style={{ background: "var(--sq-accent)", color: "black" }}>
                       +{quest.xpReward} XP
                     </span>
                     {quest.isDaily ? (
-                      <span className="rounded-md bg-amber-500/20 px-2 py-1 text-white">
+                      <span className="rounded-md px-2 py-1" style={{ background: "#ffd28c", color: "black" }}>
                         Daily
                       </span>
                     ) : null}
                     {quest.status === "completed" ? (
-                      <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-white">
+                      <span className="rounded-md px-2 py-1" style={{ background: "#b9f2cf", color: "black" }}>
                         Completed
                       </span>
                     ) : (
-                      <span className="rounded-md bg-blue-500/20 px-2 py-1 text-white">
+                      <span className="rounded-md px-2 py-1" style={{ background: "var(--sq-base-dark)", color: "white" }}>
                         Active
                       </span>
                     )}
@@ -164,13 +195,23 @@ export default function ViewQuestsPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/quests/${quest._id}/edit`}
-                      className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
+                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+                      style={{
+                        background: "var(--sq-button-bg)",
+                        color: "var(--sq-button-text)",
+                        borderColor: "var(--sq-border-strong)",
+                      }}
                     >
                       Edit
                     </Link>
                     <button
                       onClick={() => void completeQuest(quest._id)}
-                      className="rounded-md bg-indigo-500 px-3 py-2 text-sm hover:bg-indigo-400"
+                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+                      style={{
+                        background: "var(--sq-accent)",
+                        color: "var(--sq-base-black)",
+                        borderColor: "#e2932a",
+                      }}
                     >
                       Complete
                     </button>
@@ -179,25 +220,53 @@ export default function ViewQuestsPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/quests/${quest._id}/edit`}
-                      className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
+                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+                      style={{
+                        background: "var(--sq-button-bg)",
+                        color: "var(--sq-button-text)",
+                        borderColor: "var(--sq-border-strong)",
+                      }}
                     >
                       Edit
                     </Link>
-                    <span className="rounded-md bg-zinc-800 px-3 py-2 text-xs">Done</span>
+                    <span
+                      className="rounded-md border px-3 py-2 text-xs"
+                      style={{
+                        background: "var(--sq-base-mid)",
+                        color: "white",
+                        borderColor: "var(--sq-border-strong)",
+                      }}
+                    >
+                      Done
+                    </span>
                   </div>
                 )}
               </div>
             </article>
           ))
         ) : (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+          <div
+            className="rounded-xl border p-4 text-sm"
+            style={{
+              borderColor: "var(--sq-border)",
+              background: "#ffffffb5",
+              color: "var(--sq-text-muted)",
+            }}
+          >
             No quests match your current filters.
           </div>
         )}
       </section>
 
       {feedback ? (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300">
+        <div
+          className="rounded-md border px-4 py-3"
+          style={{
+            borderColor: "#74d99c",
+            background: "#dff8e8",
+            color: "#1a6a39",
+          }}
+        >
           {feedback}
         </div>
       ) : null}
