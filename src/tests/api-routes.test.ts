@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockConnectToDatabase = vi.fn();
 const mockGetAuthSession = vi.fn();
+const mockStartSession = vi.fn();
 const mockHash = vi.fn();
 const mockUserFindOne = vi.fn();
 const mockUserCreate = vi.fn();
 const mockUserFindById = vi.fn();
 const mockQuestCreate = vi.fn();
+const mockQuestFindOne = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   connectToDatabase: mockConnectToDatabase,
@@ -21,6 +23,18 @@ vi.mock("bcryptjs", () => ({
   hash: mockHash,
 }));
 
+vi.mock("mongoose", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("mongoose")>();
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      startSession: mockStartSession,
+    },
+    startSession: mockStartSession,
+  };
+});
+
 vi.mock("@/models/User", () => ({
   UserModel: {
     findOne: mockUserFindOne,
@@ -32,6 +46,7 @@ vi.mock("@/models/User", () => ({
 vi.mock("@/models/Quest", () => ({
   QuestModel: {
     create: mockQuestCreate,
+    findOne: mockQuestFindOne,
   },
 }));
 
@@ -86,6 +101,24 @@ describe("API route baseline tests", () => {
       expect(response.status).toBe(409);
       expect(json.error).toBe("Email already in use");
     });
+
+    it("rejects invalid payload", async () => {
+      const request = new Request("http://localhost/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "bad-email",
+          displayName: "A",
+          password: "123",
+        }),
+      });
+
+      const response = await registerRoute.POST(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(json.error).toBe("Invalid payload");
+      expect(mockUserCreate).not.toHaveBeenCalled();
+    });
   });
 
   describe("POST /api/quests", () => {
@@ -124,6 +157,25 @@ describe("API route baseline tests", () => {
       expect(response.status).toBe(201);
       expect(mockQuestCreate).toHaveBeenCalledTimes(1);
     });
+
+    it("rejects invalid payload for authenticated user", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      const request = new Request("http://localhost/api/quests", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "",
+          description: "Do thing",
+          difficulty: "invalid",
+          category: "work",
+        }),
+      });
+
+      const response = await questsRoute.POST(request);
+      const json = await response.json();
+      expect(response.status).toBe(400);
+      expect(json.error).toBe("Invalid payload");
+      expect(mockQuestCreate).not.toHaveBeenCalled();
+    });
   });
 
   describe("PATCH /api/quests/:id/complete", () => {
@@ -138,6 +190,54 @@ describe("API route baseline tests", () => {
       const json = await response.json();
       expect(response.status).toBe(401);
       expect(json.error).toBe("Unauthorized");
+    });
+
+    it("returns 404 when quest is not found", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      const mockDbSession = {
+        withTransaction: vi.fn(async (cb: () => Promise<void>) => cb()),
+        endSession: vi.fn(),
+      };
+      mockStartSession.mockResolvedValue(mockDbSession);
+      mockQuestFindOne.mockReturnValue({
+        session: vi.fn().mockResolvedValue(null),
+      });
+
+      const request = new Request("http://localhost/api/quests/missing/complete", {
+        method: "PATCH",
+      });
+      const response = await completeQuestRoute.PATCH(request, {
+        params: Promise.resolve({ id: "missing" }),
+      });
+      const json = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(json.error).toBe("Quest not found");
+      expect(mockDbSession.endSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns 409 when quest is already completed", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      const mockDbSession = {
+        withTransaction: vi.fn(async (cb: () => Promise<void>) => cb()),
+        endSession: vi.fn(),
+      };
+      mockStartSession.mockResolvedValue(mockDbSession);
+      mockQuestFindOne.mockReturnValue({
+        session: vi.fn().mockResolvedValue({ status: "completed" }),
+      });
+
+      const request = new Request("http://localhost/api/quests/done/complete", {
+        method: "PATCH",
+      });
+      const response = await completeQuestRoute.PATCH(request, {
+        params: Promise.resolve({ id: "done" }),
+      });
+      const json = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(json.error).toBe("Quest already completed");
+      expect(mockDbSession.endSession).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -159,6 +259,19 @@ describe("API route baseline tests", () => {
       expect(response.status).toBe(200);
       expect(json.profile.email).toBe("user@sidequest.app");
       expect(json.profile.level).toBe(2);
+      expect(json.profile.xpIntoLevel).toBeTypeOf("number");
+      expect(json.profile.xpForNextLevel).toBeTypeOf("number");
+    });
+
+    it("returns 404 when user profile is missing", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "missing" } });
+      mockUserFindById.mockResolvedValue(null);
+      const request = new Request("http://localhost/api/progression", { method: "GET" });
+
+      const response = await progressionRoute.GET(request);
+      const json = await response.json();
+      expect(response.status).toBe(404);
+      expect(json.error).toBe("User not found");
     });
   });
 });

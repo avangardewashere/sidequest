@@ -76,6 +76,9 @@ This document reflects the repository's current implementation status.
 - Difficulty-based XP rewards and progression profile calculations
 - Daily quest endpoint and milestone/completion log tracking
 - Route-level UI separation (dashboard vs quest workflows)
+- Vitest suite for domain logic and route-handler integration coverage (`src/tests/**`)
+- Playwright critical flow E2E suite (`e2e/critical-flows.spec.ts`)
+- GitHub Actions CI + separate E2E workflow (`.github/workflows/ci.yml`, `.github/workflows/e2e.yml`)
 
 ### Partial / Placeholder
 
@@ -84,7 +87,7 @@ This document reflects the repository's current implementation status.
 
 ### Not Present Yet
 
-- End-to-end test suite (Playwright not configured yet)
+- Guild Stats production charts and consumer wiring for metrics endpoint
 
 ## Security And Operational Notes
 
@@ -97,7 +100,7 @@ This document reflects the repository's current implementation status.
 
 1. Implement real Guild Stats charts backed by `/api/metrics/summary`
 2. Expand integration test coverage for auth, quest CRUD, completion, and progression endpoints
-3. Add Playwright coverage for critical end-to-end flows
+3. Keep Playwright coverage aligned with evolving authenticated quest flows
 4. Monitor and refine CI quality gates as test surface grows
 
 ## One-Line Summary

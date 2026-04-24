@@ -31,6 +31,8 @@ npm run dev
 - Run lint: `npm run lint`
 - Run types: `npm run typecheck`
 - Run tests: `npm run test`
+- Run E2E tests: `npm run test:e2e`
+- Run E2E tests (headed): `npm run test:e2e:headed`
 
 ## Implemented v1 APIs
 

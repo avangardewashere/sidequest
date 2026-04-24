@@ -25,6 +25,13 @@ describe("xp helpers", () => {
     expect(levelFromTotalXp(200)).toBe(3);
   });
 
+  it("handles larger totals and exact next-level threshold", () => {
+    const levelTenThreshold = xpRequiredForLevel(10);
+    expect(levelTenThreshold).toBe(4050);
+    expect(levelFromTotalXp(levelTenThreshold - 1)).toBe(9);
+    expect(levelFromTotalXp(levelTenThreshold)).toBe(10);
+  });
+
   it("returns current level progress details", () => {
     expect(currentLevelProgress(0)).toEqual({
       level: 1,
@@ -36,6 +43,12 @@ describe("xp helpers", () => {
       level: 2,
       xpIntoLevel: 25,
       xpForNextLevel: 150,
+    });
+
+    expect(currentLevelProgress(4050)).toEqual({
+      level: 10,
+      xpIntoLevel: 0,
+      xpForNextLevel: 950,
     });
   });
 });

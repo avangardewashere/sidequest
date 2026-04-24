@@ -44,6 +44,43 @@ describe("progression helpers", () => {
     vi.useRealTimers();
   });
 
+  it("keeps streak on same-day completion and preserves longest streak", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-24T22:00:00.000Z"));
+
+    const result = applyQuestCompletion({
+      totalXp: 200,
+      currentStreak: 7,
+      longestStreak: 10,
+      lastCompletedAt: new Date("2026-04-24T02:00:00.000Z"),
+      xpGained: 20,
+    });
+
+    expect(result.currentStreak).toBe(7);
+    expect(result.longestStreak).toBe(10);
+    expect(result.level).toBeGreaterThanOrEqual(3);
+
+    vi.useRealTimers();
+  });
+
+  it("resets streak after multi-day gap", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-24T12:00:00.000Z"));
+
+    const result = applyQuestCompletion({
+      totalXp: 20,
+      currentStreak: 12,
+      longestStreak: 12,
+      lastCompletedAt: new Date("2026-04-19T12:00:00.000Z"),
+      xpGained: 10,
+    });
+
+    expect(result.currentStreak).toBe(1);
+    expect(result.longestStreak).toBe(12);
+
+    vi.useRealTimers();
+  });
+
   it("returns milestone bonuses only at configured milestones", () => {
     expect(getMilestoneBonus(3)).toBe(15);
     expect(getMilestoneBonus(7)).toBe(40);

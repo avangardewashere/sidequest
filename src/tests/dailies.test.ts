@@ -24,4 +24,19 @@ describe("daily quest generation", () => {
     const forUserTwo = buildDailyQuestSet("user-2", "2026-04-24");
     expect(forUserOne).not.toEqual(forUserTwo);
   });
+
+  it("changes output when daily key changes for same user", () => {
+    const dayOne = buildDailyQuestSet("user-1", "2026-04-24");
+    const dayTwo = buildDailyQuestSet("user-1", "2026-04-25");
+    expect(dayOne).not.toEqual(dayTwo);
+    expect(dayOne).toHaveLength(3);
+    expect(dayTwo).toHaveLength(3);
+  });
+
+  it("returns idempotent result across repeated calls", () => {
+    const calls = Array.from({ length: 5 }, () => buildDailyQuestSet("loop-user", "2026-05-01"));
+    for (let index = 1; index < calls.length; index += 1) {
+      expect(calls[index]).toEqual(calls[0]);
+    }
+  });
 });
