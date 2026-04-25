@@ -19,11 +19,13 @@ async function registerAndLogin(page: Page, user: ReturnType<typeof randomUser>)
   await page.getByPlaceholder("Password").fill(user.password);
   await page.getByRole("button", { name: "Create account" }).click();
 
-  await expect(page.getByRole("heading", { name: "SideQuest Dashboard" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /SideQuest Dashboard|Today/i }),
+  ).toBeVisible();
 }
 
-function extractTotalXp(summaryText: string) {
-  const match = summaryText.match(/\|\s*(\d+)\s*XP/);
+function extractLevel(levelText: string) {
+  const match = levelText.match(/LV\.\s*(\d+)/i);
   if (!match) {
     return null;
   }
@@ -100,16 +102,17 @@ async function addAuthenticatedSessionCookie(page: Page) {
     },
     secret: process.env.AUTH_SECRET ?? "test-auth-secret",
   });
-  await page.context().addCookies([
-    {
-      name: "next-auth.session-token",
+  const cookieNames = ["next-auth.session-token", "authjs.session-token"];
+  await page.context().addCookies(
+    cookieNames.map((name) => ({
+      name,
       value: token,
       domain: "localhost",
       path: "/",
       httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
+      sameSite: "Lax" as const,
+    })),
+  );
 }
 
 test("protected quest route redirects unauthenticated users to login", async ({ page }) => {
@@ -199,7 +202,7 @@ test.describe.serial("critical authenticated flows", () => {
       description: "Quest to validate completion XP",
       difficulty: "hard",
       category: "work",
-      xpReward: 35,
+      xpReward: 60,
       status: "active",
     };
 
@@ -258,9 +261,9 @@ test.describe.serial("critical authenticated flows", () => {
     });
 
     await page.goto("/");
-    const profileSummary = page.locator("header p").first();
-    const beforeText = await profileSummary.textContent();
-    const beforeXp = beforeText ? extractTotalXp(beforeText) : null;
+    const levelLabel = page.getByText(/LV\.\s*\d+/).first();
+    const beforeText = await levelLabel.textContent();
+    const beforeLevel = beforeText ? extractLevel(beforeText) : null;
 
     await page.goto("/quests/create");
     await page.getByLabel("Quest Title").fill(quest.title);
@@ -275,12 +278,12 @@ test.describe.serial("critical authenticated flows", () => {
     await expect(page.getByText(/Quest complete! \+\d+ XP/)).toBeVisible();
 
     await page.goto("/");
-    expect(beforeXp).not.toBeNull();
+    expect(beforeLevel).not.toBeNull();
     await expect
       .poll(async () => {
-        const afterText = await profileSummary.textContent();
-        return afterText ? extractTotalXp(afterText) : null;
+        const afterText = await levelLabel.textContent();
+        return afterText ? extractLevel(afterText) : null;
       })
-      .toBeGreaterThan(beforeXp as number);
+      .toBeGreaterThan(beforeLevel as number);
   });
 });
