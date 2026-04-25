@@ -15,7 +15,7 @@ This document reflects the repository's current implementation status.
 
 ### Routes (UI)
 
-- `/` dashboard + login/register surface (`src/app/page.tsx`)
+- `/` Today/Focus home shell when authenticated; login/register when not (`src/app/page.tsx`)
 - `/quests/create` create quest form (`src/app/quests/create/page.tsx`)
 - `/quests/view` list/filter/sort/complete quests (`src/app/quests/view/page.tsx`)
 - `/quests/[id]/edit` update/delete a quest (`src/app/quests/[id]/edit/page.tsx`)
@@ -44,7 +44,7 @@ This document reflects the repository's current implementation status.
 
 - Route-level pages under `src/app/**/page.tsx`
 - Shared navigation and session wrapper components in `src/components/**`
-- Client-side behavior orchestration in `src/hooks/useDashboardActions.ts`
+- Client-side behavior orchestration in `src/hooks/useDashboardActions.ts` and `src/hooks/useTodayDashboard.ts`
 
 ### Application Layer
 
@@ -75,7 +75,8 @@ This document reflects the repository's current implementation status.
 - Full quest CRUD + completion flow
 - Difficulty-based XP rewards and progression profile calculations
 - Daily quest endpoint and milestone/completion log tracking
-- Route-level UI separation (dashboard vs quest workflows)
+- Route-level UI separation (home Today/Focus vs quest workflows)
+- Authenticated home (`TodayFocusShell`) loads live progression, active quests, and dailies via `useTodayDashboard` / `fetchTodayDashboard`, maps them in `src/lib/today-dashboard-mappers.ts`, supports completing quests from the list, quick-add (`TodayFocusQuickAddSheet`), and row navigation to quest edit
 - Vitest suite for domain logic and route-handler integration coverage (`src/tests/**`)
 - Playwright critical flow E2E suite (`e2e/critical-flows.spec.ts`)
 - GitHub Actions CI + separate E2E workflow (`.github/workflows/ci.yml`, `.github/workflows/e2e.yml`)
@@ -84,6 +85,7 @@ This document reflects the repository's current implementation status.
 
 - Guild Stats UI exists but currently displays placeholder content only
 - Metrics summary endpoint exists, but no current dashboard/chart consumer was found in `src`
+- Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists
 
 ### Not Present Yet
 
@@ -106,6 +108,7 @@ This document reflects the repository's current implementation status.
 ## Documentation Trackers
 
 - **[HomeUI] - tracker** (`documentation/home-ui-tracker.md`)
+- Progress summary (`documentation/progress-summary.md`)
 - Today/Focus phase plan (`documentation/today-focus-ui-plan.md`)
 - Color scheme rollout plan (`.cursor/plans/color-scheme-rollout-plan_2f6e2ea3.plan.md`)
 
@@ -124,4 +127,4 @@ This document reflects the repository's current implementation status.
 
 ## One-Line Summary
 
-**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic, with analytics UI, testing, and release maturity as the next major steps.**
+**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme; guild analytics charts and manual design QA sign-off remain the next major steps.**

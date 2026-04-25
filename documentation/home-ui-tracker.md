@@ -4,9 +4,8 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 
 ## Scope
 
-- Client-side UI components only
-- No API wiring, no database integration
-- Focused on Home (`Today/Focus`) before adjacent screens
+- Home (`Today/Focus`) UI plus **read-only and mutation client calls** to existing APIs (no new route handlers or schema changes in the data-wiring phase)
+- Adjacent shells (Quest list tab route, Calendar, Codex) still future work
 
 ## Color Migration Status
 
@@ -16,7 +15,7 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 
 ## Current Phase
 
-- **Phase 1: Home UI Foundation (Today/Focus)**
+- **Phase 1 extended:** Live dashboard on home (`useTodayDashboard`, mappers, sections, complete-from-row, quick-add sheet). **Phase 2** (per `today-focus-ui-plan.md`): richer interactions and optional tab routing when ready.
 
 ## Checklist Status
 
@@ -54,8 +53,8 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 ### E) Validate Before Sign-Off
 
 - [x] Lint/type diagnostics for touched files
-- [x] Visual QA vs design reference
-- [x] Confirm no backend/API/model changes
+- [x] Visual QA vs design reference (initial mock phase)
+- [x] Confirm no backend/API/model changes (UI-only foundation)
 
 ### F) Phase 1 Exit Gate
 
@@ -63,13 +62,24 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 - [x] Unauthenticated Home remains unchanged
 - [x] Phase 1 acceptance criteria complete
 
+### G) Live data on Home (post-foundation)
+
+- [x] `fetchTodayDashboard` / `useTodayDashboard` consumed by `TodayFocusShell`
+- [x] `today-dashboard-mappers.ts` + Vitest coverage
+- [x] Header + XP/stats (partial stats) + main quest + sections from snapshot
+- [x] Skeleton loading for header/XP block; error + retry path
+- [x] Quest row complete → `PATCH` complete + `refresh`; quick-add FAB sheet → `POST /api/quests`
+- [x] Authenticated `/` skips redundant `fetchDashboardData` in `useDashboardActions` (`prefetchDashboard: false`)
+
 ## Handoff Summary
 
 - Removed transitional color compatibility layer and finalized role-based token usage.
 - Verified route behavior remains stable for loading, unauthenticated, and authenticated states.
 - Home and Quests View are now aligned with the new color system and ready for future dark-mode refinement.
+- Today home reads live progression and quest lists; tab bar remains presentational; manual pass of `today-focus-leftovers-checklist.md` Section E still recommended after visual changes.
 
 ## Reference Docs
 
+- `documentation/progress-summary.md`
 - `documentation/today-focus-ui-plan.md`
 - `documentation/Design References/sidequest-demo.jsx`
