@@ -37,10 +37,10 @@ export function DashboardNav({ onLogout }: DashboardNavProps) {
             </div>
           </details>
           <Link
-            href="/guild-stats"
+            href="/stats"
             className="rounded-md bg-zinc-800 px-3 py-2 text-sm font-medium hover:bg-zinc-700"
           >
-            Guild Stats
+            Stats
           </Link>
         </div>
         <button

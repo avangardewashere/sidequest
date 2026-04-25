@@ -1,9 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
-import { DashboardNav } from "@/components/dashboard-nav";
+import localFont from "next/font/local";
+import { useSession } from "next-auth/react";
+import { TodayFocusShell } from "@/components/home/today-focus-shell";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
+
+const clashDisplay = localFont({
+  src: [
+    { path: "../assets/clashDisplay/ClashDisplay-Regular.otf", weight: "400", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Medium.otf", weight: "500", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Semibold.otf", weight: "600", style: "normal" },
+    { path: "../assets/clashDisplay/ClashDisplay-Bold.otf", weight: "700", style: "normal" },
+  ],
+  display: "swap",
+});
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -16,11 +26,12 @@ export default function Home() {
     setPassword,
     mode,
     setMode,
-    profile,
     feedback,
-    progressPct,
     handleAuthSubmit,
-  } = useDashboardActions({ isAuthenticated: Boolean(session?.user) });
+  } = useDashboardActions({
+    isAuthenticated: Boolean(session?.user),
+    prefetchDashboard: !session?.user,
+  });
 
   if (status === "loading") {
     return (
@@ -33,20 +44,44 @@ export default function Home() {
   if (!session?.user) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-6 text-zinc-100">
+        <div
+          className={`${clashDisplay.className} w-full max-w-md rounded-xl border p-6 shadow-[0_12px_28px_rgba(0,0,0,0.18)]`}
+          style={{
+            borderColor: "var(--color-border-default)",
+            color: "var(--color-text-primary)",
+            background:
+              "linear-gradient(to bottom, var(--color-bg-surface) 0%, var(--color-bg-elevated) 100%)",
+          }}
+        >
           <h1 className="text-2xl font-semibold">SideQuest</h1>
-          <p className="mt-1 text-sm text-zinc-400">Turn tasks into XP and levels.</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Turn tasks into XP and levels.
+          </p>
 
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => setMode("login")}
-              className={`rounded-md px-3 py-1 text-sm ${mode === "login" ? "bg-indigo-500 text-white" : "bg-zinc-800"}`}
+              className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
+                mode === "login" ? "" : "opacity-85 hover:opacity-100"
+              }`}
+              style={{
+                background: mode === "login" ? "var(--color-primary)" : "var(--color-bg-elevated)",
+                color: mode === "login" ? "var(--color-primary-on-accent)" : "var(--color-text-primary)",
+                borderColor: mode === "login" ? "var(--color-primary-hover)" : "var(--color-border-default)",
+              }}
             >
               Login
             </button>
             <button
               onClick={() => setMode("register")}
-              className={`rounded-md px-3 py-1 text-sm ${mode === "register" ? "bg-indigo-500 text-white" : "bg-zinc-800"}`}
+              className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
+                mode === "register" ? "" : "opacity-85 hover:opacity-100"
+              }`}
+              style={{
+                background: mode === "register" ? "var(--color-primary)" : "var(--color-bg-elevated)",
+                color: mode === "register" ? "var(--color-primary-on-accent)" : "var(--color-text-primary)",
+                borderColor: mode === "register" ? "var(--color-primary-hover)" : "var(--color-border-default)",
+              }}
             >
               Register
             </button>
@@ -58,7 +93,12 @@ export default function Home() {
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="Display name"
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+                className="w-full rounded-md border px-3 py-2"
+                style={{
+                  color: "var(--color-text-primary)",
+                  borderColor: "var(--color-border-default)",
+                  background: "var(--color-bg-surface)",
+                }}
                 required
               />
             ) : null}
@@ -67,7 +107,12 @@ export default function Home() {
               onChange={(event) => setEmail(event.target.value)}
               type="email"
               placeholder="Email"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+              className="w-full rounded-md border px-3 py-2"
+              style={{
+                color: "var(--color-text-primary)",
+                borderColor: "var(--color-border-default)",
+                background: "var(--color-bg-surface)",
+              }}
               required
             />
             <input
@@ -75,12 +120,22 @@ export default function Home() {
               onChange={(event) => setPassword(event.target.value)}
               type="password"
               placeholder="Password"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+              className="w-full rounded-md border px-3 py-2"
+              style={{
+                color: "var(--color-text-primary)",
+                borderColor: "var(--color-border-default)",
+                background: "var(--color-bg-surface)",
+              }}
               required
             />
             <button
               type="submit"
-              className="w-full rounded-md bg-indigo-500 px-3 py-2 font-medium hover:bg-indigo-400"
+              className="h-[48px] w-full rounded-md border font-medium transition hover:brightness-95"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-primary-on-accent)",
+                borderColor: "var(--color-primary-hover)",
+              }}
             >
               {mode === "register" ? "Create account" : "Login"}
             </button>
@@ -91,64 +146,5 @@ export default function Home() {
     );
   }
 
-  return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6">
-      <DashboardNav onLogout={() => void signOut({ redirect: false })} />
-
-      <header className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-        <div>
-          <h1 className="text-2xl font-semibold">SideQuest Dashboard</h1>
-          <p className="text-sm text-zinc-400">
-            {profile?.displayName ?? session.user.name} | Level {profile?.level ?? 1} |{" "}
-            {profile?.totalXp ?? 0} XP
-          </p>
-        </div>
-        <div className="mt-3">
-          <div className="mb-1 flex justify-between text-xs text-zinc-400">
-            <span>XP to next level</span>
-            <span>
-              {profile?.xpIntoLevel ?? 0}/{profile?.xpForNextLevel ?? 1}
-            </span>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-            <div
-              className="h-full bg-indigo-500 transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-zinc-400">
-            Current streak: {profile?.currentStreak ?? 0} days | Best streak:{" "}
-            {profile?.longestStreak ?? 0} days
-          </p>
-        </div>
-      </header>
-
-      <section className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100">
-        <h2 className="text-lg font-semibold">Quick Actions</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <Link
-            href="/quests/view"
-            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
-          >
-            <p className="font-medium">View Quests</p>
-            <p className="text-sm text-zinc-400">Filter, sort, and complete your quest list.</p>
-          </Link>
-          <Link
-            href="/quests/create"
-            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
-          >
-            <p className="font-medium">Create Quest</p>
-            <p className="text-sm text-zinc-400">Add a new quest with category and description.</p>
-          </Link>
-          <Link
-            href="/guild-stats"
-            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700"
-          >
-            <p className="font-medium">Guild Stats</p>
-            <p className="text-sm text-zinc-400">Review progress trends and performance insights.</p>
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+  return <TodayFocusShell />;
 }

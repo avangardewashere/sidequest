@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useToast } from "@/components/feedback/toast-provider";
 import {
+  actionResultToToast,
   completeQuestById,
   fetchDashboardData,
   loginWithCredentials,
@@ -12,9 +14,17 @@ import type { AuthMode, Profile, Quest } from "@/types/dashboard";
 
 type UseDashboardActionsParams = {
   isAuthenticated: boolean;
+  /** When false and authenticated, skips `fetchDashboardData` (e.g. home uses `useTodayDashboard`). Default true. */
+  prefetchDashboard?: boolean;
+  onAfterQuestMutation?: () => void | Promise<void>;
 };
 
-export function useDashboardActions({ isAuthenticated }: UseDashboardActionsParams) {
+export function useDashboardActions({
+  isAuthenticated,
+  prefetchDashboard = true,
+  onAfterQuestMutation,
+}: UseDashboardActionsParams) {
+  const { pushToast } = useToast();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +46,7 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
   const progressPct = useMemo(() => getProgressPct(profile), [profile]);
 
   const loadData = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !prefetchDashboard) {
       return;
     }
 
@@ -44,11 +54,22 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
     setQuests(dashboardData.quests);
     setProfile(dashboardData.profile);
     setDailies(dashboardData.dailies);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, prefetchDashboard]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    if (!isAuthenticated || !prefetchDashboard) {
+      return;
+    }
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        void loadData();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadData, isAuthenticated, prefetchDashboard]);
 
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,14 +95,26 @@ export function useDashboardActions({ isAuthenticated }: UseDashboardActionsPara
 
   async function completeQuest(questId: string) {
     setFeedback("");
-    const { ok, data } = await completeQuestById(questId);
+    const result = await completeQuestById(questId);
+    const { ok, data, message } = result;
     if (!ok) {
-      setFeedback(data.error ?? "Could not complete quest.");
+      setFeedback(message ?? data?.error ?? "Could not complete quest right now.");
+      pushToast(
+        actionResultToToast(result, {
+          fallbackErrorTitle: "Quest completion failed",
+        }),
+      );
       return;
     }
 
-    setFeedback(getCompletionFeedback(data));
+    setFeedback(getCompletionFeedback(data ?? {}));
+    pushToast({
+      tone: "success",
+      title: "Quest completed",
+      message: "Rewards were applied to your profile.",
+    });
     await loadData();
+    await onAfterQuestMutation?.();
   }
 
   return {

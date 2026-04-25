@@ -5,6 +5,11 @@ import { z } from "zod";
 import { connectToDatabase } from "@/lib/db";
 import { UserModel } from "@/models/User";
 
+const authSecret = process.env.AUTH_SECRET;
+if (!authSecret) {
+  throw new Error("AUTH_SECRET environment variable is not set.");
+}
+
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -14,7 +19,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.AUTH_SECRET ?? "dev-only-secret",
+  secret: authSecret,
   providers: [
     Credentials({
       name: "Credentials",

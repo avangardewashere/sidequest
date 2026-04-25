@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { createQuest } from "@/lib/client-api";
+import { useToast } from "@/components/feedback/toast-provider";
+import { actionResultToToast, createQuest } from "@/lib/client-api";
 import type { Quest } from "@/types/dashboard";
 
 export default function CreateQuestPage() {
   const router = useRouter();
+  const { pushToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("easy");
@@ -22,8 +24,13 @@ export default function CreateQuestPage() {
     setCreatedQuest(false);
 
     const created = await createQuest({ title, description, difficulty, category });
-    if (!created) {
-      setFeedback("Could not create quest.");
+    if (!created.ok) {
+      setFeedback(created.message ?? "Could not create quest.");
+      pushToast(
+        actionResultToToast(created, {
+          fallbackErrorTitle: "Create quest failed",
+        }),
+      );
       return;
     }
 
@@ -33,6 +40,11 @@ export default function CreateQuestPage() {
     setDifficulty("easy");
     setCreatedQuest(true);
     setFeedback("Quest created successfully.");
+    pushToast({
+      tone: "success",
+      title: "Quest created",
+      message: "Your new quest is ready.",
+    });
     if (redirectAfterCreate) {
       router.push("/quests/view");
     }
