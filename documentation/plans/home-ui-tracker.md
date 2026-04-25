@@ -15,7 +15,7 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 
 ## Current Phase
 
-- **Phase 1 extended:** Live dashboard on home (`useTodayDashboard`, mappers, sections, complete-from-row, quick-add sheet). **Phase 2** (per `today-focus-ui-plan.md`): richer interactions and optional tab routing when ready.
+- **Phase 1 extended:** Live dashboard on home (`useTodayDashboard`, mappers, sections, complete-from-row, quick-add sheet). **Phase 2** (per `documentation/plans/today-focus-ui-plan.md`): richer interactions and optional tab routing when ready.
 
 ## Checklist Status
 
@@ -80,6 +80,6 @@ Tracks progress for the UI-first Home (`Today/Focus`) rollout.
 
 ## Reference Docs
 
-- `documentation/progress-summary.md`
-- `documentation/today-focus-ui-plan.md`
-- `documentation/Design References/sidequest-demo.jsx`
+- `documentation/status/progress-summary.md`
+- `documentation/plans/today-focus-ui-plan.md`
+- `documentation/reference/design-references/sidequest-demo.jsx`

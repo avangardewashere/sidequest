@@ -4,24 +4,33 @@ Use this table of contents to quickly jump to implementation chapters and operat
 
 ## Table of Contents
 
-1. [Chapter 1 - Foundation Implemented](./chapter-1.md)
+1. [Chapter 1 - Foundation Implemented](./chapters/chapter-1.md)
    - baseline architecture, schemas, core gameplay loop, API surface
-2. [Chapter 2 - Retention Sprint (Daily Quests + Milestones)](./chapter-2.md)
+2. [Chapter 2 - Retention Sprint (Daily Quests + Milestones)](./chapters/chapter-2.md)
    - daily quest generation, milestone reward system, retention metrics
-3. [Chapter 3 - Stability Fixes And Frontend Refactor](./chapter-3.md)
+3. [Chapter 3 - Stability Fixes And Frontend Refactor](./chapters/chapter-3.md)
    - MongoDB case mismatch fix, duplicate-safe registration, frontend layering refactor
-4. [Chapter 4 - Todo Core Hardening And API Observability](./chapter-4.md)
+4. [Chapter 4 - Todo Core Hardening And API Observability](./chapters/chapter-4.md)
    - middleware protection, server-side quest queries, delete safety, error UX, showlogger-gated API logging
-5. [Chapter 5 - Cycle 2 Completion (Stats Analytics)](./chapter-5-cycle-2-completion.md)
+5. [Chapter 5 - Cycle 2 Completion (Stats Analytics)](./chapters/chapter-5-cycle-2-completion.md)
    - cycle 2 delivered scope, stats analytics architecture, validation evidence, and sign-off
-6. [Chapter 6 - Cycle 3 Summary (Hardening And Ship Readiness)](./chapter-6-cycle-3-summary.md)
+6. [Chapter 6 - Cycle 3 Summary (Hardening And Ship Readiness)](./chapters/chapter-6-cycle-3-summary.md)
    - cycle 3 outcomes across phases 3.1-3.5, validation ledger, deploy blocker, and closeout criteria
-7. [Progress Summary - Home Data Wiring And Current Status](./progress-summary.md)
+7. [Progress Summary - Home Data Wiring And Current Status](./status/progress-summary.md)
    - latest implementation summary, validation results, known gaps, and next steps
-8. [Ops Chapter - Environment And Secret Rotation](./chapter-ops-secrets.md)
+8. [Ops Chapter - Environment And Secret Rotation](./ops/chapter-ops-secrets.md)
    - env setup, credential rotation, deployment-safe secret practices
-9. [Dev Notes - One-Liners](./dev-notes-one-liners.md)
+9. [Dev Notes - One-Liners](./ops/dev-notes-one-liners.md)
    - phase-based one-line changelog across Chapters 1-4 and Ops
+
+## Folder Guide
+
+- [chapters](./chapters/README.md): long-form implementation history and closeout chapters
+- [cycles](./cycles/README.md): cycle-specific plans, notes, and release artifacts
+- [status](./status/README.md): living status snapshots and progress rollups
+- [plans](./plans/README.md): product/UI planning docs and checklists
+- [ops](./ops/README.md): deployment, secrets, setup, and operational runbooks
+- [reference](./reference/README.md): architecture and design references
 
 ## Suggested Reading Order
 

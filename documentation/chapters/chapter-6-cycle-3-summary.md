@@ -40,13 +40,13 @@ Cycle 3 focused on hardening the user experience, improving confidence through a
   - `/stats`
 - Reduced avoidable rerender pressure in hot paths (task rows/sections, quests view cards).
 - Stabilized `/stats` chart mapping and key behavior.
-- Documented findings in `documentation/cycle-3-phase-4-perf-notes.md`.
+- Documented findings in `documentation/cycles/cycle-3/phase-4-perf-notes.md`.
 
 ### Phase 3.5 - Deploy and telemetry finalization
 
 - Integrated Vercel Analytics in `src/app/layout.tsx`.
 - Updated deployment/ops notes in `README.md`.
-- Added release handoff and rollback guidance in `documentation/cycle-3-phase-5-release-notes.md`.
+- Added release handoff and rollback guidance in `documentation/cycles/cycle-3/phase-5-release-notes.md`.
 
 ## 3) Validation ledger
 
