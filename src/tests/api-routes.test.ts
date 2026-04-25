@@ -11,6 +11,9 @@ const mockQuestCreate = vi.fn();
 const mockQuestFindOne = vi.fn();
 const mockQuestFind = vi.fn();
 const mockQuestAggregate = vi.fn();
+const mockQuestCountDocuments = vi.fn();
+const mockCompletionAggregate = vi.fn();
+const mockMilestoneCountDocuments = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   connectToDatabase: mockConnectToDatabase,
@@ -51,6 +54,19 @@ vi.mock("@/models/Quest", () => ({
     findOne: mockQuestFindOne,
     find: mockQuestFind,
     aggregate: mockQuestAggregate,
+    countDocuments: mockQuestCountDocuments,
+  },
+}));
+
+vi.mock("@/models/CompletionLog", () => ({
+  CompletionLogModel: {
+    aggregate: mockCompletionAggregate,
+  },
+}));
+
+vi.mock("@/models/MilestoneRewardLog", () => ({
+  MilestoneRewardLogModel: {
+    countDocuments: mockMilestoneCountDocuments,
   },
 }));
 
@@ -58,6 +74,7 @@ const registerRoute = await import("@/app/api/auth/register/route");
 const questsRoute = await import("@/app/api/quests/route");
 const progressionRoute = await import("@/app/api/progression/route");
 const completeQuestRoute = await import("@/app/api/quests/[id]/complete/route");
+const metricsSummaryRoute = await import("@/app/api/metrics/summary/route");
 
 describe("API route baseline tests", () => {
   beforeEach(() => {
@@ -315,6 +332,83 @@ describe("API route baseline tests", () => {
       const json = await response.json();
       expect(response.status).toBe(404);
       expect(json.error).toBe("User not found");
+    });
+  });
+
+  describe("GET /api/metrics/summary", () => {
+    it("returns 401 for unauthenticated requests", async () => {
+      mockGetAuthSession.mockResolvedValue(null);
+      const request = new Request("http://localhost/api/metrics/summary", { method: "GET" });
+
+      const response = await metricsSummaryRoute.GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(json.error).toBe("Unauthorized");
+    });
+
+    it("returns default 7d chart arrays and summary blocks", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "507f1f77bcf86cd799439011" } });
+      mockUserFindById.mockResolvedValue({ currentStreak: 3, longestStreak: 8 });
+      mockQuestCountDocuments
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(4)
+        .mockResolvedValueOnce(2);
+      mockMilestoneCountDocuments.mockResolvedValueOnce(1);
+      mockCompletionAggregate
+        .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 20, totalXpFromCompletions: 100, completionEvents: 5 }])
+        .mockResolvedValueOnce([{ _id: "2026-04-20", value: 2 }])
+        .mockResolvedValueOnce([{ _id: "2026-04-20", value: 40 }])
+        .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 15, totalXpFromCompletions: 75, completionEvents: 3 }])
+        .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 25, totalXpFromCompletions: 75, completionEvents: 3 }]);
+      mockQuestAggregate.mockResolvedValueOnce([{ category: "work", count: 3, xpTotal: 60 }]);
+
+      const response = await metricsSummaryRoute.GET(
+        new Request("http://localhost/api/metrics/summary", { method: "GET" }),
+      );
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.range).toBe("7d");
+      expect(json.rangeDays).toBe(7);
+      expect(json.completionsByDay).toHaveLength(7);
+      expect(json.xpByDay).toHaveLength(7);
+      expect(json.byCategory).toEqual([{ category: "work", count: 3, xpTotal: 60 }]);
+      expect(json.streakHistory.current).toBe(3);
+      expect(json.streakHistory.longest).toBe(8);
+      expect(json.streakHistory.last7d).toHaveLength(7);
+      expect(json.kpis.totalCompletions).toBe(5);
+      expect(json.kpis.totalXp).toBe(100);
+      expect(json.previousPeriod.totalCompletions).toBe(3);
+      expect(json.last7Days.questsCreated).toBe(10);
+    });
+
+    it("supports range=30d with zero-filled arrays", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "507f1f77bcf86cd799439011" } });
+      mockUserFindById.mockResolvedValue({ currentStreak: 0, longestStreak: 1 });
+      mockQuestCountDocuments.mockResolvedValue(0);
+      mockMilestoneCountDocuments.mockResolvedValue(0);
+      mockCompletionAggregate
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      mockQuestAggregate.mockResolvedValueOnce([]);
+
+      const response = await metricsSummaryRoute.GET(
+        new Request("http://localhost/api/metrics/summary?range=30d", { method: "GET" }),
+      );
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.range).toBe("30d");
+      expect(json.rangeDays).toBe(30);
+      expect(json.completionsByDay).toHaveLength(30);
+      expect(json.xpByDay).toHaveLength(30);
+      expect(json.completionsByDay.every((point: { value: number }) => point.value === 0)).toBe(true);
+      expect(json.xpByDay.every((point: { value: number }) => point.value === 0)).toBe(true);
     });
   });
 });

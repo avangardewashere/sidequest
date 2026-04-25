@@ -9,6 +9,7 @@ import type {
   UpdateQuestPayload,
 } from "@/types/dashboard";
 import type { ProgressionProfile, TodayDashboardSnapshot } from "@/types/today-dashboard";
+import type { MetricsRange, MetricsSummary } from "@/types/metrics-summary";
 
 type DashboardData = {
   quests: Quest[];
@@ -259,5 +260,12 @@ export async function completeQuestById(questId: string): Promise<ActionResult<C
         method: "PATCH",
       }),
     (json) => (json as CompleteQuestResponse | null) ?? {},
+  );
+}
+
+export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionResult<MetricsSummary>> {
+  return runAction<MetricsSummary>(
+    () => fetch(`/api/metrics/summary?range=${encodeURIComponent(range)}`),
+    (json) => (json as MetricsSummary | null) ?? null,
   );
 }
