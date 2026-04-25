@@ -155,7 +155,7 @@ This is exactly how Todoist handles priority reds — darker fills with white te
 │  ║           [ ▶ Start focus ]           ║  │  XP chip: --primary-subtle bg + --primary-default text
 │  ╚═══════════════════════════════════════╝  │  CTA button: --primary-default bg, --primary-on-accent text
 ├─────────────────────────────────────────────┤
-│  PARTY QUESTS                               │  section heading: --text-tertiary 12px UPPERCASE
+│  TODAY QUESTS                               │  section heading: --text-tertiary 12px UPPERCASE
 │  ☐ [P1] Reply to design review     +15 XP   │  checkbox border: --border-default, fill on check: --success
 │  ☐ [P2] Refactor auth hook ⏱ 30m   +25 XP   │  P1 pill: --danger-subtle bg + --p1 text
 │  ☐      Stretch + water break       +5 XP   │  P2 pill: --warning-subtle bg + --p2 text
@@ -429,7 +429,7 @@ Usage examples:
 | Accent strategy | **Single** indigo accent `#5E6AD2`, everything else is neutral | **10 fixed colors**, used as text/bg highlights only | Red priority system (P1‑P4), otherwise neutral | **Two accents (dual‑role)**: indigo for progression/CTA (Linear‑style), ember for heat/streak/hero (new) |
 | Primary accent hex | `#5E6AD2` | no single accent | no single accent | **`#5B5BD6`** — +1 contrast point vs Linear for AA body safety |
 | Gamification hooks | none | none | Karma points (exists but invisible) | **Built‑in**: XP chip, level badge, streak flame, hero accent, all colored intentionally |
-| Priority semantics | Label colors per team | Emoji/color per user | Red → orange → blue → gray | **P1 deep red, P2 deep amber** — avoids using ember (which is streak) for priority confusion |
+| Priority semantics | Label colors per priority | Emoji/color per user | Red → orange → blue → gray | **P1 deep red, P2 deep amber** — avoids using ember (which is streak) for priority confusion |
 | Cool vs warm feel | Cool (indigo + neutral grays) | Cool‑neutral (nearly achromatic) | Warm neutrals | **Warm neutrals + cool indigo accent + warm ember accent** — balanced like Arc |
 | "Gamification‑off" mode works? | N/A | N/A | Mostly | **Yes** — remove ember + XP chips and the rest is a clean Linear/Notion‑grade todo app |
 | Dark mode approach | Separate palette, saturated indigo desaturates slightly | Separate palette, manual | Separate palette | Inverted neutrals; indigo lightens to `#8F8FEA`; ember lightens to `#F0956A` |

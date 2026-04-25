@@ -175,8 +175,8 @@ function ScreenToday({ onNav, density, showAnnot, gamification }) {
         </div>
       </WFSection>
 
-      {/* Party quests list */}
-      <WFSection label="PARTY QUESTS · 5" right={heavy && <WFText size={10} color={wfColors.muted} style={{ fontFamily: wfFont.mono }}>+180 XP</WFText>}>
+      {/* Today quests list */}
+      <WFSection label="TODAY QUESTS · 5" right={heavy && <WFText size={10} color={wfColors.muted} style={{ fontFamily: wfFont.mono }}>+180 XP</WFText>}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, position: 'relative' }}>
           <WFTaskRow title="Review API spec doc" priority="P1"
             meta={[{ icon: 'timer', text: '30m' }, { icon: 'note', text: '2' }]}

@@ -122,6 +122,13 @@ test("protected quest route redirects unauthenticated users to login", async ({ 
   await expect(page.getByRole("heading", { name: "SideQuest" })).toBeVisible();
 });
 
+test("protected stats route redirects unauthenticated users to login", async ({ page }) => {
+  await installAuthRoutes(page);
+  await page.goto("/stats");
+  await expect(page).toHaveURL(/\/\?callbackUrl=%2Fstats/);
+  await expect(page.getByRole("heading", { name: "SideQuest" })).toBeVisible();
+});
+
 test.describe.serial("critical authenticated flows", () => {
   test("register -> login -> dashboard redirect", async ({ page }) => {
     await installAuthRoutes(page);

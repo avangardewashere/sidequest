@@ -15,7 +15,7 @@ mindmap
         /quests/create
         /quests/view
         /quests/id/edit
-        /guild-stats
+        /stats
         /stats placeholder
       Components
         dashboard-nav.tsx
@@ -265,7 +265,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A([Incoming Request]) --> B{Path matches\n/quests/* or\n/guild-stats?}
+    A([Incoming Request]) --> B{Path matches\n/quests/* or\n/stats?}
     B -->|No| C[Pass through]
     B -->|Yes| D{getToken\nJWT valid?}
     D -->|Valid| E[Continue to page]
@@ -328,7 +328,7 @@ flowchart TD
 
     K -->|View quests| N[/quests/view\nGET /api/quests?filters]
     K -->|Create quest| O[/quests/create\nPOST /api/quests]
-    K -->|Guild Stats| P[/guild-stats\ncoming soon]
+    K -->|Stats| P[/stats\ncoming soon]
 ```
 
 ---
@@ -356,7 +356,7 @@ src/
 │   │   ├── create/page.tsx
 │   │   ├── view/page.tsx
 │   │   └── [id]/edit/page.tsx
-│   └── guild-stats/page.tsx            ← Placeholder
+│   └── stats/page.tsx                  ← Placeholder
 ├── components/
 │   ├── dashboard-nav.tsx
 │   └── session-provider.tsx

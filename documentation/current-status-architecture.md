@@ -19,7 +19,7 @@ This document reflects the repository's current implementation status.
 - `/quests/create` create quest form (`src/app/quests/create/page.tsx`)
 - `/quests/view` list/filter/sort/complete quests (`src/app/quests/view/page.tsx`)
 - `/quests/[id]/edit` update/delete a quest (`src/app/quests/[id]/edit/page.tsx`)
-- `/guild-stats` placeholder page (not wired to real charts yet) (`src/app/guild-stats/page.tsx`)
+- `/stats` placeholder page (not wired to real charts yet) (`src/app/stats/page.tsx`)
 
 ### API Endpoints
 
@@ -84,24 +84,24 @@ This document reflects the repository's current implementation status.
 
 ### Partial / Placeholder
 
-- Guild Stats UI exists but currently displays placeholder content only
+- Stats UI exists but currently displays placeholder content only
 - Metrics summary endpoint exists, but no current dashboard/chart consumer was found in `src`
-- Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists; multiplayer/party quest semantics are intentionally deferred
+- Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists
 
 ### Not Present Yet
 
-- Guild Stats production charts and consumer wiring for metrics endpoint
+- Stats page production charts and consumer wiring for metrics endpoint
 
 ## Security And Operational Notes
 
-- Auth middleware protects `/quests/:path*` and `/guild-stats` (`src/middleware.ts`)
+- Auth middleware protects `/quests/:path*` and `/stats` (`src/middleware.ts`)
 - `AUTH_SECRET` and `MONGODB_URI` are environment-driven
 - Auth now fails fast when `AUTH_SECRET` is missing (`src/lib/auth.ts`, `src/middleware.ts`)
 - Generated `.next/**` artifacts may appear locally; they are build/dev output, not source architecture
 
 ## Current Priorities (Recommended)
 
-1. Implement real Guild Stats charts backed by `/api/metrics/summary`
+1. Implement real Progress Stats charts backed by `/api/metrics/summary` (Cycle 2 kickoff)
 2. Expand integration test coverage for auth, quest CRUD, completion, and progression endpoints
 3. Keep Playwright coverage aligned with evolving authenticated quest flows
 4. Monitor and refine CI quality gates as test surface grows
@@ -128,4 +128,10 @@ This document reflects the repository's current implementation status.
 
 ## One-Line Summary
 
-**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme; guild analytics charts and manual design QA sign-off remain the next major steps.**
+**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme; personal analytics charts and manual design QA sign-off remain the next major steps.**
+
+## Cycle 1 Closeout
+
+- Cycle 1 (Home data wiring and interaction baseline) is closed.
+- Section E/F verification has been completed in `documentation/today-focus-leftovers-checklist.md`.
+- Remaining scope now transitions to Cycle 2 analytics surfaces and related test hardening.

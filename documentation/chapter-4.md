@@ -18,7 +18,7 @@ These changes prioritize the main todo loop first; analytics UI work remains def
 
 - Added `src/middleware.ts` to protect:
   - `/quests/:path*`
-  - `/guild-stats`
+  - `/stats`
 - If user is not authenticated, requests are redirected to `/` with `callbackUrl`.
 - Why this matters:
   - central auth gate for protected routes

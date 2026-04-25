@@ -139,7 +139,7 @@ Use one bullet per issue:
     - Quality gates: run `npm run test`, `npm run lint`, `npm run typecheck` before moving to Phase 1.4.
   - Closeout decision:
     - Cycle 1 is closed with implementation + QA evidence; no blocker remains in the checklist.
-    - Intentional deferrals: guild-stats charts (Cycle 2), deeper tab routing behavior, and advanced celebration/toast polish.
+    - Intentional deferrals: stats charts (Cycle 2), deeper tab routing behavior, and advanced celebration/toast polish.
   - 2026-04-25 E2E coverage expansion:
     - Added `e2e/cycle1-home.spec.ts` with mocked Cycle 1 home flows:
       - home render and solo queue order expectations

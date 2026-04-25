@@ -7,7 +7,7 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - The authenticated `/` route now renders a live-data Today/Focus home experience.
 - The unauthenticated `/` login/register surface remains unchanged.
 - Core quest APIs and progression APIs continue to power the main gameplay loop.
-- Guild Stats remains a placeholder UI pending chart wiring.
+- Progress Stats remains a placeholder UI pending chart wiring.
 
 ## 2) What was delivered in this cycle
 
@@ -50,23 +50,34 @@ This chapter summarizes what was delivered in the latest implementation pass and
 
 ## 4) Known gaps and deferred items
 
-- Manual visual/responsive sign-off checklist is still pending:
-  - `documentation/today-focus-leftovers-checklist.md` (Section E/F verification workflow)
+- Manual visual/responsive sign-off checklist has been completed for Cycle 1 closeout:
+  - `documentation/today-focus-leftovers-checklist.md` (Section E/F marked complete)
 - Stats strip keeps `FOCUS` as a placeholder because no reliable focus-time source is wired yet.
 - Bottom tab bar on home is still presentational (no route switching behavior yet).
-- Guild Stats charts and metrics consumer wiring are still not implemented.
+- Progress Stats charts and metrics consumer wiring are still not implemented.
 
 ## 5) Recommended next steps
 
-1. Complete manual Section E/F QA checklist and record findings under **Issues** in `today-focus-leftovers-checklist.md`.
+1. Start Cycle 2: implement Progress Stats charts by wiring `/stats` to `/api/metrics/summary`.
 2. Decide and implement tab behavior (`Today`, `Quests`, `Calendar`, `Codex`) with route-safe navigation.
-3. Start Guild Stats implementation by wiring `/guild-stats` to `/api/metrics/summary`.
-4. Expand automated coverage around home interactions (quick-add, optimistic completion, retries).
+3. Expand automated coverage around home interactions (quick-add, optimistic completion, retries).
+4. Add celebration/toast polish once Cycle 2 baseline is stable.
 
-## 6) Related references
+## 6) Cycle 1 closure statement
+
+- Cycle 1 is closed: Phase 1.1–1.3 implementation completed, with 1.4/1.5 baseline behavior present and checklist sign-off captured.
+- No blocker remains in `today-focus-leftovers-checklist.md`.
+- Project is ready to begin Cycle 2 work.
+## 7) Related references
 
 - `documentation/current-status-architecture.md`
 - `documentation/home-ui-tracker.md`
 - `documentation/today-focus-ui-plan.md`
 - `documentation/today-focus-leftovers-checklist.md`
 - `documentation/dev-notes-one-liners.md`
+
+## 8) Cycle 2 kickoff note (solo taxonomy)
+
+- Analytics route is now standardized as `/stats` (replacing `/guild-stats`).
+- UI and docs now use solo-first terms (`Progress Stats`, `Today Quests`, `Today Queue`).
+- Multiplayer framing is intentionally out of scope for this product iteration.

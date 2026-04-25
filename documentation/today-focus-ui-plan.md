@@ -32,7 +32,7 @@ From [documentation/current-status-architecture.md](documentation/current-status
   - XP hero + segmented progress treatment for gamified mode
   - Stats strip (streak/daily goal/focus time)
   - Main Quest hero card with progress and "Start focus" action
-  - Structured sections (`In Progress`, `Queued/Party Quests`, `Claimed`)
+  - Structured sections (`In Progress`, `Today Queue`, `Claimed`)
   - Floating quick-add action button
   - Mobile bottom tab bar shell for `Today/Quests/Calendar/Codex`
 - Supporting design primitives shown in [documentation/Design References/screens-a.jsx](documentation/Design References/screens-a.jsx) are not represented as reusable components in `src/components` yet.

@@ -145,7 +145,7 @@ export const Checkbox = ({ checked, onChange }) => (
   </button>
 );
 
-/** Eyebrow label — "MAIN QUEST", "PARTY QUESTS", "TOMORROW". */
+/** Eyebrow label — "MAIN QUEST", "TODAY QUESTS", "TOMORROW". */
 export const Eyebrow = ({ children, tone = "muted", className = "" }) => (
   <span
     className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${className}`}
@@ -306,7 +306,7 @@ export const StatsStrip = ({
   </div>
 );
 
-/** Section header — "PARTY QUESTS · 5     +180 XP" */
+/** Section header — "TODAY QUESTS · 5     +180 XP" */
 export const SectionHeader = ({ label, count, totalXP, dueLabel }) => (
   <div className="flex items-center justify-between px-5 mt-5 mb-2">
     <div className="flex items-center gap-1.5">
@@ -588,7 +588,7 @@ export const TodayScreen = () => {
           focusMinutes={25}
         />
 
-        <SectionHeader label="Party Quests" count={5} totalXP={180} />
+        <SectionHeader label="Today Quests" count={5} totalXP={180} />
         <div>
           <QuestRow
             id="p1"
@@ -844,7 +844,7 @@ export default function SideQuestDemo() {
 
           <GalleryItem name="<Eyebrow />">
             <div className="flex gap-4">
-              <Eyebrow>Party Quests</Eyebrow>
+              <Eyebrow>Today Quests</Eyebrow>
               <Eyebrow tone="ember">Main Quest</Eyebrow>
             </div>
           </GalleryItem>
