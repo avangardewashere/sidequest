@@ -79,6 +79,8 @@ describe("fetchTodayDashboard", () => {
 describe("useTodayDashboard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it("exposes data after fetch settles", async () => {
@@ -99,5 +101,65 @@ describe("useTodayDashboard", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.data?.profile?.displayName).toBe("Hero");
     expect(result.current.data?.dailies).toHaveLength(1);
+  });
+
+  it("uses same-day session cache immediately, then refreshes with network snapshot", async () => {
+    const cachedSnapshot = {
+      profile: {
+        ...sampleProfile,
+        level: 3,
+      },
+      activeQuests: [sampleQuest],
+      dailies: [],
+      dailyKey: "cached-key",
+    };
+    const dayKey = `today-dashboard:${new Date().toISOString().slice(0, 10)}`;
+    window.sessionStorage.setItem(dayKey, JSON.stringify(cachedSnapshot));
+
+    vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/progression")) {
+        return jsonResponse({
+          profile: {
+            ...sampleProfile,
+            level: 9,
+          },
+        });
+      }
+      if (url.includes("/api/quests") && url.includes("status=active")) {
+        return jsonResponse({ quests: [sampleQuest] });
+      }
+      if (url.includes("/api/dailies")) {
+        return jsonResponse({ dailyKey: "live-key", dailies: [] });
+      }
+      return jsonResponse({}, 500);
+    });
+
+    const { result } = renderHook(() => useTodayDashboard());
+
+    await waitFor(() => expect(result.current.data?.profile?.level).toBe(3));
+    await waitFor(() => expect(result.current.data?.profile?.level).toBe(9));
+    expect(result.current.error).toBeNull();
+  });
+
+  it("falls back to last-known local cache when fetch throws", async () => {
+    const fallbackSnapshot = {
+      profile: {
+        ...sampleProfile,
+        level: 7,
+      },
+      activeQuests: [sampleQuest],
+      dailies: [sampleQuest],
+      dailyKey: "last-known",
+    };
+    window.localStorage.setItem("today-dashboard:last-known", JSON.stringify(fallbackSnapshot));
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
+
+    const { result } = renderHook(() => useTodayDashboard());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBe("network down");
+    expect(result.current.data?.profile?.level).toBe(7);
+    expect(result.current.data?.dailyKey).toBe("last-known");
   });
 });

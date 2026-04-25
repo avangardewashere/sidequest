@@ -117,4 +117,14 @@ Use one bullet per issue:
 - Status: `Manual E.1–E.2 pending` (implementation on `/` now uses live data + new interactions; run the checklist in a browser when ready)
 - Reviewer:
 - Date:
-- Notes: 2026-04-25 — Home shell wired to APIs (XP bar, header date, sections, complete checkbox, quick-add). Section E checkboxes above are intentionally **not** bulk-ticked here; record findings under **Issues** as you run them.
+- Notes:
+  - 2026-04-25 — Home shell wired to APIs (XP bar, header date, sections, complete checkbox, quick-add). Section E checkboxes above are intentionally **not** bulk-ticked here; record findings under **Issues** as you run them.
+  - Phase 1.2 hero acceptance criteria:
+    - Hero must render live `profile.level`, `profile.xpIntoLevel`, `profile.xpForNextLevel` values via mappers.
+    - Header + XP region must show skeleton during cold load (`isLoading && !data && !error`).
+    - XP bar width transition must animate on value change (target ~500-600ms ease-out).
+    - On fetch error, UI must show usable values (session/local cached snapshot when available, otherwise safe placeholder values).
+  - 2026-04-25 validation log:
+    - Automated checks passed: `vitest` (Phase 1.2 tests), `eslint`.
+    - Added tests for session cache-first load and local last-known fallback on network failure.
+    - Manual browser QA for E.1/E.2 remains pending and should be completed before final sign-off.

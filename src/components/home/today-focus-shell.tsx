@@ -113,6 +113,7 @@ export function TodayFocusShell() {
   }, [refresh]);
 
   const showError = Boolean(error && !data);
+  const showCachedErrorHint = Boolean(error && data);
   const showSkeleton = isLoading && !data && !error;
 
   return (
@@ -136,6 +137,21 @@ export function TodayFocusShell() {
           <TodayFocusHeaderXpSkeleton />
         ) : (
           <>
+            {showCachedErrorHint ? (
+              <div className="px-4 pt-2">
+                <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                  Showing last known snapshot while network refresh is unavailable.
+                </p>
+                <button
+                  type="button"
+                  className="mt-1 rounded-full border px-3 py-1 text-xs font-medium"
+                  style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-secondary)" }}
+                  onClick={() => void refresh()}
+                >
+                  Retry refresh
+                </button>
+              </div>
+            ) : null}
             <TodayFocusHeader data={header} onMenuClick={handleMenuClick} onSearchClick={handleSearchClick} />
             <TodayFocusXpStats xp={xp} stats={stats} />
 
