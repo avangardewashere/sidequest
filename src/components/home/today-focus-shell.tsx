@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TodayFocusFab } from "@/components/home/today-focus-fab";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
@@ -14,6 +14,14 @@ import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
 import { useToast } from "@/components/feedback/toast-provider";
 import { actionResultToToast, completeQuestById } from "@/lib/client-api";
+import {
+  consumeDailyCue,
+  consumeLevelUpCelebration,
+  localDateKey,
+  markCompletionToday,
+  readLastCompletionDateKey,
+  shouldShowStreakRisk,
+} from "@/lib/retention-cues";
 import {
   buildTodayHeaderData,
   profileToTodayXpData,
@@ -46,6 +54,8 @@ export function TodayFocusShell() {
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [optimisticDoneIds, setOptimisticDoneIds] = useState<Set<string>>(() => new Set());
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  const [completionDateKey, setCompletionDateKey] = useState<string | null>(null);
   const completeInFlightRef = useRef(false);
 
   const snapshot = data ?? EMPTY_SNAPSHOT;
@@ -109,6 +119,8 @@ export function TodayFocusShell() {
           title: "Quest completed",
           message: "Progress and stats were updated.",
         });
+        markCompletionToday();
+        setCompletionDateKey(localDateKey());
         setOptimisticDoneIds(new Set());
         await refresh();
       } finally {
@@ -126,6 +138,45 @@ export function TodayFocusShell() {
   const showError = Boolean(error && !data);
   const showCachedErrorHint = Boolean(error && data);
   const showSkeleton = isLoading && !data && !error;
+  const hasCompletionToday = completionDateKey === localDateKey(now);
+  const streakAtRisk = shouldShowStreakRisk(now, hasCompletionToday);
+
+  useEffect(() => {
+    setCompletionDateKey(readLastCompletionDateKey());
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!snapshot.profile?.level) {
+      return;
+    }
+    if (!consumeLevelUpCelebration(snapshot.profile.level)) {
+      return;
+    }
+    pushToast({
+      tone: "success",
+      title: `Level up! LV ${snapshot.profile.level}`,
+      message: "Your consistency is paying off.",
+    });
+  }, [pushToast, snapshot.profile?.level]);
+
+  useEffect(() => {
+    if (!data || isLoading || error || !snapshot.dailyKey) {
+      return;
+    }
+    if (!consumeDailyCue(now)) {
+      return;
+    }
+    pushToast({
+      tone: "info",
+      title: "New daily quests are live",
+      message: "Review your queue and keep your streak alive.",
+    });
+  }, [data, error, isLoading, now, pushToast, snapshot.dailyKey]);
 
   return (
     <div className="relative min-h-screen">
@@ -168,6 +219,20 @@ export function TodayFocusShell() {
             ) : null}
             <TodayFocusHeader data={header} onMenuClick={handleMenuClick} onSearchClick={handleSearchClick} />
             <TodayFocusXpStats xp={xp} stats={stats} />
+            {streakAtRisk ? (
+              <div className="px-4 pt-2">
+                <p
+                  className="rounded-lg border px-3 py-2 text-xs font-medium"
+                  style={{
+                    borderColor: "var(--color-warning)",
+                    background: "var(--color-warning-subtle)",
+                    color: "var(--color-warning)",
+                  }}
+                >
+                  Streak risk: no completion yet today. Finish one quest before day end.
+                </p>
+              </div>
+            ) : null}
 
             {actionMessage ? (
               <p className="px-4 pt-2 text-sm" style={{ color: "var(--color-danger)" }}>
