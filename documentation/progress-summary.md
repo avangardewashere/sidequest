@@ -7,7 +7,7 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - The authenticated `/` route now renders a live-data Today/Focus home experience.
 - The unauthenticated `/` login/register surface remains unchanged.
 - Core quest APIs and progression APIs continue to power the main gameplay loop.
-- Progress Stats remains a placeholder UI pending chart wiring.
+- Progress Stats is now a live analytics surface powered by `/api/metrics/summary`.
 
 ## 2) What was delivered in this cycle
 
@@ -54,14 +54,15 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `documentation/today-focus-leftovers-checklist.md` (Section E/F marked complete)
 - Stats strip keeps `FOCUS` as a placeholder because no reliable focus-time source is wired yet.
 - Bottom tab bar on home is still presentational (no route switching behavior yet).
-- Progress Stats charts and metrics consumer wiring are still not implemented.
+- Focus-time metric source is still placeholder-oriented in home stats.
+- Home bottom tab behavior remains presentational and needs route behavior finalization.
 
 ## 5) Recommended next steps
 
-1. Start Cycle 2: implement Progress Stats charts by wiring `/stats` to `/api/metrics/summary`.
-2. Decide and implement tab behavior (`Today`, `Quests`, `Calendar`, `Codex`) with route-safe navigation.
-3. Expand automated coverage around home interactions (quick-add, optimistic completion, retries).
-4. Add celebration/toast polish once Cycle 2 baseline is stable.
+1. Start Cycle 3.1: global error handling and toast infrastructure across home/quests/stats.
+2. Add retention polish (streak-in-danger cue + celebration behavior + daily-roll feedback).
+3. Expand test coverage around analytics interactions and progression edge cases.
+4. Run perf/deployment hardening pass (loading states, Lighthouse, telemetry wiring).
 
 ## 6) Cycle 1 closure statement
 
@@ -81,3 +82,15 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - Analytics route is now standardized as `/stats` (replacing `/guild-stats`).
 - UI and docs now use solo-first terms (`Progress Stats`, `Today Quests`, `Today Queue`).
 - Multiplayer framing is intentionally out of scope for this product iteration.
+
+## 9) Cycle 2 closure statement
+
+- Cycle 2 is complete: analytics API, range switching, KPI deltas, and three core charts are shipped on `/stats`.
+- Stats page now includes themed tooltips, chart table fallbacks, responsive tuning, and empty-state/reset UX polish.
+- Project is ready to begin Cycle 3 hardening and ship preparation.
+
+## 10) Cycle 3 kickoff priorities
+
+- Phase 3.1: global error handling + toast primitive + offline messaging baseline.
+- Phase 3.2: retention effects aligned to solo flow (streak risk cue + celebration control).
+- Phase 3.3+: test/perf/deploy readiness with telemetry and release checklist.

@@ -19,7 +19,7 @@ This document reflects the repository's current implementation status.
 - `/quests/create` create quest form (`src/app/quests/create/page.tsx`)
 - `/quests/view` list/filter/sort/complete quests (`src/app/quests/view/page.tsx`)
 - `/quests/[id]/edit` update/delete a quest (`src/app/quests/[id]/edit/page.tsx`)
-- `/stats` placeholder page (not wired to real charts yet) (`src/app/stats/page.tsx`)
+- `/stats` live analytics page with range-aware charts (`src/app/stats/page.tsx`)
 
 ### API Endpoints
 
@@ -84,13 +84,12 @@ This document reflects the repository's current implementation status.
 
 ### Partial / Placeholder
 
-- Stats UI exists but currently displays placeholder content only
-- Metrics summary endpoint exists, but no current dashboard/chart consumer was found in `src`
 - Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists
 
 ### Not Present Yet
 
-- Stats page production charts and consumer wiring for metrics endpoint
+- Global error boundary coverage for app + route segments planned for Cycle 3
+- Deeper retention effects (streak risk cues, celebration polish) planned for Cycle 3
 
 ## Security And Operational Notes
 
@@ -101,10 +100,10 @@ This document reflects the repository's current implementation status.
 
 ## Current Priorities (Recommended)
 
-1. Implement real Progress Stats charts backed by `/api/metrics/summary` (Cycle 2 kickoff)
-2. Expand integration test coverage for auth, quest CRUD, completion, and progression endpoints
-3. Keep Playwright coverage aligned with evolving authenticated quest flows
-4. Monitor and refine CI quality gates as test surface grows
+1. Start Cycle 3.1 global error handling and toast infrastructure
+2. Expand automated coverage for new analytics interactions and retention behaviors
+3. Add performance hardening for stats charts (lazy load + Lighthouse checks)
+4. Prepare deployment and telemetry pass (Vercel + error tracking + analytics)
 
 ## Documentation Trackers
 
@@ -128,10 +127,17 @@ This document reflects the repository's current implementation status.
 
 ## One-Line Summary
 
-**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme; personal analytics charts and manual design QA sign-off remain the next major steps.**
+**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme, and `/stats` now delivers range-aware personal analytics with KPI deltas and chart fallbacks; Cycle 3 hardening and ship-readiness are the next major steps.**
 
 ## Cycle 1 Closeout
 
 - Cycle 1 (Home data wiring and interaction baseline) is closed.
 - Section E/F verification has been completed in `documentation/today-focus-leftovers-checklist.md`.
 - Remaining scope now transitions to Cycle 2 analytics surfaces and related test hardening.
+
+## Cycle 2 Closeout
+
+- Cycle 2 (Stats analytics surface) is closed.
+- `/stats` is now fully wired to `/api/metrics/summary` with `7d|30d|90d` ranges, KPI deltas, and three chart surfaces.
+- Accessibility and polish additions shipped (`<details>` data tables, empty-state panel, confirm-only reset action).
+- Remaining scope now transitions to Cycle 3 hardening + deployment readiness.
