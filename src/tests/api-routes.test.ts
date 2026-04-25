@@ -299,6 +299,29 @@ describe("API route baseline tests", () => {
       expect(json.error).toBe("Quest already completed");
       expect(mockDbSession.endSession).toHaveBeenCalledTimes(1);
     });
+
+    it("returns 409 when duplicate completion event is detected", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      const mockDbSession = {
+        withTransaction: vi.fn(async () => {
+          throw { code: 11000 };
+        }),
+        endSession: vi.fn(),
+      };
+      mockStartSession.mockResolvedValue(mockDbSession);
+
+      const request = new Request("http://localhost/api/quests/q-dup/complete", {
+        method: "PATCH",
+      });
+      const response = await completeQuestRoute.PATCH(request, {
+        params: Promise.resolve({ id: "q-dup" }),
+      });
+      const json = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(json.error).toBe("Duplicate completion event ignored");
+      expect(mockDbSession.endSession).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("GET /api/progression", () => {

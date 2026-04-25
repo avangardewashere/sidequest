@@ -163,4 +163,65 @@ describe("useTodayDashboard", () => {
     expect(result.current.data?.profile?.level).toBe(7);
     expect(result.current.data?.dailyKey).toBe("last-known");
   });
+
+  it("ignores malformed session cache and uses network snapshot", async () => {
+    const dayKey = `today-dashboard:${new Date().toISOString().slice(0, 10)}`;
+    window.sessionStorage.setItem(dayKey, "{invalid-json");
+    vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/progression")) {
+        return jsonResponse({
+          profile: {
+            ...sampleProfile,
+            level: 8,
+          },
+        });
+      }
+      if (url.includes("/api/quests") && url.includes("status=active")) {
+        return jsonResponse({ quests: [sampleQuest] });
+      }
+      if (url.includes("/api/dailies")) {
+        return jsonResponse({ dailyKey: "safe-key", dailies: [] });
+      }
+      return jsonResponse({}, 500);
+    });
+
+    const { result } = renderHook(() => useTodayDashboard());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBeNull();
+    expect(result.current.data?.profile?.level).toBe(8);
+    expect(result.current.data?.dailyKey).toBe("safe-key");
+  });
+
+  it("refresh updates state after initial load", async () => {
+    let level = 2;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/progression")) {
+        return jsonResponse({
+          profile: {
+            ...sampleProfile,
+            level,
+          },
+        });
+      }
+      if (url.includes("/api/quests") && url.includes("status=active")) {
+        return jsonResponse({ quests: [sampleQuest] });
+      }
+      if (url.includes("/api/dailies")) {
+        return jsonResponse({ dailyKey: "refresh-key", dailies: [] });
+      }
+      return jsonResponse({}, 500);
+    });
+
+    const { result } = renderHook(() => useTodayDashboard());
+    await waitFor(() => expect(result.current.data?.profile?.level).toBe(2));
+
+    level = 4;
+    await result.current.refresh();
+
+    await waitFor(() => expect(result.current.data?.profile?.level).toBe(4));
+    expect(result.current.error).toBeNull();
+  });
 });

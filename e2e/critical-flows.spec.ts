@@ -280,7 +280,9 @@ test.describe.serial("critical authenticated flows", () => {
     await expect(page.getByText("Quest created successfully.")).toBeVisible();
 
     await page.goto("/quests/view");
+    await expect(page.getByRole("heading", { name: "View Quests" })).toBeVisible();
     const questCard = page.locator("article", { hasText: quest.title }).first();
+    await expect(questCard).toBeVisible();
     await questCard.getByRole("button", { name: "Complete" }).click();
     await expect(page.getByText(/Quest complete! \+\d+ XP/)).toBeVisible();
 
@@ -292,5 +294,152 @@ test.describe.serial("critical authenticated flows", () => {
         return afterText ? extractLevel(afterText) : null;
       })
       .toBeGreaterThan(beforeLevel as number);
+  });
+
+  test("quest completion is reflected on stats page", async ({ page }) => {
+    await addAuthenticatedSessionCookie(page);
+
+    let totalXp = 0;
+    let totalCompletions = 0;
+    let questStatus: "active" | "completed" = "active";
+    const quest = {
+      _id: "q-stats",
+      title: `Stats Quest ${Date.now()}`,
+      description: "Quest to validate stats reflection",
+      difficulty: "hard",
+      category: "work",
+      xpReward: 60,
+      status: "active",
+    };
+
+    const buildMetricsSummary = () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const completionsValue = questStatus === "completed" ? 1 : 0;
+      return {
+        range: "7d",
+        rangeDays: 7,
+        completionsByDay: Array.from({ length: 7 }, (_, idx) => ({
+          date: idx === 6 ? today : `2026-04-${String(20 + idx).padStart(2, "0")}`,
+          value: idx === 6 ? completionsValue : 0,
+        })),
+        xpByDay: Array.from({ length: 7 }, (_, idx) => ({
+          date: idx === 6 ? today : `2026-04-${String(20 + idx).padStart(2, "0")}`,
+          value: idx === 6 ? totalXp : 0,
+        })),
+        byCategory: totalCompletions
+          ? [{ category: "work", count: totalCompletions, xpTotal: totalXp }]
+          : [],
+        streakHistory: {
+          current: totalCompletions ? 1 : 0,
+          longest: totalCompletions ? 1 : 0,
+          last7d: Array.from({ length: 7 }, (_, idx) => ({
+            date: idx === 6 ? today : `2026-04-${String(20 + idx).padStart(2, "0")}`,
+            value: idx === 6 ? 1 : 0,
+          })),
+        },
+        kpis: {
+          totalCompletions,
+          totalXp,
+          avgXpPerCompletion: totalCompletions ? totalXp / totalCompletions : 0,
+          avgCompletionsPerDay: Number((totalCompletions / 7).toFixed(1)),
+        },
+        previousPeriod: {
+          totalCompletions: 0,
+          totalXp: 0,
+          avgXpPerCompletion: 0,
+          avgCompletionsPerDay: 0,
+        },
+        last7Days: {
+          questsCreated: 1,
+          questsCompleted: totalCompletions,
+          xpGained: totalXp,
+          dailiesGenerated: 0,
+          dailiesClaimed: 0,
+          milestoneBonusesGranted: 0,
+        },
+      };
+    };
+
+    await page.route("**/api/auth/session**", async (route) => {
+      await route.fulfill(
+        asJsonResponse({
+          user: { name: "E2E User", email: "e2e@sidequest.test", image: null },
+          expires: "2099-01-01T00:00:00.000Z",
+        }),
+      );
+    });
+    await page.route("**/api/dailies**", async (route) => {
+      await route.fulfill(asJsonResponse({ dailies: [] }));
+    });
+    await page.route("**/api/progression**", async (route) => {
+      await route.fulfill(
+        asJsonResponse({
+          profile: {
+            email: "e2e@sidequest.test",
+            displayName: "E2E User",
+            totalXp,
+            level: totalXp >= 50 ? 2 : 1,
+            currentStreak: totalCompletions ? 1 : 0,
+            longestStreak: totalCompletions ? 1 : 0,
+            xpIntoLevel: totalXp >= 50 ? totalXp - 50 : totalXp,
+            xpForNextLevel: totalXp >= 50 ? 150 : 50,
+          },
+        }),
+      );
+    });
+    await page.route("**/api/metrics/summary**", async (route) => {
+      await route.fulfill(asJsonResponse(buildMetricsSummary()));
+    });
+    await page.route("**/api/quests**", async (route) => {
+      const url = route.request().url();
+      if (url.includes("/complete")) {
+        totalXp += quest.xpReward;
+        totalCompletions += 1;
+        questStatus = "completed";
+        await route.fulfill(
+          asJsonResponse({
+            quest: {
+              ...quest,
+              status: "completed",
+            },
+            progression: {
+              totalXp,
+              level: totalXp >= 50 ? 2 : 1,
+              currentStreak: 1,
+              longestStreak: 1,
+            },
+            xpGained: quest.xpReward,
+            milestoneReward: null,
+          }),
+        );
+        return;
+      }
+      if (route.request().method() === "POST") {
+        await route.fulfill(asJsonResponse({ quest }, 201));
+        return;
+      }
+      await route.fulfill(
+        asJsonResponse({
+          quests: [
+            {
+              ...quest,
+              status: questStatus,
+            },
+          ],
+        }),
+      );
+    });
+
+    await page.goto("/");
+    await page.getByRole("checkbox", { name: `Complete ${quest.title}` }).click();
+    await expect(page.getByText("Quest completed")).toBeVisible();
+
+    await page.goto("/stats");
+    await expect(page.getByRole("heading", { name: "Progress Stats" })).toBeVisible();
+
+    const completionsCard = page.locator("div").filter({ hasText: "Total completions" }).first();
+    const xpCard = page.locator("div").filter({ hasText: "Total XP" }).first();
+    await expect(completionsCard).toContainText("1");
+    await expect(xpCard).toContainText("60");
   });
 });
