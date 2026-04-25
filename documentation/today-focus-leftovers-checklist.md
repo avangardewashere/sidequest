@@ -128,3 +128,12 @@ Use one bullet per issue:
     - Automated checks passed: `vitest` (Phase 1.2 tests), `eslint`.
     - Added tests for session cache-first load and local last-known fallback on network failure.
     - Manual browser QA for E.1/E.2 remains pending and should be completed before final sign-off.
+  - 2026-04-25 Phase 1.3 (solo quest list) updates:
+    - Added explicit home quest sort mode `priority_due` (`difficulty` priority, then `dueDate` ascending with nulls last, then XP/createdAt tie-breakers).
+    - Home list loading now includes a 3-row task skeleton in addition to header/XP skeleton.
+    - In-progress empty state CTA text aligned to plan: `No quests forged yet — start your first one ->`.
+    - Task row edit navigation remains `/quests/[id]/edit` for both list rows and main quest open action.
+  - Cycle 1 post-1.3 review checklist:
+    - Functional smoke: hero loads, list order follows `priority_due`, edit navigation works, empty-state CTA points to quick-add.
+    - State transitions: list skeleton appears on cold load; cached fallback remains active when network fails; optimistic completion remains stable.
+    - Quality gates: run `npm run test`, `npm run lint`, `npm run typecheck` before moving to Phase 1.4.

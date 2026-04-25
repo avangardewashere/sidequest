@@ -77,6 +77,7 @@ This document reflects the repository's current implementation status.
 - Daily quest endpoint and milestone/completion log tracking
 - Route-level UI separation (home Today/Focus vs quest workflows)
 - Authenticated home (`TodayFocusShell`) loads live progression, active quests, and dailies via `useTodayDashboard` / `fetchTodayDashboard`, maps them in `src/lib/today-dashboard-mappers.ts`, supports completing quests from the list, quick-add (`TodayFocusQuickAddSheet`), and row navigation to quest edit
+- Home active quest fetch now uses explicit `priority_due` sorting (`/api/quests?status=active&sort=priority_due`) to keep solo Today list ordering deterministic for Phase 1.3
 - Vitest suite for domain logic and route-handler integration coverage (`src/tests/**`)
 - Playwright critical flow E2E suite (`e2e/critical-flows.spec.ts`)
 - GitHub Actions CI + separate E2E workflow (`.github/workflows/ci.yml`, `.github/workflows/e2e.yml`)
@@ -85,7 +86,7 @@ This document reflects the repository's current implementation status.
 
 - Guild Stats UI exists but currently displays placeholder content only
 - Metrics summary endpoint exists, but no current dashboard/chart consumer was found in `src`
-- Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists
+- Bottom tab bar on home remains presentational (no route changes); stats strip “Focus” tile is a placeholder until a metrics source exists; multiplayer/party quest semantics are intentionally deferred
 
 ### Not Present Yet
 

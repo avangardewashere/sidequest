@@ -6,6 +6,7 @@ export type Quest = {
   category: "work" | "study" | "health" | "personal" | "other";
   xpReward: number;
   status: "active" | "completed";
+  dueDate?: string | null;
   isDaily?: boolean;
   dailyKey?: string | null;
 };

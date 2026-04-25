@@ -133,7 +133,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 /** Per-request defaults when a leg fails (non-OK or malformed): empty slice / null for that leg only. */
 export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
   const [questRes, progressionRes, dailiesRes] = await Promise.all([
-    fetch("/api/quests?status=active&sort=newest"),
+    fetch("/api/quests?status=active&sort=priority_due"),
     fetch("/api/progression"),
     fetch("/api/dailies"),
   ]);

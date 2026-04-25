@@ -9,6 +9,8 @@ const mockUserCreate = vi.fn();
 const mockUserFindById = vi.fn();
 const mockQuestCreate = vi.fn();
 const mockQuestFindOne = vi.fn();
+const mockQuestFind = vi.fn();
+const mockQuestAggregate = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   connectToDatabase: mockConnectToDatabase,
@@ -47,6 +49,8 @@ vi.mock("@/models/Quest", () => ({
   QuestModel: {
     create: mockQuestCreate,
     findOne: mockQuestFindOne,
+    find: mockQuestFind,
+    aggregate: mockQuestAggregate,
   },
 }));
 
@@ -175,6 +179,45 @@ describe("API route baseline tests", () => {
       expect(response.status).toBe(400);
       expect(json.error).toBe("Invalid payload");
       expect(mockQuestCreate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GET /api/quests", () => {
+    it("accepts priority_due sort and uses aggregation path", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      mockQuestAggregate.mockResolvedValue([]);
+
+      const request = new Request("http://localhost/api/quests?status=active&sort=priority_due", {
+        method: "GET",
+      });
+
+      const response = await questsRoute.GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(json.quests)).toBe(true);
+      expect(mockQuestAggregate).toHaveBeenCalledTimes(1);
+      expect(mockQuestFind).not.toHaveBeenCalled();
+    });
+
+    it("uses find path for standard sort options", async () => {
+      mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+      const exec = vi.fn().mockResolvedValue([]);
+      const limit = vi.fn().mockReturnValue({ exec });
+      const sort = vi.fn().mockReturnValue({ limit, exec });
+      mockQuestFind.mockReturnValue({ sort });
+
+      const request = new Request("http://localhost/api/quests?status=active&sort=newest&limit=5", {
+        method: "GET",
+      });
+
+      const response = await questsRoute.GET(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(json.quests)).toBe(true);
+      expect(mockQuestFind).toHaveBeenCalledTimes(1);
+      expect(mockQuestAggregate).not.toHaveBeenCalled();
     });
   });
 

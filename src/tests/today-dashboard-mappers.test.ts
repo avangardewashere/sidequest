@@ -119,8 +119,24 @@ describe("snapshotToTaskSections", () => {
     const sections = snapshotToTaskSections(snapshot);
     expect(sections[0].tasks).toHaveLength(1);
     expect(sections[0].tasks[0].id).toBe("n1");
+    expect(sections[1].label).toBe("TODAY QUEUE");
     expect(sections[1].tasks).toHaveLength(1);
     expect(sections[1].tasks[0].id).toBe("d1");
+  });
+
+  it("applies difficulty then due-date ordering for non-daily tasks", () => {
+    const snapshot: TodayDashboardSnapshot = {
+      profile: null,
+      activeQuests: [
+        baseQuest({ _id: "late-medium", difficulty: "medium", dueDate: "2030-02-01T00:00:00.000Z", isDaily: false }),
+        baseQuest({ _id: "hard-no-due", difficulty: "hard", dueDate: null, isDaily: false }),
+        baseQuest({ _id: "hard-soon", difficulty: "hard", dueDate: "2030-01-01T00:00:00.000Z", isDaily: false }),
+      ],
+      dailies: [],
+      dailyKey: null,
+    };
+    const sections = snapshotToTaskSections(snapshot);
+    expect(sections[0].tasks.map((t) => t.id)).toEqual(["hard-soon", "hard-no-due", "late-medium"]);
   });
 });
 

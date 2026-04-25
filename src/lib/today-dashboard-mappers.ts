@@ -11,6 +11,25 @@ import type { ProgressionProfile, TodayDashboardSnapshot } from "@/types/today-d
 
 const DIFF_ORDER: Record<Quest["difficulty"], number> = { hard: 0, medium: 1, easy: 2 };
 
+function dueDateTs(quest: Quest): number {
+  if (!quest.dueDate) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  const parsed = Date.parse(quest.dueDate);
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+}
+
+function sortForTodayQueue(quests: Quest[]): Quest[] {
+  return [...quests].sort((a, b) => {
+    const difficultyCmp = DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty];
+    if (difficultyCmp !== 0) return difficultyCmp;
+    const dueCmp = dueDateTs(a) - dueDateTs(b);
+    if (dueCmp !== 0) return dueCmp;
+    if (b.xpReward !== a.xpReward) return b.xpReward - a.xpReward;
+    return String(a._id).localeCompare(String(b._id));
+  });
+}
+
 /** Sort for "main" pick: higher difficulty first, then higher XP, stable by _id. */
 export function sortActiveQuestsForMain(quests: Quest[]): Quest[] {
   return [...quests].sort((a, b) => {
@@ -123,8 +142,8 @@ export function snapshotToMainQuest(snapshot: TodayDashboardSnapshot): MainQuest
 }
 
 export function snapshotToTaskSections(snapshot: TodayDashboardSnapshot): TaskSectionData[] {
-  const nonDaily = snapshot.activeQuests.filter((q) => !q.isDaily);
-  const dailyActive = snapshot.dailies.filter((q) => q.status === "active");
+  const nonDaily = sortForTodayQueue(snapshot.activeQuests.filter((q) => !q.isDaily));
+  const dailyActive = sortForTodayQueue(snapshot.dailies.filter((q) => q.status === "active"));
 
   const inProgress: TaskSectionData = {
     id: "in-progress",
@@ -135,7 +154,7 @@ export function snapshotToTaskSections(snapshot: TodayDashboardSnapshot): TaskSe
 
   const queued: TaskSectionData = {
     id: "queued",
-    label: "DAILIES",
+    label: "TODAY QUEUE",
     rightLabel: snapshot.dailyKey ? snapshot.dailyKey : undefined,
     tasks: dailyActive.map((q) => questToTaskRow(q)),
   };

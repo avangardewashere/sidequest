@@ -43,3 +43,27 @@ export function TodayFocusHeaderXpSkeleton() {
     </>
   );
 }
+
+export function TodayFocusTaskRowsSkeleton() {
+  const pulse = "animate-pulse rounded-md";
+  return (
+    <section className="px-4 pt-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className={`h-3 w-24 ${pulse}`} style={{ background: "var(--color-border-subtle)" }} />
+        <div className={`h-3 w-16 ${pulse}`} style={{ background: "var(--color-border-subtle)" }} />
+      </div>
+      <div className="flex flex-col gap-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="rounded-lg border px-3 py-3"
+            style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-surface)" }}
+          >
+            <div className={`h-3 w-40 ${pulse}`} style={{ background: "var(--color-border-subtle)" }} />
+            <div className={`mt-2 h-2 w-28 ${pulse}`} style={{ background: "var(--color-border-subtle)" }} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

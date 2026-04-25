@@ -42,7 +42,7 @@ describe("fetchTodayDashboard", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/progression")) return jsonResponse({ profile: sampleProfile });
-      if (url.includes("/api/quests") && url.includes("status=active") && url.includes("sort=newest")) {
+      if (url.includes("/api/quests") && url.includes("status=active") && url.includes("sort=priority_due")) {
         return jsonResponse({ quests: [sampleQuest] });
       }
       if (url.includes("/api/dailies")) return jsonResponse({ dailyKey: "2026-04-25", dailies: [] });
@@ -52,6 +52,7 @@ describe("fetchTodayDashboard", () => {
     const snap = await fetchTodayDashboard();
 
     expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(fetchSpy).toHaveBeenCalledWith("/api/quests?status=active&sort=priority_due");
     expect(snap.profile).toEqual(sampleProfile);
     expect(snap.activeQuests).toEqual([sampleQuest]);
     expect(snap.dailies).toEqual([]);

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TodayFocusFab } from "@/components/home/today-focus-fab";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
 import { TodayFocusMainQuest } from "@/components/home/today-focus-main-quest";
-import { TodayFocusHeaderXpSkeleton } from "@/components/home/today-focus-loading-skeleton";
+import { TodayFocusHeaderXpSkeleton, TodayFocusTaskRowsSkeleton } from "@/components/home/today-focus-loading-skeleton";
 import { todayFocusMockData, type TodayTabItem } from "@/components/home/today-focus-mock-data";
 import { TodayFocusQuickAddSheet } from "@/components/home/today-focus-quick-add-sheet";
 import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
@@ -30,7 +30,7 @@ const EMPTY_SNAPSHOT: TodayDashboardSnapshot = {
 };
 
 const SECTION_EMPTY: Record<string, string> = {
-  "in-progress": "No open quests yet — tap + to forge one.",
+  "in-progress": "No quests forged yet — start your first one ->",
   queued: "No active dailies right now.",
   claimed: "Completed quests stay in your quest history.",
 };
@@ -134,7 +134,10 @@ export function TodayFocusShell() {
             </button>
           </div>
         ) : showSkeleton ? (
-          <TodayFocusHeaderXpSkeleton />
+          <>
+            <TodayFocusHeaderXpSkeleton />
+            <TodayFocusTaskRowsSkeleton />
+          </>
         ) : (
           <>
             {showCachedErrorHint ? (

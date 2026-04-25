@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { PipelineStage } from "mongoose";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
@@ -17,7 +18,7 @@ const createQuestSchema = z.object({
 const questListQuerySchema = z.object({
   status: z.enum(["all", "active", "completed", "daily"]).default("all"),
   category: z.enum(["all", "work", "study", "health", "personal", "other"]).default("all"),
-  sort: z.enum(["newest", "oldest", "highest_xp", "category"]).default("newest"),
+  sort: z.enum(["newest", "oldest", "highest_xp", "category", "priority_due"]).default("newest"),
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 
@@ -62,11 +63,39 @@ export async function GET(request: Request) {
     }
 
     await connectToDatabase();
-    let queryBuilder = QuestModel.find(filter).sort(sort);
-    if (parsed.data.limit != null) {
-      queryBuilder = queryBuilder.limit(parsed.data.limit);
+    let quests;
+    if (parsed.data.sort === "priority_due") {
+      const pipeline: PipelineStage[] = [
+        { $match: filter },
+        {
+          $addFields: {
+            difficultyRank: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$difficulty", "hard"] }, then: 0 },
+                  { case: { $eq: ["$difficulty", "medium"] }, then: 1 },
+                ],
+                default: 2,
+              },
+            },
+            dueDateSort: {
+              $ifNull: ["$dueDate", new Date("9999-12-31T00:00:00.000Z")],
+            },
+          },
+        },
+        { $sort: { difficultyRank: 1, dueDateSort: 1, xpReward: -1, createdAt: -1 } },
+      ];
+      if (parsed.data.limit != null) {
+        pipeline.push({ $limit: parsed.data.limit });
+      }
+      quests = await QuestModel.aggregate(pipeline);
+    } else {
+      let queryBuilder = QuestModel.find(filter).sort(sort);
+      if (parsed.data.limit != null) {
+        queryBuilder = queryBuilder.limit(parsed.data.limit);
+      }
+      quests = await queryBuilder.exec();
     }
-    const quests = await queryBuilder.exec();
 
     logger.info("api.quests.list.success", { count: quests.length });
     return NextResponse.json({ quests });
