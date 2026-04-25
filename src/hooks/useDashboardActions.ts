@@ -12,11 +12,14 @@ import type { AuthMode, Profile, Quest } from "@/types/dashboard";
 
 type UseDashboardActionsParams = {
   isAuthenticated: boolean;
+  /** When false and authenticated, skips `fetchDashboardData` (e.g. home uses `useTodayDashboard`). Default true. */
+  prefetchDashboard?: boolean;
   onAfterQuestMutation?: () => void | Promise<void>;
 };
 
 export function useDashboardActions({
   isAuthenticated,
+  prefetchDashboard = true,
   onAfterQuestMutation,
 }: UseDashboardActionsParams) {
   const [email, setEmail] = useState("");
@@ -40,7 +43,7 @@ export function useDashboardActions({
   const progressPct = useMemo(() => getProgressPct(profile), [profile]);
 
   const loadData = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !prefetchDashboard) {
       return;
     }
 
@@ -48,9 +51,12 @@ export function useDashboardActions({
     setQuests(dashboardData.quests);
     setProfile(dashboardData.profile);
     setDailies(dashboardData.dailies);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, prefetchDashboard]);
 
   useEffect(() => {
+    if (!isAuthenticated || !prefetchDashboard) {
+      return;
+    }
     let cancelled = false;
     queueMicrotask(() => {
       if (!cancelled) {
@@ -60,7 +66,7 @@ export function useDashboardActions({
     return () => {
       cancelled = true;
     };
-  }, [loadData]);
+  }, [loadData, isAuthenticated, prefetchDashboard]);
 
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

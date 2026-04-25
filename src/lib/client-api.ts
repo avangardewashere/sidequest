@@ -8,6 +8,7 @@ import type {
   RegisterPayload,
   UpdateQuestPayload,
 } from "@/types/dashboard";
+import type { ProgressionProfile, TodayDashboardSnapshot } from "@/types/today-dashboard";
 
 type DashboardData = {
   quests: Quest[];
@@ -126,6 +127,55 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     quests: (questData?.quests as Quest[] | undefined) ?? [],
     profile: (progressionData?.profile as Profile | undefined) ?? null,
     dailies: (dailiesData?.dailies as Quest[] | undefined) ?? [],
+  };
+}
+
+/** Per-request defaults when a leg fails (non-OK or malformed): empty slice / null for that leg only. */
+export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
+  const [questRes, progressionRes, dailiesRes] = await Promise.all([
+    fetch("/api/quests?status=active&sort=newest"),
+    fetch("/api/progression"),
+    fetch("/api/dailies"),
+  ]);
+
+  const [questData, progressionData, dailiesData] = await Promise.all([
+    questRes.ok ? parseJsonSafe(questRes) : null,
+    progressionRes.ok ? parseJsonSafe(progressionRes) : null,
+    dailiesRes.ok ? parseJsonSafe(dailiesRes) : null,
+  ]);
+
+  const profile =
+    progressionData &&
+    typeof progressionData === "object" &&
+    "profile" in progressionData &&
+    progressionData.profile &&
+    typeof progressionData.profile === "object"
+      ? (progressionData.profile as ProgressionProfile)
+      : null;
+
+  const activeQuests =
+    questData && typeof questData === "object" && "quests" in questData && Array.isArray(questData.quests)
+      ? (questData.quests as Quest[])
+      : [];
+
+  const dailies =
+    dailiesData && typeof dailiesData === "object" && "dailies" in dailiesData && Array.isArray(dailiesData.dailies)
+      ? (dailiesData.dailies as Quest[])
+      : [];
+
+  const dailyKey =
+    dailiesData &&
+    typeof dailiesData === "object" &&
+    "dailyKey" in dailiesData &&
+    typeof dailiesData.dailyKey === "string"
+      ? dailiesData.dailyKey
+      : null;
+
+  return {
+    profile,
+    activeQuests,
+    dailies,
+    dailyKey,
   };
 }
 

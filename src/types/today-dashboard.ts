@@ -1,0 +1,37 @@
+import type { Profile, Quest } from "@/types/dashboard";
+
+/**
+ * Mock → API source map for Today/Focus (`TodayFocusMockData` in today-focus-mock-data.ts).
+ * Phase 1.1 only ships the raw snapshot; UI mapping happens in later phases.
+ *
+ * | Mock key    | Data source (future mapping)                                      |
+ * |-------------|-------------------------------------------------------------------|
+ * | header      | Mostly `new Date()` + static copy (Phase 1.2)                     |
+ * | xp          | `profile`: level, xpIntoLevel, xpForNextLevel; role label TBD     |
+ * | stats       | Derived counts / streak / focus time — not in raw snapshot        |
+ * | mainQuest   | Heuristic from `activeQuests` / `dailies` (Phase 1.2+)           |
+ * | sections    | Built from `activeQuests` + filters (Phase 1.3)                   |
+ * | tabs        | Static shell labels — local only                                  |
+ */
+
+/** Progression API profile; includes optional `email` from GET /api/progression. */
+export type ProgressionProfile = Profile & {
+  email?: string;
+};
+
+/** JSON body shape for GET /api/dailies. */
+export type DailiesApiResponse = {
+  dailyKey: string;
+  dailies: Quest[];
+};
+
+/**
+ * Aggregated client bundle for the authenticated home (Cycle 1 Phase 1.1).
+ * Each leg may be empty if that request failed; callers map to UI in later phases.
+ */
+export type TodayDashboardSnapshot = {
+  profile: ProgressionProfile | null;
+  activeQuests: Quest[];
+  dailies: Quest[];
+  dailyKey: string | null;
+};

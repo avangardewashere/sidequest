@@ -5,6 +5,9 @@ import type { TaskMetaItem, TaskRowData } from "@/components/home/today-focus-mo
 type TodayFocusTaskRowProps = {
   task: TaskRowData;
   onClick?: (taskId: string) => void;
+  showCompleteToggle?: boolean;
+  completeDisabled?: boolean;
+  onComplete?: (taskId: string) => void;
 };
 
 const iconTextByMeta: Record<TaskMetaItem["icon"], string> = {
@@ -33,18 +36,39 @@ const priorityColorByLevel: Record<NonNullable<TaskRowData["priority"]>, { bg: s
   },
 };
 
-export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
+export function TodayFocusTaskRow({
+  task,
+  onClick,
+  showCompleteToggle,
+  completeDisabled,
+  onComplete,
+}: TodayFocusTaskRowProps) {
+  const canComplete = Boolean(showCompleteToggle && onComplete && !task.done);
+
   return (
-    <button
-      type="button"
-      onClick={() => onClick?.(task.id)}
-      className="w-full rounded-lg border px-3 py-2 text-left"
+    <div
+      className="flex w-full items-start gap-2 rounded-lg border px-3 py-2"
       style={{
         borderColor: task.done ? "var(--color-border-subtle)" : "var(--color-border-default)",
         background: "var(--color-bg-surface)",
         opacity: task.done ? 0.75 : 1,
       }}
     >
+      {canComplete ? (
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-primary)]"
+          disabled={completeDisabled}
+          aria-label={`Complete ${task.title}`}
+          onChange={() => onComplete?.(task.id)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : null}
+      <button
+        type="button"
+        onClick={() => onClick?.(task.id)}
+        className="min-w-0 flex-1 text-left"
+      >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -97,6 +121,7 @@ export function TodayFocusTaskRow({ task, onClick }: TodayFocusTaskRowProps) {
           </span>
         ) : null}
       </div>
-    </button>
+      </button>
+    </div>
   );
 }

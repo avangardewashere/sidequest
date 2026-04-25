@@ -28,7 +28,10 @@ export default function Home() {
     setMode,
     feedback,
     handleAuthSubmit,
-  } = useDashboardActions({ isAuthenticated: Boolean(session?.user) });
+  } = useDashboardActions({
+    isAuthenticated: Boolean(session?.user),
+    prefetchDashboard: !session?.user,
+  });
 
   if (status === "loading") {
     return (

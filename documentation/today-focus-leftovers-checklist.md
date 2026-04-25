@@ -1,0 +1,120 @@
+# Today/Focus Leftovers Checklist
+
+This checklist tracks the remaining items from `documentation/today-focus-ui-plan.md` (Section E exit criteria and Section F exit gate) before moving to the next phase.
+
+## Source Reference
+
+- `documentation/today-focus-ui-plan.md` (lines 438-451)
+- `documentation/Design References/color analysis colorscheme.md`
+
+## Remaining Items To Close
+
+### Section E Exit Criteria (Execution-Ready)
+
+**Goal:** Close Section E with evidence-backed manual QA: each focus area has a clear pass condition, comparison anchors, and a place to record findings under **Issues** before Section F.
+
+#### E.0 Preconditions
+
+- [ ] Dev server running; note the URL (e.g. `http://localhost:3000` or `http://localhost:3001` if the port is taken).
+- [ ] Two ways to test auth: **authenticated** session and **unauthenticated** (incognito or signed out).
+- [ ] References available (optional but recommended):
+  - `documentation/Design References/sidequest-demo.jsx` (Today / header + composition)
+  - `documentation/Design References/color analysis colorscheme.md` (paper, indigo CTA, ember accent, text tiers)
+
+#### E.1 Manual visual checks (five focus areas)
+
+For each area: **Pass** = matches intent below and no obvious contrast/layout break. **Fail** = log under **Issues** with screenshot + one-line repro + viewport.
+
+- [ ] **E.1.1 Top app bar hierarchy**
+  - [ ] Open authenticated `/`.
+  - [ ] Verify order and weight: day/date line reads as **secondary**; title reads as **primary**; menu and search read as controls (not body text).
+  - [ ] Compare to demo: `AppBar` / header region in `sidequest-demo.jsx` (date above title, actions on the right).
+  - [ ] **Pass if:** hierarchy matches reference; no clipped text at narrow width (360px).
+
+- [ ] **E.1.2 XP + stats grouping**
+  - [ ] XP block reads as one **card** on `--color-bg-surface` with subtle border; track uses **primary-subtle** fill + **primary** progress.
+  - [ ] Stats row: three tiles share one rhythm (padding, border, label size); values are readable at a glance.
+  - [ ] Cross-check color doc: stats strip uses surface + subtle border; labels use tertiary/secondary as intended.
+  - [ ] **Pass if:** grouping is obvious; no “floating” tiles; streak row does not fight the XP bar for attention.
+
+- [ ] **E.1.3 Main quest emphasis + CTA**
+  - [ ] Hero card reads as **primary surface** with clear border; **ember left accent** (3px) visible per color spec.
+  - [ ] “Main Quest” eyebrow uses **secondary-strong** (readable ember text), not decorative orange on tiny text.
+  - [ ] XP chip uses **primary-subtle** bg + **primary** text; CTA uses **primary** fill + **primary-on-accent** label.
+  - [ ] Secondary button (Open) is visibly **secondary** to CTA (outline/neutral), not competing.
+  - [ ] **Pass if:** CTA is the strongest interactive element; hero is unmistakably the focal card.
+
+- [ ] **E.1.4 Section spacing rhythm**
+  - [ ] Scroll full page: spacing between **Header → XP → Main quest → sections** feels consistent (no random tight/loose jumps).
+  - [ ] Section headers: label + optional right label align; uppercase rhythm matches reference.
+  - [ ] Task rows: done vs active states are distinguishable (opacity/strike + tertiary where expected).
+  - [ ] **Pass if:** scan from top to bottom feels like one system, not stacked unrelated panels.
+
+- [ ] **E.1.5 FAB + bottom tab bar anchoring**
+  - [ ] Scroll to bottom: last section content is **not hidden** behind tab bar or FAB (padding / safe area).
+  - [ ] FAB sits above tab bar, not overlapping it; tap targets do not overlap.
+  - [ ] Active tab state is obvious (primary fill vs inactive tertiary).
+  - [ ] **Pass if:** no overlap at 360px and 390px widths; keyboard tab order still reaches tab buttons and FAB.
+
+- [ ] **E.1 Summary:** All five areas **Pass** → tick parent item: “Manual visual checks completed for all five focus areas”.
+
+#### E.2 Responsive checks (mobile + desktop)
+
+Use DevTools device toolbar or a real device. Record viewport in **Issues** if anything fails.
+
+- [ ] **E.2.1 Mobile — 360×800**
+  - [ ] No horizontal scroll unless intentional.
+  - [ ] Long titles wrap or truncate without breaking layout.
+  - [ ] FAB + tab bar do not obscure content (see E.1.5).
+
+- [ ] **E.2.2 Mobile — 390×844**
+  - [ ] Smoke pass E.1.1–E.1.5: hierarchy, grouping, hero, rhythm, anchors.
+
+- [ ] **E.2.3 Desktop — ≥1280 width**
+  - [ ] Content stays within intended max width (`max-w-md` shell); page does not look stretched or misaligned.
+  - [ ] Fixed tab bar spans full width while content stays centered — confirm it looks intentional, not broken.
+
+- [ ] **E.2.4 Optional: prefers-color-scheme dark**
+  - [ ] Quick smoke: body text still readable; note any invisible pairs (full dark polish is future work).
+
+- [ ] **E.2 Summary:** All required viewports **Pass** → tick: “Responsive checks completed for mobile + desktop container behavior”.
+
+#### E.3 Handoff to Section F
+
+- [ ] If any E.1/E.2 item **failed**, add under **Issues**: viewport, route (`/`), expected vs observed, severity (blocker / non-blocker), suggested fix (UI/CSS).
+- [ ] If all **passed**, tick: **Ready to check all Section F Phase 1 exit gate items** and run Section F below.
+
+**Section E parent checklist (tick when E.1–E.3 done)**
+
+- [ ] Manual visual checks completed for all five focus areas (E.1)
+- [ ] Responsive checks completed for mobile + desktop container behavior (E.2)
+- [ ] Ready to check all Section F Phase 1 exit gate items (E.3)
+
+### Section F Phase 1 Exit Gate (Open)
+
+- [ ] Authenticated `/` shows new Today/Focus UI
+- [ ] Unauthenticated `/` still shows existing auth surface
+- [ ] All Phase 1 acceptance criteria are met
+- [ ] Ready to start Phase 2 without rework
+
+## Execution Notes
+
+- Keep this checklist focused on **verification/sign-off** only.
+- No new feature scope should be added here.
+- If any check fails, record under **Issues** using the template below before marking the parent checkbox complete.
+- Work through **E.0 → E.1 → E.2 → E.3** in order; do not tick Section F until Section E is fully closed.
+
+## Issues
+
+Use one bullet per issue:
+
+- `[E.x.x] Viewport: … | Route: … | Expected: … | Observed: … | Severity: blocker|non-blocker | Fix: …`
+
+- None recorded yet.
+
+## Sign-Off Summary
+
+- Status: `Manual E.1–E.2 pending` (implementation on `/` now uses live data + new interactions; run the checklist in a browser when ready)
+- Reviewer:
+- Date:
+- Notes: 2026-04-25 — Home shell wired to APIs (XP bar, header date, sections, complete checkbox, quick-add). Section E checkboxes above are intentionally **not** bulk-ticked here; record findings under **Issues** as you run them.

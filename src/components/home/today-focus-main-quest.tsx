@@ -50,7 +50,10 @@ export function TodayFocusMainQuest({ quest, onStartFocus, onOpenQuest }: TodayF
         </div>
 
         <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "var(--color-primary-subtle)" }}>
-          <div className="h-full rounded-full" style={{ width: `${progressPct}%`, background: "var(--color-primary)" }} />
+          <div
+            className="h-full rounded-full transition-[width] duration-500 ease-out"
+            style={{ width: `${progressPct}%`, background: "var(--color-primary)" }}
+          />
         </div>
 
         <div className="mt-3 flex gap-2">

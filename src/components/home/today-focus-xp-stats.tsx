@@ -35,7 +35,10 @@ export function TodayFocusXpStats({ xp, stats }: TodayFocusXpStatsProps) {
           </p>
         </div>
         <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--color-primary-subtle)" }}>
-          <div className="h-full rounded-full" style={{ width: `${progressPct}%`, background: "var(--color-primary)" }} />
+          <div
+            className="h-full rounded-full transition-[width] duration-500 ease-out"
+            style={{ width: `${progressPct}%`, background: "var(--color-primary)" }}
+          />
         </div>
       </div>
 
