@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { createQuest } from "@/lib/client-api";
+import { useToast } from "@/components/feedback/toast-provider";
+import { actionResultToToast, createQuest } from "@/lib/client-api";
 import type { Quest } from "@/types/dashboard";
 
 const DEFAULT_DESCRIPTION = "Forged from Today home.";
@@ -15,6 +16,7 @@ type TodayFocusQuickAddSheetProps = {
 const difficulties: Quest["difficulty"][] = ["easy", "medium", "hard"];
 
 export function TodayFocusQuickAddSheet({ open, onClose, onCreated }: TodayFocusQuickAddSheetProps) {
+  const { pushToast } = useToast();
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("medium");
   const [saving, setSaving] = useState(false);
@@ -65,9 +67,19 @@ export function TodayFocusQuickAddSheet({ open, onClose, onCreated }: TodayFocus
 
     if (!result.ok) {
       setFormError(result.message ?? "Could not create quest.");
+      pushToast(
+        actionResultToToast(result, {
+          fallbackErrorTitle: "Quick add failed",
+        }),
+      );
       return;
     }
 
+    pushToast({
+      tone: "success",
+      title: "Quest created",
+      message: "New quest added to your list.",
+    });
     onCreated();
     onClose();
   }

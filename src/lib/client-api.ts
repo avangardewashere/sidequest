@@ -24,6 +24,12 @@ export type ActionResult<T = null> = {
   errorCode?: "unauthorized" | "validation" | "network" | "server" | "unknown";
 };
 
+export type ActionToast = {
+  tone: "success" | "warning" | "danger";
+  title: string;
+  message?: string;
+};
+
 async function parseJsonSafe(response: Response) {
   try {
     return await response.json();
@@ -91,6 +97,37 @@ async function runAction<T>(
       message: "Network issue. Check your connection and retry.",
     };
   }
+}
+
+export function actionResultToToast<T>(
+  result: ActionResult<T>,
+  copy?: {
+    successTitle?: string;
+    successMessage?: string;
+    fallbackErrorTitle?: string;
+  },
+): ActionToast {
+  if (result.ok) {
+    return {
+      tone: "success",
+      title: copy?.successTitle ?? "Action completed",
+      message: copy?.successMessage,
+    };
+  }
+
+  if (result.errorCode === "validation") {
+    return {
+      tone: "warning",
+      title: copy?.fallbackErrorTitle ?? "Action needs attention",
+      message: result.message ?? "Please review your input and retry.",
+    };
+  }
+
+  return {
+    tone: "danger",
+    title: copy?.fallbackErrorTitle ?? "Action failed",
+    message: result.message ?? "Please try again.",
+  };
 }
 
 export async function fetchQuestsList(query: QuestListQuery): Promise<Quest[]> {

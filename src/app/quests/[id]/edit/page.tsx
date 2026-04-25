@@ -5,13 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
-import { deleteQuestById, getQuestById, updateQuestById } from "@/lib/client-api";
+import { useToast } from "@/components/feedback/toast-provider";
+import { actionResultToToast, deleteQuestById, getQuestById, updateQuestById } from "@/lib/client-api";
 import type { Quest } from "@/types/dashboard";
 
 export default function EditQuestPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const questId = params.id;
+  const { pushToast } = useToast();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -27,6 +29,11 @@ export default function EditQuestPage() {
       const quest = await getQuestById(questId);
       if (!quest) {
         setFeedback("Quest not found.");
+        pushToast({
+          tone: "warning",
+          title: "Quest not found",
+          message: "The requested quest could not be loaded.",
+        });
         setLoading(false);
         return;
       }
@@ -38,7 +45,7 @@ export default function EditQuestPage() {
       setLoading(false);
     };
     void run();
-  }, [questId]);
+  }, [pushToast, questId]);
 
   async function handleUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,11 +59,21 @@ export default function EditQuestPage() {
     });
     if (!updated.ok) {
       setFeedback(updated.message ?? "Could not update quest.");
+      pushToast(
+        actionResultToToast(updated, {
+          fallbackErrorTitle: "Update quest failed",
+        }),
+      );
       return;
     }
     setSavedTitle(title.trim());
     setDeleteConfirmTitle("");
     setFeedback("Quest updated successfully.");
+    pushToast({
+      tone: "success",
+      title: "Quest updated",
+      message: "Changes saved successfully.",
+    });
   }
 
   async function handleDelete() {
@@ -67,14 +84,29 @@ export default function EditQuestPage() {
 
     if (deleteConfirmTitle.trim() !== savedTitle.trim()) {
       setFeedback("Type the saved quest title exactly in the box below to confirm deletion.");
+      pushToast({
+        tone: "warning",
+        title: "Delete confirmation mismatch",
+        message: "Type the exact saved title before deleting.",
+      });
       return;
     }
 
     const deleted = await deleteQuestById(questId, deleteConfirmTitle.trim());
     if (!deleted.ok) {
       setFeedback(deleted.message ?? "Could not delete quest. Check the title matches exactly.");
+      pushToast(
+        actionResultToToast(deleted, {
+          fallbackErrorTitle: "Delete quest failed",
+        }),
+      );
       return;
     }
+    pushToast({
+      tone: "success",
+      title: "Quest deleted",
+      message: "The quest has been removed.",
+    });
     router.push("/quests/view");
   }
 

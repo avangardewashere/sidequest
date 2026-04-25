@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useToast } from "@/components/feedback/toast-provider";
 import {
+  actionResultToToast,
   completeQuestById,
   fetchDashboardData,
   loginWithCredentials,
@@ -22,6 +24,7 @@ export function useDashboardActions({
   prefetchDashboard = true,
   onAfterQuestMutation,
 }: UseDashboardActionsParams) {
+  const { pushToast } = useToast();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -92,13 +95,24 @@ export function useDashboardActions({
 
   async function completeQuest(questId: string) {
     setFeedback("");
-    const { ok, data, message } = await completeQuestById(questId);
+    const result = await completeQuestById(questId);
+    const { ok, data, message } = result;
     if (!ok) {
       setFeedback(message ?? data?.error ?? "Could not complete quest right now.");
+      pushToast(
+        actionResultToToast(result, {
+          fallbackErrorTitle: "Quest completion failed",
+        }),
+      );
       return;
     }
 
     setFeedback(getCompletionFeedback(data ?? {}));
+    pushToast({
+      tone: "success",
+      title: "Quest completed",
+      message: "Rewards were applied to your profile.",
+    });
     await loadData();
     await onAfterQuestMutation?.();
   }

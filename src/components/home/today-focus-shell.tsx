@@ -12,7 +12,8 @@ import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { TodayFocusTaskSection } from "@/components/home/today-focus-task-section";
 import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
-import { completeQuestById } from "@/lib/client-api";
+import { useToast } from "@/components/feedback/toast-provider";
+import { actionResultToToast, completeQuestById } from "@/lib/client-api";
 import {
   buildTodayHeaderData,
   profileToTodayXpData,
@@ -37,6 +38,7 @@ const SECTION_EMPTY: Record<string, string> = {
 
 export function TodayFocusShell() {
   const router = useRouter();
+  const { pushToast } = useToast();
   const { data, isLoading, error, refresh } = useTodayDashboard();
   const [activeTab, setActiveTab] = useState<TodayTabItem["id"]>("today");
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -96,8 +98,17 @@ export function TodayFocusShell() {
             return next;
           });
           setActionMessage(result.message ?? "Could not complete quest.");
+          const toast = actionResultToToast(result, {
+            fallbackErrorTitle: "Quest completion failed",
+          });
+          pushToast(toast);
           return;
         }
+        pushToast({
+          tone: "success",
+          title: "Quest completed",
+          message: "Progress and stats were updated.",
+        });
         setOptimisticDoneIds(new Set());
         await refresh();
       } finally {
@@ -105,7 +116,7 @@ export function TodayFocusShell() {
         completeInFlightRef.current = false;
       }
     },
-    [completingTaskId, refresh],
+    [completingTaskId, pushToast, refresh],
   );
 
   const handleQuickAddCreated = useCallback(() => {

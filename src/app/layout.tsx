@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/session-provider";
+import { OfflineBanner } from "@/components/feedback/offline-banner";
+import { ToastProvider } from "@/components/feedback/toast-provider";
 import { Locator } from "nextjs-locator";
 
 const geistSans = Geist({
@@ -31,7 +33,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthSessionProvider>{children}</AuthSessionProvider>
+        <AuthSessionProvider>
+          <ToastProvider>
+            <OfflineBanner />
+            {children}
+          </ToastProvider>
+        </AuthSessionProvider>
         {process.env.NODE_ENV === "development" ? <Locator editor="cursor" /> : null}
       </body>
     </html>
