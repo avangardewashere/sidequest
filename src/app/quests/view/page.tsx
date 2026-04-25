@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
@@ -12,6 +12,132 @@ import type {
   QuestStatusFilter,
 } from "@/lib/quest-selectors";
 import type { Quest } from "@/types/dashboard";
+
+const QuestCard = memo(function QuestCard({
+  quest,
+  onComplete,
+}: {
+  quest: Quest;
+  onComplete: (questId: string) => void;
+}) {
+  return (
+    <article
+      className="rounded-xl border p-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+      style={{
+        borderColor: "var(--color-border-default)",
+        background: "#ffffffb5",
+      }}
+    >
+      <div
+        className="flex items-start justify-between gap-3 rounded-lg p-3"
+        style={{
+          background: "linear-gradient(to bottom, var(--color-bg-base) 0%, var(--color-bg-elevated) 100%)",
+          boxShadow: "inset 0 0 0 2px var(--color-border-subtle)",
+        }}
+      >
+        <div className="space-y-2" style={{ color: "var(--color-text-primary)" }}>
+          <h3 className={`text-base font-semibold ${quest.status === "completed" ? "line-through opacity-80" : ""}`}>
+            {quest.title}
+          </h3>
+          <p className="text-sm">{quest.description}</p>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span
+              className="rounded-md px-2 py-1"
+              style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)" }}
+            >
+              {quest.category}
+            </span>
+            <span
+              className="rounded-md px-2 py-1"
+              style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
+            >
+              {quest.difficulty}
+            </span>
+            <span
+              className="rounded-md px-2 py-1"
+              style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
+            >
+              +{quest.xpReward} XP
+            </span>
+            {quest.isDaily ? (
+              <span
+                className="rounded-md px-2 py-1"
+                style={{ background: "var(--color-warning-subtle)", color: "var(--color-warning)" }}
+              >
+                Daily
+              </span>
+            ) : null}
+            {quest.status === "completed" ? (
+              <span
+                className="rounded-md px-2 py-1"
+                style={{ background: "var(--color-success-subtle)", color: "var(--color-success)" }}
+              >
+                Completed
+              </span>
+            ) : (
+              <span
+                className="rounded-md px-2 py-1"
+                style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
+              >
+                Active
+              </span>
+            )}
+          </div>
+        </div>
+        {quest.status === "active" ? (
+          <div className="flex gap-2">
+            <Link
+              href={`/quests/${quest._id}/edit`}
+              className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-primary-on-accent)",
+                borderColor: "var(--color-primary-hover)",
+              }}
+            >
+              Edit
+            </Link>
+            <button
+              onClick={() => onComplete(quest._id)}
+              className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-primary-on-accent)",
+                borderColor: "var(--color-primary-hover)",
+              }}
+            >
+              Complete
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Link
+              href={`/quests/${quest._id}/edit`}
+              className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-primary-on-accent)",
+                borderColor: "var(--color-primary-hover)",
+              }}
+            >
+              Edit
+            </Link>
+            <span
+              className="rounded-md border px-3 py-2 text-xs"
+              style={{
+                background: "var(--color-bg-elevated)",
+                color: "var(--color-text-secondary)",
+                borderColor: "var(--color-border-default)",
+              }}
+            >
+              Done
+            </span>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+});
 
 export default function ViewQuestsPage() {
   const { data: session, status } = useSession();
@@ -46,6 +172,18 @@ export default function ViewQuestsPage() {
   useEffect(() => {
     void reloadQuestList();
   }, [reloadQuestList]);
+
+  const handleComplete = useCallback(
+    (questId: string) => {
+      void completeQuest(questId);
+    },
+    [completeQuest],
+  );
+
+  const questCards = useMemo(
+    () => quests.map((quest) => <QuestCard key={quest._id} quest={quest} onComplete={handleComplete} />),
+    [handleComplete, quests],
+  );
 
   if (status === "loading") {
     return (
@@ -141,126 +279,7 @@ export default function ViewQuestsPage() {
             Loading quests...
           </div>
         ) : quests.length ? (
-          quests.map((quest) => (
-            <article
-              key={quest._id}
-              className="rounded-xl border p-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
-              style={{
-                borderColor: "var(--color-border-default)",
-                background: "#ffffffb5",
-              }}
-            >
-              <div
-                className="flex items-start justify-between gap-3 rounded-lg p-3"
-                style={{
-                  background: "linear-gradient(to bottom, var(--color-bg-base) 0%, var(--color-bg-elevated) 100%)",
-                  boxShadow: "inset 0 0 0 2px var(--color-border-subtle)",
-                }}
-              >
-                <div className="space-y-2" style={{ color: "var(--color-text-primary)" }}>
-                  <h3
-                    className={`text-base font-semibold ${quest.status === "completed" ? "line-through opacity-80" : ""}`}
-                  >
-                    {quest.title}
-                  </h3>
-                  <p className="text-sm">{quest.description}</p>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span
-                      className="rounded-md px-2 py-1"
-                      style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)" }}
-                    >
-                      {quest.category}
-                    </span>
-                    <span
-                      className="rounded-md px-2 py-1"
-                      style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
-                    >
-                      {quest.difficulty}
-                    </span>
-                    <span
-                      className="rounded-md px-2 py-1"
-                      style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
-                    >
-                      +{quest.xpReward} XP
-                    </span>
-                    {quest.isDaily ? (
-                      <span
-                        className="rounded-md px-2 py-1"
-                        style={{ background: "var(--color-warning-subtle)", color: "var(--color-warning)" }}
-                      >
-                        Daily
-                      </span>
-                    ) : null}
-                    {quest.status === "completed" ? (
-                      <span
-                        className="rounded-md px-2 py-1"
-                        style={{ background: "var(--color-success-subtle)", color: "var(--color-success)" }}
-                      >
-                        Completed
-                      </span>
-                    ) : (
-                      <span
-                        className="rounded-md px-2 py-1"
-                        style={{ background: "var(--color-primary-subtle)", color: "var(--color-primary)" }}
-                      >
-                        Active
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {quest.status === "active" ? (
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/quests/${quest._id}/edit`}
-                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
-                      style={{
-                        background: "var(--color-primary)",
-                        color: "var(--color-primary-on-accent)",
-                        borderColor: "var(--color-primary-hover)",
-                      }}
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => void completeQuest(quest._id)}
-                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
-                      style={{
-                        background: "var(--color-primary)",
-                        color: "var(--color-primary-on-accent)",
-                        borderColor: "var(--color-primary-hover)",
-                      }}
-                    >
-                      Complete
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/quests/${quest._id}/edit`}
-                      className="rounded-md border px-3 py-2 text-sm transition hover:brightness-95"
-                      style={{
-                        background: "var(--color-primary)",
-                        color: "var(--color-primary-on-accent)",
-                        borderColor: "var(--color-primary-hover)",
-                      }}
-                    >
-                      Edit
-                    </Link>
-                    <span
-                      className="rounded-md border px-3 py-2 text-xs"
-                      style={{
-                        background: "var(--color-bg-elevated)",
-                        color: "var(--color-text-secondary)",
-                        borderColor: "var(--color-border-default)",
-                      }}
-                    >
-                      Done
-                    </span>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))
+          questCards
         ) : (
           <div
             className="rounded-xl border p-4 text-sm"

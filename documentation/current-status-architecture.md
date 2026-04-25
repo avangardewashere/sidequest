@@ -100,10 +100,10 @@ This document reflects the repository's current implementation status.
 
 ## Current Priorities (Recommended)
 
-1. Start Cycle 3.1 global error handling and toast infrastructure
-2. Expand automated coverage for new analytics interactions and retention behaviors
-3. Add performance hardening for stats charts (lazy load + Lighthouse checks)
-4. Prepare deployment and telemetry pass (Vercel + error tracking + analytics)
+1. Monitor production stability on `/`, `/quests/view`, and `/stats`
+2. Verify Vercel Analytics event flow in dashboard after normal traffic window
+3. Triage post-Cycle-3 backlog (minor polish and warning cleanup)
+4. Prepare next planning cycle based on production feedback
 
 ## Documentation Trackers
 
@@ -141,3 +141,8 @@ This document reflects the repository's current implementation status.
 - `/stats` is now fully wired to `/api/metrics/summary` with `7d|30d|90d` ranges, KPI deltas, and three chart surfaces.
 - Accessibility and polish additions shipped (`<details>` data tables, empty-state panel, confirm-only reset action).
 - Remaining scope now transitions to Cycle 3 hardening + deployment readiness.
+
+## Cycle 3 Summary Status
+
+- Cycle 3 implementation scope across phases 3.1 to 3.5 is documented in `documentation/chapter-6-cycle-3-summary.md`.
+- Closeout status: Cycle 3 is fully closed with preview and production deployments completed.

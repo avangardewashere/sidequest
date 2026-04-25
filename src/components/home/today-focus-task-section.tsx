@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { TodayFocusTaskRow } from "@/components/home/today-focus-task-row";
 import type { TaskSectionData } from "@/components/home/today-focus-mock-data";
 
@@ -13,7 +14,7 @@ type TodayFocusTaskSectionProps = {
   onCompleteTask?: (taskId: string) => void;
 };
 
-export function TodayFocusTaskSection({
+function TodayFocusTaskSectionBase({
   section,
   onTaskClick,
   emptyMessage = "Nothing here yet.",
@@ -22,6 +23,15 @@ export function TodayFocusTaskSection({
   optimisticDoneIds,
   onCompleteTask,
 }: TodayFocusTaskSectionProps) {
+  const renderedTasks = useMemo(
+    () =>
+      section.tasks.map((task) => ({
+        ...task,
+        done: task.done || optimisticDoneIds?.has(task.id),
+      })),
+    [optimisticDoneIds, section.tasks],
+  );
+
   return (
     <section className="px-4 pt-4">
       <div className="mb-2 flex items-center justify-between">
@@ -40,13 +50,10 @@ export function TodayFocusTaskSection({
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {section.tasks.map((task) => (
+          {renderedTasks.map((task) => (
             <TodayFocusTaskRow
               key={task.id}
-              task={{
-                ...task,
-                done: task.done || optimisticDoneIds?.has(task.id),
-              }}
+              task={task}
               onClick={onTaskClick}
               showCompleteToggle={showCompleteToggle}
               completeDisabled={completingTaskId === task.id}
@@ -58,3 +65,5 @@ export function TodayFocusTaskSection({
     </section>
   );
 }
+
+export const TodayFocusTaskSection = memo(TodayFocusTaskSectionBase);

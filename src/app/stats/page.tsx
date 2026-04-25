@@ -56,6 +56,14 @@ const CATEGORY_COLORS = [
   "var(--color-warning)",
 ];
 
+type StatsChartPoint = {
+  date: string;
+  value: number;
+  dateShort: string;
+  weekend: boolean;
+  key: string;
+};
+
 export default function StatsPage() {
   const { data, isLoading, error, range, setRange, refresh } = useStats("7d");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -109,6 +117,25 @@ export default function StatsPage() {
   const hasXpHistory = (data?.xpByDay ?? []).some((point) => point.value > 0);
   const hasCategoryData = (data?.byCategory?.length ?? 0) > 0;
   const hasAnyHistory = hasCompletionHistory || hasXpHistory || hasCategoryData;
+  const completionChartData = useMemo<StatsChartPoint[]>(
+    () =>
+      (data?.completionsByDay ?? []).map((point, index) => ({
+        ...point,
+        dateShort: shortDateLabel(point.date),
+        weekend: isWeekend(point.date),
+        key: `${point.date}-${index}`,
+      })),
+    [data?.completionsByDay],
+  );
+  const xpChartData = useMemo(
+    () =>
+      xpLineData.map((point, index) => ({
+        ...point,
+        dateShort: shortDateLabel(point.date),
+        key: `${point.date}-${index}`,
+      })),
+    [xpLineData],
+  );
 
   function handleResetStatsClick() {
     const confirmed = window.confirm(
@@ -240,8 +267,8 @@ export default function StatsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(data?.completionsByDay ?? []).map((point) => (
-                        <tr key={`completion-row-${point.date}`} style={{ color: "var(--color-text-primary)" }}>
+                      {completionChartData.map((point) => (
+                        <tr key={`completion-row-${point.key}`} style={{ color: "var(--color-text-primary)" }}>
                           <td className="px-2 py-1.5">{point.date}</td>
                           <td className="px-2 py-1.5">{point.value}</td>
                         </tr>
@@ -256,23 +283,17 @@ export default function StatsPage() {
           {hasCompletionHistory ? (
             <div className="h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={(data?.completionsByDay ?? []).map((point) => ({
-                    ...point,
-                    dateShort: shortDateLabel(point.date),
-                    weekend: isWeekend(point.date),
-                  }))}
-                >
+                <BarChart data={completionChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dateShort" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} />
                   <Tooltip content={<ThemedChartTooltip />} />
                   <Legend />
                   <Bar dataKey="value" name="Completions" radius={[6, 6, 0, 0]}>
-                    {(data?.completionsByDay ?? []).map((point) => (
+                    {completionChartData.map((point) => (
                       <Cell
-                        key={`completion-bar-${point.date}`}
-                        fill={isWeekend(point.date) ? "var(--color-text-tertiary)" : "var(--color-primary)"}
+                        key={`completion-bar-${point.key}`}
+                        fill={point.weekend ? "var(--color-text-tertiary)" : "var(--color-primary)"}
                       />
                     ))}
                   </Bar>
@@ -306,8 +327,8 @@ export default function StatsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {xpLineData.map((point) => (
-                        <tr key={`xp-row-${point.date}`} style={{ color: "var(--color-text-primary)" }}>
+                      {xpChartData.map((point) => (
+                        <tr key={`xp-row-${point.key}`} style={{ color: "var(--color-text-primary)" }}>
                           <td className="px-2 py-1.5">{point.date}</td>
                           <td className="px-2 py-1.5">{point.value}</td>
                           <td className="px-2 py-1.5">{point.levelUpTo ? `Lv. ${point.levelUpTo}` : "-"}</td>
@@ -323,12 +344,7 @@ export default function StatsPage() {
           {hasXpHistory ? (
             <div className="h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={xpLineData.map((point) => ({
-                    ...point,
-                    dateShort: shortDateLabel(point.date),
-                  }))}
-                >
+                <LineChart data={xpChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dateShort" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} />
@@ -342,12 +358,12 @@ export default function StatsPage() {
                     strokeWidth={2}
                     dot={{ r: 2 }}
                   />
-                  {xpLineData
+                  {xpChartData
                     .filter((point) => point.levelUpTo)
                     .map((point) => (
                       <ReferenceDot
-                        key={`level-up-${point.date}`}
-                        x={shortDateLabel(point.date)}
+                        key={`level-up-${point.key}`}
+                        x={point.dateShort}
                         y={point.value}
                         r={4}
                         fill="var(--color-secondary-strong)"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/session-provider";
 import { OfflineBanner } from "@/components/feedback/offline-banner";
@@ -39,6 +40,7 @@ export default function RootLayout({
             {children}
           </ToastProvider>
         </AuthSessionProvider>
+        <Analytics />
         {process.env.NODE_ENV === "development" ? <Locator editor="cursor" /> : null}
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { TaskMetaItem, TaskRowData } from "@/components/home/today-focus-mock-data";
 
 type TodayFocusTaskRowProps = {
@@ -36,7 +37,7 @@ const priorityColorByLevel: Record<NonNullable<TaskRowData["priority"]>, { bg: s
   },
 };
 
-export function TodayFocusTaskRow({
+function TodayFocusTaskRowBase({
   task,
   onClick,
   showCompleteToggle,
@@ -125,3 +126,5 @@ export function TodayFocusTaskRow({
     </div>
   );
 }
+
+export const TodayFocusTaskRow = memo(TodayFocusTaskRowBase);

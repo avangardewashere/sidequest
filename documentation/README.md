@@ -14,15 +14,17 @@ Use this table of contents to quickly jump to implementation chapters and operat
    - middleware protection, server-side quest queries, delete safety, error UX, showlogger-gated API logging
 5. [Chapter 5 - Cycle 2 Completion (Stats Analytics)](./chapter-5-cycle-2-completion.md)
    - cycle 2 delivered scope, stats analytics architecture, validation evidence, and sign-off
-6. [Progress Summary - Home Data Wiring And Current Status](./progress-summary.md)
+6. [Chapter 6 - Cycle 3 Summary (Hardening And Ship Readiness)](./chapter-6-cycle-3-summary.md)
+   - cycle 3 outcomes across phases 3.1-3.5, validation ledger, deploy blocker, and closeout criteria
+7. [Progress Summary - Home Data Wiring And Current Status](./progress-summary.md)
    - latest implementation summary, validation results, known gaps, and next steps
-7. [Ops Chapter - Environment And Secret Rotation](./chapter-ops-secrets.md)
+8. [Ops Chapter - Environment And Secret Rotation](./chapter-ops-secrets.md)
    - env setup, credential rotation, deployment-safe secret practices
-8. [Dev Notes - One-Liners](./dev-notes-one-liners.md)
+9. [Dev Notes - One-Liners](./dev-notes-one-liners.md)
    - phase-based one-line changelog across Chapters 1-4 and Ops
 
 ## Suggested Reading Order
 
-- New project onboarding: Chapter 1 -> Chapter 2 -> Chapter 3 -> Chapter 4 -> Chapter 5 -> Progress Summary
+- New project onboarding: Chapter 1 -> Chapter 2 -> Chapter 3 -> Chapter 4 -> Chapter 5 -> Chapter 6 -> Progress Summary
 - Production and security checklist: Ops Chapter
 - Refactor reference for future projects: Chapter 3 and Chapter 4
