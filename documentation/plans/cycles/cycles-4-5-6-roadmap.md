@@ -55,4 +55,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Plan and execute Cycle 5 Phase 5.1 (next roadmap wave after Cycle 4 closure).
+- Execute `documentation/plans/cycle-5/phase-5-1-personalized-weekly-review-plan.md` (next Cycle 5 item).
