@@ -42,6 +42,17 @@ export type OnboardingState = {
   encouragementStyle: "gentle" | "direct" | "celebration" | null;
 };
 
+export type WeeklyReview = {
+  rangeStart: string;
+  rangeEnd: string;
+  completionsLast7d: number;
+  weeklyTarget: number;
+  progressPct: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -354,6 +365,19 @@ export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionRe
   return runAction<MetricsSummary>(
     () => fetch(`/api/metrics/summary?range=${encodeURIComponent(range)}`),
     (json) => (json as MetricsSummary | null) ?? null,
+  );
+}
+
+export async function fetchWeeklyReview(): Promise<ActionResult<{ weeklyReview: WeeklyReview }>> {
+  return runAction<{ weeklyReview: WeeklyReview }>(
+    () => fetch("/api/review/weekly"),
+    (json) => {
+      const weeklyReview = (json as { weeklyReview?: WeeklyReview } | null)?.weeklyReview;
+      if (!weeklyReview) {
+        return null;
+      }
+      return { weeklyReview };
+    },
   );
 }
 

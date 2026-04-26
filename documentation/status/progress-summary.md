@@ -254,3 +254,30 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no server-side scheduler/cron implementation
   - no service-worker push pipeline
   - no advanced AI/coaching notification automation
+
+## 17) Cycle 5 - Phase 5.1 closeout (Personalized weekly review)
+
+- Added authenticated weekly review API:
+  - `GET /api/review/weekly` composes the last 7 days of completions for the signed-in user
+  - reuses `User.onboardingWeeklyTarget` (defaults to 5 when unset) and `User.onboardingEncouragementStyle` (defaults to `gentle`)
+  - returns ready-to-render `summaryHeadline` and `summaryMessage` with tone branching across `gentle` / `direct` / `celebration`
+- Added weekly review UI:
+  - new `src/components/review/weekly-review-card.tsx`
+  - mounted at the top of `/stats` (`src/app/stats/page.tsx`) ahead of existing KPI/chart sections
+  - reuses existing loading/error patterns (`var(--color-warning)` panel) consistent with the rest of `/stats`
+- Added client contract:
+  - `WeeklyReview` type and `fetchWeeklyReview()` in `src/lib/client-api.ts`
+- Added test coverage:
+  - `src/tests/api-routes-review.test.ts` (auth + payload composition + encouragement-style branching)
+  - `src/tests/weekly-review-card.test.tsx` (tone variant rendering)
+  - `e2e/weekly-review.spec.ts` (authenticated `/stats` happy path; wired but blocked locally because port `3000` was already in use)
+- Validation:
+  - `npm run test:ci -- src/tests/api-routes-review.test.ts src/tests/weekly-review-card.test.tsx` passed (3/3)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e` passed
+  - `npm run build` passed; build manifest now lists `/api/review/weekly`
+- Scope guardrails held:
+  - no new persistence / no new User fields
+  - no multi-week or historical review comparison (deferred to Phase 5.2)
+  - no event-logged behavioral analytics (gated 5.4 / 5.5 per roadmap)
+  - no sharing/export of the weekly review (Cycle 6 distribution)
