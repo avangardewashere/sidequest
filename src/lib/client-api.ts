@@ -53,6 +53,22 @@ export type WeeklyReview = {
   summaryMessage: string;
 };
 
+export type HistoricalReviewWeek = {
+  rangeStart: string;
+  rangeEnd: string;
+  completions: number;
+  weeklyTarget: number;
+  progressPct: number;
+};
+
+export type HistoricalReview = {
+  weeks: HistoricalReviewWeek[];
+  trend: "rising" | "steady" | "declining";
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -377,6 +393,21 @@ export async function fetchWeeklyReview(): Promise<ActionResult<{ weeklyReview: 
         return null;
       }
       return { weeklyReview };
+    },
+  );
+}
+
+export async function fetchHistoricalReview(
+  weeks: number = 4,
+): Promise<ActionResult<{ historicalReview: HistoricalReview }>> {
+  return runAction<{ historicalReview: HistoricalReview }>(
+    () => fetch(`/api/review/historical?weeks=${encodeURIComponent(String(weeks))}`),
+    (json) => {
+      const historicalReview = (json as { historicalReview?: HistoricalReview } | null)?.historicalReview;
+      if (!historicalReview) {
+        return null;
+      }
+      return { historicalReview };
     },
   );
 }

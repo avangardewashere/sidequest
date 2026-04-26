@@ -25,8 +25,14 @@ import { StatCard } from "@/components/stats/stat-card";
 import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
 import { WeeklyReviewCard } from "@/components/review/weekly-review-card";
+import { HistoricalReviewCard } from "@/components/review/historical-review-card";
 import { useStats } from "@/hooks/useStats";
-import { fetchWeeklyReview, type WeeklyReview } from "@/lib/client-api";
+import {
+  fetchHistoricalReview,
+  fetchWeeklyReview,
+  type HistoricalReview,
+  type WeeklyReview,
+} from "@/lib/client-api";
 
 function percentDelta(current: number, previous: number): number {
   if (previous === 0 && current === 0) {
@@ -73,6 +79,9 @@ export default function StatsPage() {
   const [weeklyReview, setWeeklyReview] = useState<WeeklyReview | null>(null);
   const [weeklyReviewLoading, setWeeklyReviewLoading] = useState(true);
   const [weeklyReviewError, setWeeklyReviewError] = useState<string | null>(null);
+  const [historicalReview, setHistoricalReview] = useState<HistoricalReview | null>(null);
+  const [historicalReviewLoading, setHistoricalReviewLoading] = useState(true);
+  const [historicalReviewError, setHistoricalReviewError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const completionsSparkline = data?.completionsByDay.map((point) => point.value) ?? [];
@@ -166,6 +175,28 @@ export default function StatsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setHistoricalReviewLoading(true);
+      setHistoricalReviewError(null);
+      const result = await fetchHistoricalReview(4);
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setHistoricalReviewError(result.message ?? "Failed to load historical review.");
+        setHistoricalReviewLoading(false);
+        return;
+      }
+      setHistoricalReview(result.data.historicalReview);
+      setHistoricalReviewLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   function handleResetStatsClick() {
     const confirmed = window.confirm(
       "Reset stats is not wired yet. This is a preview action only. Continue?",
@@ -216,6 +247,32 @@ export default function StatsPage() {
 
       {!weeklyReviewLoading && !weeklyReviewError && weeklyReview ? (
         <WeeklyReviewCard review={weeklyReview} />
+      ) : null}
+
+      {historicalReviewLoading ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+        >
+          <p style={{ color: "var(--color-text-secondary)" }}>Loading historical review...</p>
+        </section>
+      ) : null}
+
+      {!historicalReviewLoading && historicalReviewError ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{
+            borderColor: "var(--color-warning)",
+            background: "var(--color-warning-subtle)",
+            color: "var(--color-warning)",
+          }}
+        >
+          <p>{historicalReviewError}</p>
+        </section>
+      ) : null}
+
+      {!historicalReviewLoading && !historicalReviewError && historicalReview ? (
+        <HistoricalReviewCard review={historicalReview} />
       ) : null}
 
       {error ? (
