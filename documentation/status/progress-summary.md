@@ -169,3 +169,27 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - Scope guardrails held:
   - no Phase 4.4 profile/settings internals were implemented
   - no onboarding/reminder behavior was introduced
+
+## 14) Cycle 4 - Phase 4.4 closeout (You tab + settings baseline)
+
+- Upgraded `/you` from a placeholder shell into a baseline settings experience with three scoped sections:
+  - profile summary card (display name, email, level/XP, streaks)
+  - profile basics editor (display-name update + save feedback)
+  - password flow scaffold (current/new/confirm validation + submit)
+- Added minimal authenticated settings APIs:
+  - `GET /api/you/profile` (baseline profile payload)
+  - `PATCH /api/you/profile` (display-name update)
+  - `PATCH /api/you/password` (current-password verification + password-hash update)
+- Added focused test coverage:
+  - `src/tests/you-settings-routes.test.ts`
+  - `e2e/you-settings.spec.ts`
+- Validation:
+  - `npm run test:ci` passed
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+  - `npx playwright test e2e/you-settings.spec.ts --config=playwright.phase44.reuse3001.config.ts` passed
+- Scope guardrails held:
+  - no Phase 4.5 onboarding logic was introduced
+  - no Phase 4.6 reminder/scheduling work was added
+  - no advanced account-security surfaces (device/session management) were added

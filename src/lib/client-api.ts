@@ -17,6 +17,15 @@ type DashboardData = {
   dailies: Quest[];
 };
 
+export type YouProfile = {
+  email: string;
+  displayName: string;
+  level: number;
+  totalXp: number;
+  currentStreak: number;
+  longestStreak: number;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -329,6 +338,53 @@ export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionRe
   return runAction<MetricsSummary>(
     () => fetch(`/api/metrics/summary?range=${encodeURIComponent(range)}`),
     (json) => (json as MetricsSummary | null) ?? null,
+  );
+}
+
+export async function fetchYouProfile(): Promise<ActionResult<{ profile: YouProfile }>> {
+  return runAction<{ profile: YouProfile }>(
+    () => fetch("/api/you/profile"),
+    (json) => {
+      const profile = (json as { profile?: YouProfile } | null)?.profile;
+      if (!profile) {
+        return null;
+      }
+      return { profile };
+    },
+  );
+}
+
+export async function updateYouProfile(displayName: string): Promise<ActionResult<{ profile: YouProfile }>> {
+  return runAction<{ profile: YouProfile }>(
+    () =>
+      fetch("/api/you/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName }),
+      }),
+    (json) => {
+      const profile = (json as { profile?: YouProfile } | null)?.profile;
+      if (!profile) {
+        return null;
+      }
+      return { profile };
+    },
+  );
+}
+
+export async function changeYouPassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<ActionResult> {
+  return runAction(
+    () =>
+      fetch("/api/you/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    () => null,
   );
 }
 

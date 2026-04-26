@@ -20,7 +20,7 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 1. Phase 4.1 - real focus-time pipeline (`closed`)
 2. Phase 4.3 - bottom tab routing (`closed`)
-3. Phase 4.4 - You tab + settings baseline
+3. Phase 4.4 - You tab + settings baseline (`closed`)
 
 ### Wave 2 - Cycle 4 engagement polish
 
@@ -55,4 +55,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Execute `documentation/plans/cycle-4/phase-4-4-you-tab-settings-plan.md` (next Wave 1 foundation item).
+- Execute `documentation/plans/cycle-4/phase-4-5-onboarding-flow-plan.md` (next Cycle 4 item).
