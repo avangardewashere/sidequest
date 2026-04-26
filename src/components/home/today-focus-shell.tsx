@@ -11,11 +11,17 @@ import { TodayFocusQuickAddSheet } from "@/components/home/today-focus-quick-add
 import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { TodayFocusTaskSection } from "@/components/home/today-focus-task-section";
 import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
+import { NextBestQuestCard } from "@/components/home/next-best-quest-card";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
 import { useFocusTimer } from "@/hooks/useFocusTimer";
 import { usePomodoroCycle } from "@/hooks/usePomodoroCycle";
 import { useToast } from "@/components/feedback/toast-provider";
-import { actionResultToToast, completeQuestById } from "@/lib/client-api";
+import {
+  actionResultToToast,
+  completeQuestById,
+  fetchTodaySuggestion,
+  type NextBestQuestSuggestion,
+} from "@/lib/client-api";
 import {
   consumeDailyCue,
   consumeLevelUpCelebration,
@@ -57,6 +63,9 @@ export function TodayFocusShell() {
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [optimisticDoneIds, setOptimisticDoneIds] = useState<Set<string>>(() => new Set());
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<NextBestQuestSuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(true);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [completionDateKey, setCompletionDateKey] = useState<string | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">(
@@ -190,6 +199,28 @@ export function TodayFocusShell() {
   const streakAtRisk = shouldShowStreakRisk(now, hasCompletionToday);
 
   useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setSuggestionLoading(true);
+      setSuggestionError(null);
+      const result = await fetchTodaySuggestion();
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setSuggestionError(result.message ?? "Failed to load next-best quest suggestion.");
+        setSuggestionLoading(false);
+        return;
+      }
+      setSuggestion(result.data.suggestion ?? null);
+      setSuggestionLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     setCompletionDateKey(readLastCompletionDateKey());
   }, []);
 
@@ -312,6 +343,36 @@ export function TodayFocusShell() {
               <p className="px-4 pt-2 text-sm" style={{ color: "var(--color-danger)" }}>
                 {actionMessage}
               </p>
+            ) : null}
+
+            {suggestionLoading ? (
+              <section className="px-4 pt-3" aria-label="Next best quest loading">
+                <div
+                  className="rounded-xl border p-4 text-sm"
+                  style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+                >
+                  <p style={{ color: "var(--color-text-secondary)" }}>Loading next-best quest...</p>
+                </div>
+              </section>
+            ) : null}
+
+            {!suggestionLoading && suggestionError ? (
+              <section className="px-4 pt-3" aria-label="Next best quest error">
+                <div
+                  className="rounded-xl border p-4 text-sm"
+                  style={{
+                    borderColor: "var(--color-warning)",
+                    background: "var(--color-warning-subtle)",
+                    color: "var(--color-warning)",
+                  }}
+                >
+                  <p>{suggestionError}</p>
+                </div>
+              </section>
+            ) : null}
+
+            {!suggestionLoading && !suggestionError && suggestion ? (
+              <NextBestQuestCard suggestion={suggestion} />
             ) : null}
 
             {mainQuest ? (

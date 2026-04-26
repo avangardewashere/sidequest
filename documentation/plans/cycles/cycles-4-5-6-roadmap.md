@@ -32,13 +32,14 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 7. Phase 5.1 - personalized weekly review (closed)
 8. Phase 5.2 - historical review trend (closed)
-9. Phases 5.3 through 5.6 in order, with 5.4 and 5.5 gated on stable event logging.
+9. Phase 5.3 - focus-area next-best quest (closed)
+10. Phases 5.4 through 5.6 in order, with 5.4 and 5.5 gated on stable event logging.
 
 ### Wave 4 - Cycle 6 platform/distribution
 
-10. Phase 6.1 before 6.2 (PWA before offline queue)
-11. Phases 6.3 and 6.4 may be planned in parallel but implemented sequentially
-12. Phase 6.5 (recap) then 6.6 (public launch/monitoring)
+11. Phase 6.1 before 6.2 (PWA before offline queue)
+12. Phases 6.3 and 6.4 may be planned in parallel but implemented sequentially
+13. Phase 6.5 (recap) then 6.6 (public launch/monitoring)
 
 ## Dependency Notes
 
@@ -57,4 +58,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Execute `documentation/plans/cycle-5/phase-5-3-focus-area-next-best-quest-plan.md` (next Cycle 5 item).
+- Execute `documentation/plans/cycle-5/phase-5-4-behavioral-event-logging-plan.md` (next Cycle 5 item).

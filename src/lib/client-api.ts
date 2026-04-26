@@ -69,6 +69,16 @@ export type HistoricalReview = {
   summaryMessage: string;
 };
 
+export type NextBestQuestSuggestion = {
+  questId: string;
+  title: string;
+  category: Quest["category"];
+  reason: "focus_area_match" | "category_rotation" | "fallback_priority";
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -408,6 +418,19 @@ export async function fetchHistoricalReview(
         return null;
       }
       return { historicalReview };
+    },
+  );
+}
+
+export async function fetchTodaySuggestion(): Promise<ActionResult<{ suggestion: NextBestQuestSuggestion | null }>> {
+  return runAction<{ suggestion: NextBestQuestSuggestion | null }>(
+    () => fetch("/api/today/suggestion"),
+    (json) => {
+      const payload = json as { suggestion?: NextBestQuestSuggestion | null } | null;
+      if (!payload || !("suggestion" in payload)) {
+        return null;
+      }
+      return { suggestion: payload.suggestion ?? null };
     },
   );
 }

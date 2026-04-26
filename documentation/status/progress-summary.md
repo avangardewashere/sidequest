@@ -311,3 +311,32 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no per-day drill-in (deferred to a later Cycle 5 phase)
   - no event-logged behavioral analytics (gated 5.4 / 5.5)
   - no sharing/export workflow
+
+## 19) Cycle 5 - Phase 5.3 closeout (Focus-area next-best quest)
+
+- Added authenticated next-best-quest suggestion API:
+  - `GET /api/today/suggestion` returns `{ suggestion | null }` for the signed-in user's active quests
+  - Deterministic ranking: focus-area category match (from `User.onboardingFocusArea`) -> category rotation against the last 7 days of `CompletionLog` -> priority fallback using existing `priority_due` ordering
+  - Reason enum (`focus_area_match` / `category_rotation` / `fallback_priority`) drives tone-aware copy keyed off `User.onboardingEncouragementStyle` (`gentle` / `direct` / `celebration`)
+- Added Today UI integration:
+  - new `src/components/home/next-best-quest-card.tsx`
+  - mounted near the top of `src/components/home/today-focus-shell.tsx` ahead of existing main quest / queue sections
+  - reuses existing loading / error panel patterns; no disruption to current Today flow
+- Added client contract:
+  - `NextBestQuestSuggestion` type and `fetchTodaySuggestion()` action in `src/lib/client-api.ts`
+- Added test coverage:
+  - `src/tests/api-routes-today-suggestion.test.ts` (auth, null when no active quests, focus-match preference, category rotation, priority fallback, encouragement-style branching)
+  - `src/tests/next-best-quest-card.test.tsx` (reason labels + tone badge variants)
+  - `e2e/today-next-best-quest.spec.ts` (Today happy path; mocked API responses)
+- Validation:
+  - `npm run test:ci` passed (20/20 files, 103/103 tests)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest now includes `/api/today/suggestion` alongside `/api/review/weekly` and `/api/review/historical`
+  - `npx playwright test e2e/today-next-best-quest.spec.ts` remains environment-blocked locally because port `3000` is already in use (same caveat as Phases 5.1 and 5.2)
+- Scope guardrails held:
+  - no new persistence / no new `User` fields
+  - no multi-suggestion feed or carousel
+  - no AI/LLM-generated recommendation logic
+  - no event-logged behavioral analytics (gated 5.4 per roadmap)
+  - no sharing/export workflow
