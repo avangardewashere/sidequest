@@ -24,6 +24,14 @@ export type YouProfile = {
   totalXp: number;
   currentStreak: number;
   longestStreak: number;
+  reminders: ReminderSettings;
+};
+
+export type ReminderSettings = {
+  enabled: boolean;
+  timeLocal: string | null;
+  days: number[];
+  lastFiredOn: string | null;
 };
 
 export type OnboardingState = {
@@ -362,13 +370,19 @@ export async function fetchYouProfile(): Promise<ActionResult<{ profile: YouProf
   );
 }
 
-export async function updateYouProfile(displayName: string): Promise<ActionResult<{ profile: YouProfile }>> {
+export async function updateYouProfile(payload: {
+  displayName?: string;
+  remindersEnabled?: boolean;
+  reminderTimeLocal?: string | null;
+  reminderDays?: number[];
+  reminderLastFiredOn?: string | null;
+}): Promise<ActionResult<{ profile: YouProfile }>> {
   return runAction<{ profile: YouProfile }>(
     () =>
       fetch("/api/you/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName }),
+        body: JSON.stringify(payload),
       }),
     (json) => {
       const profile = (json as { profile?: YouProfile } | null)?.profile;

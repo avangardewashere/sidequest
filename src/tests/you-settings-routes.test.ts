@@ -50,6 +50,10 @@ describe("you settings API routes", () => {
       totalXp: 200,
       currentStreak: 3,
       longestStreak: 7,
+      remindersEnabled: false,
+      reminderTimeLocal: null,
+      reminderDays: [1, 2, 3, 4, 5],
+      reminderLastFiredOn: null,
       save,
     });
 
@@ -63,6 +67,52 @@ describe("you settings API routes", () => {
     expect(response.status).toBe(200);
     expect(save).toHaveBeenCalledTimes(1);
     expect(json.profile.displayName).toBe("New Name");
+    expect(json.profile.reminders.enabled).toBe(false);
+  });
+
+  it("PATCH /api/you/profile validates reminder payload", async () => {
+    mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+    const response = await profileRoute.PATCH(
+      new Request("http://localhost/api/you/profile", {
+        method: "PATCH",
+        body: JSON.stringify({ remindersEnabled: true, reminderTimeLocal: "25:61" }),
+      }),
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("PATCH /api/you/profile saves reminders settings", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+    mockUserFindById.mockResolvedValue({
+      email: "u1@sidequest.test",
+      displayName: "User",
+      level: 2,
+      totalXp: 200,
+      currentStreak: 3,
+      longestStreak: 7,
+      remindersEnabled: false,
+      reminderTimeLocal: null,
+      reminderDays: [1, 2, 3, 4, 5],
+      reminderLastFiredOn: null,
+      save,
+    });
+    const response = await profileRoute.PATCH(
+      new Request("http://localhost/api/you/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          remindersEnabled: true,
+          reminderTimeLocal: "19:30",
+          reminderDays: [1, 3, 5],
+        }),
+      }),
+    );
+    const json = await response.json();
+    expect(response.status).toBe(200);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(json.profile.reminders.enabled).toBe(true);
+    expect(json.profile.reminders.timeLocal).toBe("19:30");
+    expect(json.profile.reminders.days).toEqual([1, 3, 5]);
   });
 
   it("PATCH /api/you/password rejects wrong current password", async () => {

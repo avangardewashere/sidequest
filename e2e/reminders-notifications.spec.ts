@@ -12,10 +12,10 @@ function asJsonResponse(body: unknown, status = 200) {
 async function addAuthenticatedSessionCookie(page: import("@playwright/test").Page) {
   const token = await encode({
     token: {
-      name: "You E2E User",
-      email: "you-e2e@sidequest.test",
-      userId: "you-e2e-user-id",
-      sub: "you-e2e-user-id",
+      name: "Reminder E2E User",
+      email: "reminder-e2e@sidequest.test",
+      userId: "reminder-e2e-user-id",
+      sub: "reminder-e2e-user-id",
     },
     secret: process.env.AUTH_SECRET ?? "test-auth-secret",
   });
@@ -32,13 +32,13 @@ async function addAuthenticatedSessionCookie(page: import("@playwright/test").Pa
   );
 }
 
-test("you page supports baseline profile save flow", async ({ page }) => {
+test("you page saves local reminder settings", async ({ page }) => {
   await addAuthenticatedSessionCookie(page);
 
   await page.route("**/api/auth/session**", async (route) => {
     await route.fulfill(
       asJsonResponse({
-        user: { name: "You E2E User", email: "you-e2e@sidequest.test", image: null },
+        user: { name: "Reminder E2E User", email: "reminder-e2e@sidequest.test", image: null },
         expires: "2099-01-01T00:00:00.000Z",
       }),
     );
@@ -49,12 +49,12 @@ test("you page supports baseline profile save flow", async ({ page }) => {
       await route.fulfill(
         asJsonResponse({
           profile: {
-            email: "you-e2e@sidequest.test",
-            displayName: "You E2E User",
-            level: 4,
-            totalXp: 320,
-            currentStreak: 3,
-            longestStreak: 9,
+            email: "reminder-e2e@sidequest.test",
+            displayName: "Reminder E2E User",
+            level: 5,
+            totalXp: 640,
+            currentStreak: 6,
+            longestStreak: 11,
             reminders: {
               enabled: false,
               timeLocal: null,
@@ -70,16 +70,16 @@ test("you page supports baseline profile save flow", async ({ page }) => {
     await route.fulfill(
       asJsonResponse({
         profile: {
-          email: "you-e2e@sidequest.test",
-          displayName: "Renamed User",
-          level: 4,
-          totalXp: 320,
-          currentStreak: 3,
-          longestStreak: 9,
+          email: "reminder-e2e@sidequest.test",
+          displayName: "Reminder E2E User",
+          level: 5,
+          totalXp: 640,
+          currentStreak: 6,
+          longestStreak: 11,
           reminders: {
-            enabled: false,
-            timeLocal: null,
-            days: [1, 2, 3, 4, 5],
+            enabled: true,
+            timeLocal: "19:30",
+            days: [1, 3, 5],
             lastFiredOn: null,
           },
         },
@@ -89,10 +89,13 @@ test("you page supports baseline profile save flow", async ({ page }) => {
 
   await page.goto("/you");
   await expect(page.getByRole("heading", { name: "You" })).toBeVisible();
-  await expect(page.getByText("You E2E User")).toBeVisible();
 
-  await page.getByLabel("Display name").fill("Renamed User");
-  await page.getByRole("button", { name: "Save profile" }).click();
+  await page.getByLabel("Enable reminders").check();
+  await page.getByLabel("Reminder time").fill("19:30");
+  await page.getByRole("button", { name: "Mon" }).click();
+  await page.getByRole("button", { name: "Wed" }).click();
+  await page.getByRole("button", { name: "Fri" }).click();
+  await page.getByRole("button", { name: "Save reminders" }).click();
 
-  await expect(page.getByText("Renamed User")).toBeVisible();
+  await expect(page.getByText("Reminders saved")).toBeVisible();
 });

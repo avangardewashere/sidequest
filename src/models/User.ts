@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema(
     onboardingFocusArea: { type: String, default: null },
     onboardingWeeklyTarget: { type: Number, default: null },
     onboardingEncouragementStyle: { type: String, default: null },
+    remindersEnabled: { type: Boolean, default: false },
+    reminderTimeLocal: { type: String, default: null },
+    reminderDays: { type: [Number], default: [1, 2, 3, 4, 5] },
+    reminderLastFiredOn: { type: String, default: null },
   },
   {
     timestamps: true,

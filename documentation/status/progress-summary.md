@@ -220,3 +220,37 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - Scope guardrails held:
   - no reminder scheduling implementation (Phase 4.6)
   - no advanced security/settings expansion
+
+## 16) Cycle 4 - Phase 4.6 closeout (Reminders/notifications)
+
+- Added baseline reminder persistence on `User`:
+  - `remindersEnabled`
+  - `reminderTimeLocal`
+  - `reminderDays`
+  - `reminderLastFiredOn`
+- Extended authenticated settings API contract on `/api/you/profile`:
+  - `GET` now returns `profile.reminders`
+  - `PATCH` now validates and saves reminder settings payload fields
+- Added reminder settings UI in `/you`:
+  - local reminders enable toggle
+  - reminder time selector
+  - weekday selection
+  - explicit browser-notification permission action
+- Added local scheduling behavior:
+  - new `useLocalReminders` hook for in-app/browser-local delivery while app is open
+  - same-day dedupe via `reminderLastFiredOn`
+  - fallback to in-app toast when notification permission is unavailable
+- Added test coverage:
+  - `src/tests/you-settings-routes.test.ts`
+  - `src/tests/use-local-reminders.test.ts`
+  - `e2e/reminders-notifications.spec.ts`
+- Validation:
+  - `npm run test:ci` passed (`14/14 files`, `76/76 tests`; includes pre-existing act warnings from unrelated dashboard tests)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+  - `npx playwright test e2e/reminders-notifications.spec.ts` passed
+- Scope guardrails held:
+  - no server-side scheduler/cron implementation
+  - no service-worker push pipeline
+  - no advanced AI/coaching notification automation
