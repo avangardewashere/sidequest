@@ -123,3 +123,49 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - scoped lint `npx eslint src e2e --ext .ts,.tsx` passed
   - `npm run build` passed
 - No historical backfill is applied for focus minutes: existing users will display `0m` until they accumulate real focus sessions.
+
+## 12) Cycle 4 - Phase 4.2 closeout (Pomodoro mode)
+
+- Added Pomodoro mode orchestration on Today/main quest with configurable focus/break minutes (default 25/5).
+- Added `usePomodoroCycle` hook (`src/hooks/usePomodoroCycle.ts`) to manage focus->break transitions and manual stop behavior.
+- Integrated Pomodoro controls into `src/components/home/today-focus-shell.tsx` while reusing the existing Phase 4.1 focus-session APIs.
+- Added cycle-end feedback:
+  - in-app toasts
+  - browser notifications only when permission is already granted (explicit opt-in button, no prompt spam).
+- Added tests and happy-path e2e:
+  - `src/tests/use-pomodoro-cycle.test.tsx`
+  - `e2e/pomodoro-mode.spec.ts`
+- Validation:
+  - `npm run typecheck` passed
+  - targeted `npm run test:ci -- use-pomodoro-cycle use-focus-timer focus-pipeline api-routes-focus client-api-today-dashboard today-dashboard-mappers` passed
+  - scoped lint `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+  - `npx playwright test e2e/pomodoro-mode.spec.ts --config=playwright.phase4.reuse3001.config.ts` passed
+- Focus-XP bonus persistence remains out of scope for 4.2 and is intentionally deferred.
+
+## 13) Cycle 4 - Phase 4.3 closeout (Bottom tab routing)
+
+- Replaced presentational tab behavior with route-driven navigation using a canonical tab-route map:
+  - `today -> /`
+  - `quests -> /quests/view`
+  - `stats -> /stats`
+  - `you -> /you`
+- Added shared tab routing helpers in `src/lib/tab-routes.ts` and switched active-tab state to pathname-derived behavior.
+- Updated bottom tab component to use `next/link` navigation with `aria-current` for active route semantics.
+- Added minimal `/you` route shell (`src/app/you/page.tsx`) and ensured tab bar renders on all core tab routes:
+  - `/`
+  - `/quests/view`
+  - `/stats`
+  - `/you`
+- Added test coverage:
+  - `src/tests/tab-routes.test.ts`
+  - `e2e/bottom-tab-routing.spec.ts`
+- Validation:
+  - `npm run typecheck` passed
+  - `npm run test:ci -- tab-routes` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+  - `npx playwright test e2e/bottom-tab-routing.spec.ts --config=playwright.phase4.reuse3001.config.ts` passed
+- Scope guardrails held:
+  - no Phase 4.4 profile/settings internals were implemented
+  - no onboarding/reminder behavior was introduced

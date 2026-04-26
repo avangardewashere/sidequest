@@ -52,7 +52,7 @@ export type TaskSectionData = {
 };
 
 export type TodayTabItem = {
-  id: "today" | "quests" | "calendar" | "codex";
+  id: "today" | "quests" | "stats" | "you";
   label: string;
 };
 
@@ -173,7 +173,7 @@ export const todayFocusMockData: TodayFocusMockData = {
   tabs: [
     { id: "today", label: "Today" },
     { id: "quests", label: "Quests" },
-    { id: "calendar", label: "Calendar" },
-    { id: "codex", label: "Codex" },
+    { id: "stats", label: "Stats" },
+    { id: "you", label: "You" },
   ],
 };

@@ -6,13 +6,14 @@ import { TodayFocusFab } from "@/components/home/today-focus-fab";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
 import { TodayFocusMainQuest } from "@/components/home/today-focus-main-quest";
 import { TodayFocusHeaderXpSkeleton, TodayFocusTaskRowsSkeleton } from "@/components/home/today-focus-loading-skeleton";
-import { todayFocusMockData, type TodayTabItem } from "@/components/home/today-focus-mock-data";
+import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
 import { TodayFocusQuickAddSheet } from "@/components/home/today-focus-quick-add-sheet";
 import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { TodayFocusTaskSection } from "@/components/home/today-focus-task-section";
 import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
 import { useFocusTimer } from "@/hooks/useFocusTimer";
+import { usePomodoroCycle } from "@/hooks/usePomodoroCycle";
 import { useToast } from "@/components/feedback/toast-provider";
 import { actionResultToToast, completeQuestById } from "@/lib/client-api";
 import {
@@ -51,7 +52,6 @@ export function TodayFocusShell() {
   const { pushToast } = useToast();
   const { data, isLoading, error, refresh } = useTodayDashboard();
   const { state: focusState, start: startFocus, stop: stopFocus, hydratedWithActive } = useFocusTimer();
-  const [activeTab, setActiveTab] = useState<TodayTabItem["id"]>("today");
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddSession, setQuickAddSession] = useState(0);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
@@ -59,6 +59,14 @@ export function TodayFocusShell() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [completionDateKey, setCompletionDateKey] = useState<string | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">(
+    () => {
+      if (typeof window === "undefined" || typeof Notification === "undefined") {
+        return "unsupported";
+      }
+      return Notification.permission;
+    },
+  );
   const completeInFlightRef = useRef(false);
 
   const snapshot = data ?? EMPTY_SNAPSHOT;
@@ -70,22 +78,48 @@ export function TodayFocusShell() {
 
   const handleMenuClick = () => {};
   const handleSearchClick = () => {};
-  const handleStartFocus = useCallback(async () => {
-    try {
+  const notifyCycle = useCallback(
+    (title: string, message: string) => {
+      pushToast({ tone: "info", title, message });
+      if (notificationPermission === "granted" && typeof Notification !== "undefined") {
+        new Notification(title, { body: message });
+      }
+    },
+    [notificationPermission, pushToast],
+  );
+
+  const pomodoro = usePomodoroCycle({
+    onFocusStart: async () => {
       await startFocus(mainQuest?.id);
       pushToast({
         tone: "info",
-        title: "Focus session started",
-        message: "Stay locked in. Stop when you complete your focus block.",
+        title: "Pomodoro started",
+        message: "Focus cycle is now running.",
       });
+    },
+    onFocusStop: async () => {
+      await stopFocus();
+      await refresh();
+    },
+    onFocusComplete: () => {
+      notifyCycle("Focus cycle complete", "Break cycle started.");
+    },
+    onBreakComplete: () => {
+      notifyCycle("Break complete", "Ready for your next focus cycle.");
+    },
+  });
+
+  const handleStartFocus = useCallback(async () => {
+    try {
+      await pomodoro.start();
     } catch (e) {
       pushToast({
         tone: "danger",
-        title: "Could not start focus session",
+        title: "Could not start Pomodoro",
         message: e instanceof Error ? e.message : "Please try again.",
       });
     }
-  }, [mainQuest?.id, pushToast, startFocus]);
+  }, [pomodoro, pushToast]);
   const handleOpenQuest = useCallback(() => {
     if (mainQuest?.id) {
       router.push(`/quests/${mainQuest.id}/edit`);
@@ -102,10 +136,6 @@ export function TodayFocusShell() {
   const handleFabClick = () => {
     setQuickAddSession((n) => n + 1);
     setQuickAddOpen(true);
-  };
-
-  const handleTabChange = (tabId: TodayTabItem["id"]) => {
-    setActiveTab(tabId);
   };
 
   const handleCompleteTask = useCallback(
@@ -206,6 +236,21 @@ export function TodayFocusShell() {
       message: "You have an active focus session — keep going or stop.",
     });
   }, [focusState.startedAt, hydratedWithActive, pushToast]);
+
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof Notification === "undefined") {
+      return;
+    }
+    const next = await Notification.requestPermission();
+    setNotificationPermission(next);
+    if (next === "granted") {
+      pushToast({
+        tone: "success",
+        title: "Notifications enabled",
+        message: "Pomodoro cycle-end notifications are now active.",
+      });
+    }
+  }, [pushToast]);
 
   return (
     <div className="relative min-h-screen">
@@ -320,6 +365,84 @@ export function TodayFocusShell() {
               </div>
             ) : null}
 
+            <section className="px-4 pt-3">
+              <div
+                className="rounded-xl border p-3"
+                style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-surface)" }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
+                    Pomodoro
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                    {pomodoro.phaseLabel}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                    Focus (min)
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={pomodoro.state.focusMinutes}
+                      className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                      style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-primary)" }}
+                      onChange={(e) => pomodoro.setFocusMinutes(Number(e.target.value))}
+                    />
+                  </label>
+                  <label className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                    Break (min)
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={pomodoro.state.breakMinutes}
+                      className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                      style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-primary)" }}
+                      onChange={(e) => pomodoro.setBreakMinutes(Number(e.target.value))}
+                    />
+                  </label>
+                </div>
+                <p className="mt-2 text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {Math.floor(pomodoro.state.remainingSec / 60)}m {pomodoro.state.remainingSec % 60}s
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {!pomodoro.state.isRunning ? (
+                    <button
+                      type="button"
+                      className="rounded-full px-3 py-2 text-xs font-medium"
+                      style={{ background: "var(--color-primary)", color: "var(--color-primary-on-accent)" }}
+                      onClick={() => void handleStartFocus()}
+                    >
+                      Start cycle
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rounded-full border px-3 py-2 text-xs font-medium"
+                      style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-primary)" }}
+                      onClick={() => {
+                        void pomodoro.stop();
+                      }}
+                    >
+                      Stop cycle
+                    </button>
+                  )}
+                  {notificationPermission === "default" ? (
+                    <button
+                      type="button"
+                      className="rounded-full border px-3 py-2 text-xs font-medium"
+                      style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-secondary)" }}
+                      onClick={() => void requestNotificationPermission()}
+                    >
+                      Enable notifications
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+
             {sections.map((section) => (
               <TodayFocusTaskSection
                 key={section.id}
@@ -337,7 +460,7 @@ export function TodayFocusShell() {
       </main>
 
       <TodayFocusFab onClick={handleFabClick} />
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
       <TodayFocusQuickAddSheet
         key={quickAddSession}
         open={quickAddOpen}

@@ -22,6 +22,8 @@ import { levelFromTotalXp } from "@/lib/xp";
 import { ChartShell, ThemedChartTooltip } from "@/components/stats/chart-shell";
 import { RangeSwitcher } from "@/components/stats/range-switcher";
 import { StatCard } from "@/components/stats/stat-card";
+import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
+import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
 import { useStats } from "@/hooks/useStats";
 
 function percentDelta(current: number, previous: number): number {
@@ -149,7 +151,8 @@ export default function StatsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6">
+    <div className="relative min-h-screen">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-28">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
@@ -502,6 +505,8 @@ export default function StatsPage() {
           </p>
         ) : null}
       </div>
-    </main>
+      </main>
+      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
+    </div>
   );
 }

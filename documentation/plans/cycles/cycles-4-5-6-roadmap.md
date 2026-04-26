@@ -18,13 +18,13 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ### Wave 1 - Cycle 4 foundation
 
-1. Phase 4.1 - real focus-time pipeline (`in progress`)
-2. Phase 4.3 - bottom tab routing
+1. Phase 4.1 - real focus-time pipeline (`closed`)
+2. Phase 4.3 - bottom tab routing (`closed`)
 3. Phase 4.4 - You tab + settings baseline
 
 ### Wave 2 - Cycle 4 engagement polish
 
-4. Phase 4.2 - Pomodoro mode UI (depends on 4.1)
+4. Phase 4.2 - Pomodoro mode UI (depends on 4.1) (`closed`)
 5. Phase 4.5 - onboarding flow
 6. Phase 4.6 - reminders/notifications (depends on 4.4 and PWA foundations)
 
@@ -55,5 +55,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Execute `documentation/plans/cycle-4/phase-4-1-focus-pipeline-plan.md`
-- Track execution in `documentation/plans/cycle-4/phase-4-1-focus-pipeline-tracker.md`
+- Execute `documentation/plans/cycle-4/phase-4-4-you-tab-settings-plan.md` (next Wave 1 foundation item).
