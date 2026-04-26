@@ -58,7 +58,7 @@ describe("buildTodayHeaderData", () => {
 });
 
 describe("snapshotToTodayStats", () => {
-  it("derives open count and streak; focus is placeholder", () => {
+  it("derives open count, streak, and focus minutes", () => {
     const snapshot: TodayDashboardSnapshot = {
       profile: {
         displayName: "A",
@@ -72,11 +72,12 @@ describe("snapshotToTodayStats", () => {
       activeQuests: [baseQuest({ _id: "a", isDaily: false }), baseQuest({ _id: "b", isDaily: true })],
       dailies: [],
       dailyKey: "k",
+      focusMinutesLast7d: 73,
     };
     const stats = snapshotToTodayStats(snapshot, snapshot.profile);
     expect(stats[0].value).toBe("1");
     expect(stats[1].value).toBe("4d");
-    expect(stats[2].value).toBe("—");
+    expect(stats[2].value).toBe("73m");
   });
 });
 
@@ -90,6 +91,7 @@ describe("sortActiveQuestsForMain and snapshotToMainQuest", () => {
       ],
       dailies: [],
       dailyKey: null,
+      focusMinutesLast7d: 0,
     };
     const sorted = sortActiveQuestsForMain(snapshot.activeQuests);
     expect(sorted[0]._id).toBe("hard");
@@ -103,6 +105,7 @@ describe("sortActiveQuestsForMain and snapshotToMainQuest", () => {
       activeQuests: [],
       dailies: [],
       dailyKey: null,
+      focusMinutesLast7d: 0,
     };
     expect(snapshotToMainQuest(snapshot)).toBeNull();
   });
@@ -115,6 +118,7 @@ describe("snapshotToTaskSections", () => {
       activeQuests: [baseQuest({ _id: "n1", isDaily: false }), baseQuest({ _id: "d1", isDaily: true, status: "active" })],
       dailies: [baseQuest({ _id: "d1", isDaily: true, status: "active" })],
       dailyKey: "dk",
+      focusMinutesLast7d: 0,
     };
     const sections = snapshotToTaskSections(snapshot);
     expect(sections[0].tasks).toHaveLength(1);
@@ -134,6 +138,7 @@ describe("snapshotToTaskSections", () => {
       ],
       dailies: [],
       dailyKey: null,
+      focusMinutesLast7d: 0,
     };
     const sections = snapshotToTaskSections(snapshot);
     expect(sections[0].tasks.map((t) => t.id)).toEqual(["hard-soon", "hard-no-due", "late-medium"]);

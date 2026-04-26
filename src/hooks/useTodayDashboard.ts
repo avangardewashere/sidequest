@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchTodayDashboard } from "@/lib/client-api";
 import type { TodayDashboardSnapshot } from "@/types/today-dashboard";
 
-const TODAY_CACHE_PREFIX = "today-dashboard:";
-const LAST_KNOWN_CACHE_KEY = "today-dashboard:last-known";
+const TODAY_CACHE_PREFIX = "today-dashboard:v2:";
+const LAST_KNOWN_CACHE_KEY = "today-dashboard:v2:last-known";
 
 function isSnapshotShape(value: unknown): value is TodayDashboardSnapshot {
   if (!value || typeof value !== "object") {
@@ -17,8 +17,10 @@ function isSnapshotShape(value: unknown): value is TodayDashboardSnapshot {
     "activeQuests" in candidate &&
     "dailies" in candidate &&
     "dailyKey" in candidate &&
+    "focusMinutesLast7d" in candidate &&
     Array.isArray(candidate.activeQuests) &&
-    Array.isArray(candidate.dailies)
+    Array.isArray(candidate.dailies) &&
+    typeof candidate.focusMinutesLast7d === "number"
   );
 }
 

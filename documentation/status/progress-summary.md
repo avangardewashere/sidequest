@@ -101,3 +101,25 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - Phase 3.1: global error handling + toast primitive + offline messaging baseline.
 - Phase 3.2: retention effects aligned to solo flow (streak risk cue + celebration control).
 - Phase 3.3+: test/perf/deploy readiness with telemetry and release checklist.
+
+## 11) Cycle 4 kickoff - Phase 4.1 closeout
+
+- Added real focus-session backend pipeline:
+  - `src/models/FocusSession.ts`
+  - `POST /api/focus/start`
+  - `POST /api/focus/stop`
+  - `GET /api/focus/active`
+- Extended `GET /api/metrics/summary` with `kpis.focusMinutesLast7d`.
+- Updated today dashboard fetch/mapping path to surface real focus minutes and removed the focus placeholder branch from stats strip.
+- Added `useFocusTimer` plus Today-shell active-session UX (start/stop + hydrate restore cue).
+- Added test coverage:
+  - `src/tests/focus-pipeline.test.ts`
+  - `src/tests/api-routes-focus.test.ts`
+  - `src/tests/use-focus-timer.test.tsx`
+  - `e2e/focus-pipeline.spec.ts`
+- Validation:
+  - `npm run typecheck` passed
+  - targeted `npm run test:ci -- api-routes focus-pipeline api-routes-focus use-focus-timer client-api-today-dashboard today-dashboard-mappers` passed
+  - scoped lint `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+- No historical backfill is applied for focus minutes: existing users will display `0m` until they accumulate real focus sessions.

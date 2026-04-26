@@ -4,6 +4,7 @@ import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { CompletionLogModel } from "@/models/CompletionLog";
+import { FocusSessionModel } from "@/models/FocusSession";
 import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
 import { QuestModel } from "@/models/Quest";
 import { UserModel } from "@/models/User";
@@ -37,6 +38,7 @@ type MetricsSummaryResponse = {
     totalXp: number;
     avgXpPerCompletion: number;
     avgCompletionsPerDay: number;
+    focusMinutesLast7d: number;
   };
   previousPeriod: {
     totalCompletions: number;
@@ -129,6 +131,7 @@ export async function GET(request: Request) {
       last7DailyCompletedCount,
       last7MilestoneCount,
       last7CompletionStats,
+      focusMinutesLast7dRows,
     ] = await Promise.all([
       CompletionLogModel.aggregate([
         { $match: { userId: userObjectId, completedAt: { $gte: since } } },
@@ -246,6 +249,23 @@ export async function GET(request: Request) {
           },
         },
       ]),
+      FocusSessionModel.aggregate([
+        {
+          $match: {
+            userId: userObjectId,
+            endedAt: {
+              $gte: new Date(now.getTime() - (7 - 1) * 24 * 60 * 60 * 1000),
+            },
+            durationSec: { $gt: 0 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            durationSecTotal: { $sum: "$durationSec" },
+          },
+        },
+      ]),
     ]);
 
     const completionCountByKey = new Map<string, number>(
@@ -298,6 +318,8 @@ export async function GET(request: Request) {
       totalXpFromCompletions: 0,
       completionEvents: 0,
     };
+    const focusDurationSec = (focusMinutesLast7dRows[0]?.durationSecTotal as number | undefined) ?? 0;
+    const focusMinutesLast7d = Math.max(0, Math.floor(focusDurationSec / 60));
 
     logger.info("api.metrics.summary.success", { userId, range, rangeDays });
     const response: MetricsSummaryResponse = {
@@ -312,6 +334,7 @@ export async function GET(request: Request) {
         totalXp,
         avgXpPerCompletion,
         avgCompletionsPerDay: Number((totalCompletions / rangeDays).toFixed(1)),
+        focusMinutesLast7d,
       },
       previousPeriod: {
         totalCompletions: previousCompletions,

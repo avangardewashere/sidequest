@@ -23,6 +23,12 @@ Use this table of contents to quickly jump to implementation chapters and operat
 9. [Dev Notes - One-Liners](./ops/dev-notes-one-liners.md)
    - phase-based one-line changelog across Chapters 1-4 and Ops
 
+## Current Roadmap
+
+- [Cycles 4-6 Roadmap](./plans/cycles/cycles-4-5-6-roadmap.md)
+- [Cycle 4 Phase 4.1 Plan](./plans/cycle-4/phase-4-1-focus-pipeline-plan.md)
+- [Cycle 4 Phase 4.1 Tracker](./plans/cycle-4/phase-4-1-focus-pipeline-tracker.md)
+
 ## Folder Guide
 
 - [chapters](./chapters/README.md): long-form implementation history and closeout chapters

@@ -17,6 +17,17 @@ type DashboardData = {
   dailies: Quest[];
 };
 
+export type ActiveFocusSession = {
+  _id: string;
+  startedAt: string;
+  questId: string | null;
+};
+
+export type ClosedFocusSession = ActiveFocusSession & {
+  endedAt: string;
+  durationSec: number;
+};
+
 export type ActionResult<T = null> = {
   ok: boolean;
   data: T | null;
@@ -170,16 +181,18 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
 /** Per-request defaults when a leg fails (non-OK or malformed): empty slice / null for that leg only. */
 export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
-  const [questRes, progressionRes, dailiesRes] = await Promise.all([
+  const [questRes, progressionRes, dailiesRes, metricsRes] = await Promise.all([
     fetch("/api/quests?status=active&sort=priority_due"),
     fetch("/api/progression"),
     fetch("/api/dailies"),
+    fetch("/api/metrics/summary?range=7d"),
   ]);
 
-  const [questData, progressionData, dailiesData] = await Promise.all([
+  const [questData, progressionData, dailiesData, metricsData] = await Promise.all([
     questRes.ok ? parseJsonSafe(questRes) : null,
     progressionRes.ok ? parseJsonSafe(progressionRes) : null,
     dailiesRes.ok ? parseJsonSafe(dailiesRes) : null,
+    metricsRes.ok ? parseJsonSafe(metricsRes) : null,
   ]);
 
   const profile =
@@ -209,11 +222,23 @@ export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
       ? dailiesData.dailyKey
       : null;
 
+  const focusMinutesLast7d =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "kpis" in metricsData &&
+    metricsData.kpis &&
+    typeof metricsData.kpis === "object" &&
+    "focusMinutesLast7d" in metricsData.kpis &&
+    typeof metricsData.kpis.focusMinutesLast7d === "number"
+      ? metricsData.kpis.focusMinutesLast7d
+      : 0;
+
   return {
     profile,
     activeQuests,
     dailies,
     dailyKey,
+    focusMinutesLast7d,
   };
 }
 
@@ -304,5 +329,42 @@ export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionRe
   return runAction<MetricsSummary>(
     () => fetch(`/api/metrics/summary?range=${encodeURIComponent(range)}`),
     (json) => (json as MetricsSummary | null) ?? null,
+  );
+}
+
+export async function startFocusSession(
+  questId?: string,
+): Promise<ActionResult<{ session: ActiveFocusSession }>> {
+  return runAction<{ session: ActiveFocusSession }>(
+    () =>
+      fetch("/api/focus/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(questId ? { questId } : {}),
+      }),
+    (json) => (json as { session?: ActiveFocusSession } | null)?.session ? (json as { session: ActiveFocusSession }) : null,
+  );
+}
+
+export async function stopFocusSession(): Promise<ActionResult<{ session: ClosedFocusSession }>> {
+  return runAction<{ session: ClosedFocusSession }>(
+    () =>
+      fetch("/api/focus/stop", {
+        method: "POST",
+      }),
+    (json) => (json as { session?: ClosedFocusSession } | null)?.session ? (json as { session: ClosedFocusSession }) : null,
+  );
+}
+
+export async function getActiveFocusSession(): Promise<ActionResult<{ session: ActiveFocusSession | null }>> {
+  return runAction<{ session: ActiveFocusSession | null }>(
+    () => fetch("/api/focus/active"),
+    (json) => {
+      const payload = json as { session?: ActiveFocusSession | null } | null;
+      if (!payload || !("session" in payload)) {
+        return null;
+      }
+      return { session: payload.session ?? null };
+    },
   );
 }

@@ -94,9 +94,6 @@ export function buildTodayHeaderData(now: Date = new Date()): TodayHeaderData {
   };
 }
 
-/**
- * Stats strip: OPEN + STREAK from snapshot/profile; FOCUS is a placeholder until metrics exist.
- */
 export function snapshotToTodayStats(snapshot: TodayDashboardSnapshot, profile: ProgressionProfile | null): TodayStatItem[] {
   const streak = profile?.currentStreak ?? 0;
   const nonDailyActive = snapshot.activeQuests.filter((q) => !q.isDaily).length;
@@ -116,7 +113,7 @@ export function snapshotToTodayStats(snapshot: TodayDashboardSnapshot, profile: 
     {
       id: "focus",
       label: "FOCUS",
-      value: "—",
+      value: `${Math.max(0, Math.floor(snapshot.focusMinutesLast7d))}m`,
       icon: "timer",
     },
   ];

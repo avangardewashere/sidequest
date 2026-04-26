@@ -12,6 +12,7 @@ import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { TodayFocusTaskSection } from "@/components/home/today-focus-task-section";
 import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
+import { useFocusTimer } from "@/hooks/useFocusTimer";
 import { useToast } from "@/components/feedback/toast-provider";
 import { actionResultToToast, completeQuestById } from "@/lib/client-api";
 import {
@@ -36,6 +37,7 @@ const EMPTY_SNAPSHOT: TodayDashboardSnapshot = {
   activeQuests: [],
   dailies: [],
   dailyKey: null,
+  focusMinutesLast7d: 0,
 };
 
 const SECTION_EMPTY: Record<string, string> = {
@@ -48,6 +50,7 @@ export function TodayFocusShell() {
   const router = useRouter();
   const { pushToast } = useToast();
   const { data, isLoading, error, refresh } = useTodayDashboard();
+  const { state: focusState, start: startFocus, stop: stopFocus, hydratedWithActive } = useFocusTimer();
   const [activeTab, setActiveTab] = useState<TodayTabItem["id"]>("today");
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddSession, setQuickAddSession] = useState(0);
@@ -67,7 +70,22 @@ export function TodayFocusShell() {
 
   const handleMenuClick = () => {};
   const handleSearchClick = () => {};
-  const handleStartFocus = () => {};
+  const handleStartFocus = useCallback(async () => {
+    try {
+      await startFocus(mainQuest?.id);
+      pushToast({
+        tone: "info",
+        title: "Focus session started",
+        message: "Stay locked in. Stop when you complete your focus block.",
+      });
+    } catch (e) {
+      pushToast({
+        tone: "danger",
+        title: "Could not start focus session",
+        message: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }, [mainQuest?.id, pushToast, startFocus]);
   const handleOpenQuest = useCallback(() => {
     if (mainQuest?.id) {
       router.push(`/quests/${mainQuest.id}/edit`);
@@ -178,6 +196,17 @@ export function TodayFocusShell() {
     });
   }, [data, error, isLoading, now, pushToast, snapshot.dailyKey]);
 
+  useEffect(() => {
+    if (!hydratedWithActive || !focusState.startedAt) {
+      return;
+    }
+    pushToast({
+      tone: "info",
+      title: "Active focus session restored",
+      message: "You have an active focus session — keep going or stop.",
+    });
+  }, [focusState.startedAt, hydratedWithActive, pushToast]);
+
   return (
     <div className="relative min-h-screen">
       <main className="mx-auto w-full max-w-md pb-28">
@@ -252,6 +281,44 @@ export function TodayFocusShell() {
                 </p>
               </section>
             )}
+
+            {focusState.status === "running" ? (
+              <div className="px-4 pt-3">
+                <div
+                  className="flex items-center justify-between rounded-lg border px-3 py-2 text-xs"
+                  style={{ borderColor: "var(--color-primary)", background: "var(--color-primary-subtle)" }}
+                >
+                  <span style={{ color: "var(--color-text-primary)" }}>
+                    Focus in progress · {Math.floor(focusState.elapsedSec / 60)}m {focusState.elapsedSec % 60}s
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-full border px-3 py-1 font-medium"
+                    style={{ borderColor: "var(--color-border-default)", color: "var(--color-text-primary)" }}
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          await stopFocus();
+                          await refresh();
+                          pushToast({
+                            tone: "success",
+                            title: "Focus session stopped",
+                          });
+                        } catch (e) {
+                          pushToast({
+                            tone: "danger",
+                            title: "Could not stop focus session",
+                            message: e instanceof Error ? e.message : "Please try again.",
+                          });
+                        }
+                      })();
+                    }}
+                  >
+                    Stop
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {sections.map((section) => (
               <TodayFocusTaskSection

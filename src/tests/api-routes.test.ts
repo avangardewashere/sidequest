@@ -14,6 +14,7 @@ const mockQuestAggregate = vi.fn();
 const mockQuestCountDocuments = vi.fn();
 const mockCompletionAggregate = vi.fn();
 const mockMilestoneCountDocuments = vi.fn();
+const mockFocusAggregate = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   connectToDatabase: mockConnectToDatabase,
@@ -67,6 +68,12 @@ vi.mock("@/models/CompletionLog", () => ({
 vi.mock("@/models/MilestoneRewardLog", () => ({
   MilestoneRewardLogModel: {
     countDocuments: mockMilestoneCountDocuments,
+  },
+}));
+
+vi.mock("@/models/FocusSession", () => ({
+  FocusSessionModel: {
+    aggregate: mockFocusAggregate,
   },
 }));
 
@@ -386,6 +393,7 @@ describe("API route baseline tests", () => {
         .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 15, totalXpFromCompletions: 75, completionEvents: 3 }])
         .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 25, totalXpFromCompletions: 75, completionEvents: 3 }]);
       mockQuestAggregate.mockResolvedValueOnce([{ category: "work", count: 3, xpTotal: 60 }]);
+      mockFocusAggregate.mockResolvedValueOnce([{ _id: null, durationSecTotal: 1800 }]);
 
       const response = await metricsSummaryRoute.GET(
         new Request("http://localhost/api/metrics/summary", { method: "GET" }),
@@ -403,6 +411,7 @@ describe("API route baseline tests", () => {
       expect(json.streakHistory.last7d).toHaveLength(7);
       expect(json.kpis.totalCompletions).toBe(5);
       expect(json.kpis.totalXp).toBe(100);
+      expect(json.kpis.focusMinutesLast7d).toBe(30);
       expect(json.previousPeriod.totalCompletions).toBe(3);
       expect(json.last7Days.questsCreated).toBe(10);
     });
@@ -419,6 +428,7 @@ describe("API route baseline tests", () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
       mockQuestAggregate.mockResolvedValueOnce([]);
+      mockFocusAggregate.mockResolvedValueOnce([]);
 
       const response = await metricsSummaryRoute.GET(
         new Request("http://localhost/api/metrics/summary?range=30d", { method: "GET" }),
@@ -432,6 +442,7 @@ describe("API route baseline tests", () => {
       expect(json.xpByDay).toHaveLength(30);
       expect(json.completionsByDay.every((point: { value: number }) => point.value === 0)).toBe(true);
       expect(json.xpByDay.every((point: { value: number }) => point.value === 0)).toBe(true);
+      expect(json.kpis.focusMinutesLast7d).toBe(0);
     });
   });
 });
