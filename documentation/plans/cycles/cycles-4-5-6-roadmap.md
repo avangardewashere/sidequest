@@ -59,4 +59,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Draft and execute the next Cycle 5 phase plan for 5.5 analytics surfaces (consumer of 5.4 event logging baseline).
+- Execute `documentation/plans/cycle-5/phase-5-5-event-analytics-surface-plan.md` (next Cycle 5 item).
