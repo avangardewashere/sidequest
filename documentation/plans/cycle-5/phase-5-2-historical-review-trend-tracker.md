@@ -4,7 +4,7 @@ Pair with `phase-5-2-historical-review-trend-plan.md`.
 
 Status legend: `[ ]` pending · `[~]` in progress · `[x]` done · `[!]` blocked
 
-Phase status: `[~]` in progress
+Phase status: `[x]` done
 
 ## A. Contract and scope guardrails
 
@@ -40,9 +40,9 @@ Phase status: `[~]` in progress
 
 ## E. Docs and closeout
 
-- [ ] Add Phase 5.2 closeout note to `documentation/status/progress-summary.md`.
-- [ ] Update `documentation/plans/cycles/cycles-4-5-6-roadmap.md` Phase 5.2 status.
-- [ ] Record evidence summary in this tracker.
+- [x] Add Phase 5.2 closeout note to `documentation/status/progress-summary.md`.
+- [x] Update `documentation/plans/cycles/cycles-4-5-6-roadmap.md` Phase 5.2 status.
+- [x] Record evidence summary in this tracker.
 
 ## Blockers
 
@@ -68,11 +68,27 @@ Phase status: `[~]` in progress
 
 ## Exit criteria
 
-- [ ] Authenticated `/stats` renders historical review card under the weekly review card with 4 weekly buckets and trend copy.
-- [ ] Historical review API returns expected payload and is auth-gated, with `weeks` validation.
-- [ ] Tests and quality gates pass.
-- [ ] Progress summary + roadmap + tracker evidence are updated.
+- [x] Authenticated `/stats` renders historical review card under the weekly review card with 4 weekly buckets and trend copy.
+- [x] Historical review API returns expected payload and is auth-gated, with `weeks` validation.
+- [x] Tests and quality gates pass.
+- [x] Progress summary + roadmap + tracker evidence are updated.
 
 ## Evidence summary
 
-- (Filled in at closeout.)
+- API:
+  - `src/app/api/review/historical/route.ts` (`GET /api/review/historical?weeks=4`, auth-gated, 4 UTC week buckets, deterministic trend classification, encouragement-style tone copy)
+- UI:
+  - `src/components/review/historical-review-card.tsx`
+  - mounted under `WeeklyReviewCard` in `src/app/stats/page.tsx` with parallel loading/error states
+- Client contract:
+  - `HistoricalReview` / `HistoricalReviewWeek` types and `fetchHistoricalReview()` in `src/lib/client-api.ts`
+- Tests:
+  - `src/tests/api-routes-historical-review.test.ts` (auth + `weeks` validation + payload + trend + tone)
+  - `src/tests/historical-review-card.test.tsx` (4 bucket rendering + trend/tone variants)
+  - `e2e/historical-review.spec.ts` (wired happy-path UI assertion on `/stats`)
+- Quality gates:
+  - `npm run test:ci` passed (`18/18 files`, `94/94 tests`)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest lists `/api/review/historical`
+  - `npx playwright test e2e/historical-review.spec.ts` blocked by port `3000` in current environment (tracked in Blockers / Decision log)

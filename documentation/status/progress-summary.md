@@ -281,3 +281,33 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no multi-week or historical review comparison (deferred to Phase 5.2)
   - no event-logged behavioral analytics (gated 5.4 / 5.5 per roadmap)
   - no sharing/export of the weekly review (Cycle 6 distribution)
+
+## 18) Cycle 5 - Phase 5.2 closeout (Historical review trend)
+
+- Added authenticated historical review API:
+  - `GET /api/review/historical?weeks=4` composes four UTC 7-day buckets from `CompletionLog`
+  - reuses `User.onboardingWeeklyTarget` (defaults to `5`) and `User.onboardingEncouragementStyle` (`gentle` fallback)
+  - enforces `weeks=4` for this phase and returns deterministic trend classification (`rising` / `steady` / `declining`)
+  - returns ready-to-render `summaryHeadline` / `summaryMessage` from a 3-style x 3-trend tone table
+- Added historical review UI:
+  - new `src/components/review/historical-review-card.tsx`
+  - mounted directly under `WeeklyReviewCard` on `/stats` via `src/app/stats/page.tsx`
+  - reuses existing loading/error panel patterns already used by the review surfaces
+- Added client contract:
+  - `HistoricalReview` and `HistoricalReviewWeek` types in `src/lib/client-api.ts`
+  - `fetchHistoricalReview(weeks=4)` action wrapper for `/api/review/historical`
+- Added test coverage:
+  - `src/tests/api-routes-historical-review.test.ts` (auth, validation, payload composition, trend/tone branching)
+  - `src/tests/historical-review-card.test.tsx` (bucket rendering and trend/tone UI variants)
+  - `e2e/historical-review.spec.ts` (wired `/stats` happy-path assertions)
+- Validation:
+  - `npm run test:ci` passed (`18/18 files`, `94/94 tests`; includes pre-existing dashboard `act()` warnings)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest includes `/api/review/historical`
+  - `npx playwright test e2e/historical-review.spec.ts` remains environment-blocked locally because port `3000` is already in use
+- Scope guardrails held:
+  - no new persistence / no new `User` fields
+  - no per-day drill-in (deferred to a later Cycle 5 phase)
+  - no event-logged behavioral analytics (gated 5.4 / 5.5)
+  - no sharing/export workflow
