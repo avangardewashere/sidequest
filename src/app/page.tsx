@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import localFont from "next/font/local";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { TodayFocusShell } from "@/components/home/today-focus-shell";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
+import { fetchOnboardingState } from "@/lib/client-api";
 
 const clashDisplay = localFont({
   src: [
@@ -16,6 +19,7 @@ const clashDisplay = localFont({
 });
 
 export default function Home() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const {
     email,
@@ -33,7 +37,31 @@ export default function Home() {
     prefetchDashboard: !session?.user,
   });
 
-  if (status === "loading") {
+  const [checkingOnboarding, setCheckingOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user) {
+      return;
+    }
+    let cancelled = false;
+    const handle = window.setTimeout(async () => {
+      setCheckingOnboarding(true);
+      const result = await fetchOnboardingState();
+      if (cancelled) {
+        return;
+      }
+      setCheckingOnboarding(false);
+      if (result.ok && result.data && !result.data.onboarding.completed) {
+        router.replace("/onboarding");
+      }
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [router, session?.user]);
+
+  if (status === "loading" || checkingOnboarding) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center p-6">
         <p>Loading SideQuest...</p>

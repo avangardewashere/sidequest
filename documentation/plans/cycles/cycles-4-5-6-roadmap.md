@@ -25,7 +25,7 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 ### Wave 2 - Cycle 4 engagement polish
 
 4. Phase 4.2 - Pomodoro mode UI (depends on 4.1) (`closed`)
-5. Phase 4.5 - onboarding flow
+5. Phase 4.5 - onboarding flow (`closed`)
 6. Phase 4.6 - reminders/notifications (depends on 4.4 and PWA foundations)
 
 ### Wave 3 - Cycle 5 personalization
@@ -55,4 +55,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Execute `documentation/plans/cycle-4/phase-4-5-onboarding-flow-plan.md` (next Cycle 4 item).
+- Execute `documentation/plans/cycle-4/phase-4-6-reminders-notifications-plan.md` (next Cycle 4 item).

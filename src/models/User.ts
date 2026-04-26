@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema(
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     lastCompletedAt: { type: Date, default: null },
+    onboardingCompletedAt: { type: Date, default: null },
+    onboardingFocusArea: { type: String, default: null },
+    onboardingWeeklyTarget: { type: Number, default: null },
+    onboardingEncouragementStyle: { type: String, default: null },
   },
   {
     timestamps: true,

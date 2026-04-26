@@ -26,6 +26,14 @@ export type YouProfile = {
   longestStreak: number;
 };
 
+export type OnboardingState = {
+  completed: boolean;
+  completedAt: string | null;
+  focusArea: "work" | "health" | "learning" | "life" | null;
+  weeklyTarget: number | null;
+  encouragementStyle: "gentle" | "direct" | "celebration" | null;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -385,6 +393,44 @@ export async function changeYouPassword(payload: {
         body: JSON.stringify(payload),
       }),
     () => null,
+  );
+}
+
+export async function fetchOnboardingState(): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () => fetch("/api/onboarding"),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
+  );
+}
+
+export async function completeOnboarding(payload: {
+  focusArea: "work" | "health" | "learning" | "life";
+  weeklyTarget: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+}): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () =>
+      fetch("/api/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          complete: true,
+        }),
+      }),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
   );
 }
 

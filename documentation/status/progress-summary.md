@@ -193,3 +193,30 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no Phase 4.5 onboarding logic was introduced
   - no Phase 4.6 reminder/scheduling work was added
   - no advanced account-security surfaces (device/session management) were added
+
+## 15) Cycle 4 - Phase 4.5 closeout (Onboarding flow)
+
+- Added first-run onboarding persistence on `User` with baseline fields:
+  - `onboardingCompletedAt`
+  - `onboardingFocusArea`
+  - `onboardingWeeklyTarget`
+  - `onboardingEncouragementStyle`
+- Added authenticated onboarding API contract:
+  - `GET /api/onboarding` for onboarding state read
+  - `PATCH /api/onboarding` for baseline setup completion write
+- Added onboarding UI flow:
+  - new `/onboarding` route with baseline setup form (focus area, weekly target, encouragement style)
+  - authenticated `/` gating that redirects users with incomplete onboarding to `/onboarding`
+  - completed onboarding users continue to the normal Today experience
+- Added test coverage:
+  - `src/tests/onboarding-routes.test.ts`
+  - `e2e/onboarding-flow.spec.ts`
+- Validation:
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed
+  - `npx playwright test e2e/onboarding-flow.spec.ts --config=playwright.phase45.reuse3001.config.ts` passed
+  - `npm run test:ci` completed with all Vitest suites passing (`13/13 files`, `72/72 tests`), followed by a transient shell-wrapper temp-file lock error after test completion
+- Scope guardrails held:
+  - no reminder scheduling implementation (Phase 4.6)
+  - no advanced security/settings expansion
