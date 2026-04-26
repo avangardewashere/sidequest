@@ -340,3 +340,38 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no AI/LLM-generated recommendation logic
   - no event-logged behavioral analytics (gated 5.4 per roadmap)
   - no sharing/export workflow
+
+## 20) Cycle 5 - Phase 5.4 closeout (Behavioral event logging foundation)
+
+- Added behavioral event persistence + contract:
+  - new `src/models/BehaviorEvent.ts` collection for authenticated user events with `userId`, `name`, `properties`, `createdAt`
+  - indexed by `userId` and compound `userId + createdAt desc` for efficient per-user timeline reads
+  - new authenticated `POST /api/events` (`src/app/api/events/route.ts`) returning `{ event: { id, name, createdAt } }`
+- Added shared event allowlist and payload safeguards:
+  - `src/lib/behavior-events.ts` defines canonical event names (`weekly_review_viewed`, `historical_review_viewed`, `suggestion_viewed`, `suggestion_clicked`, `quest_completed`)
+  - route validation enforces allowlist and properties constraints (object-only, size cap, no nested arrays beyond depth 1)
+  - lightweight in-memory per-user rate-limit now returns `429` on overflow
+- Added client emitter + wiring:
+  - `recordBehaviorEvent()` in `src/lib/client-api.ts` is best-effort and swallows network failures
+  - `src/hooks/useBehaviorEvent.ts` emits one-shot mount events
+  - wired existing surfaces:
+    - Weekly review card -> `weekly_review_viewed`
+    - Historical review card -> `historical_review_viewed`
+    - Next-best quest card -> `suggestion_viewed`
+    - Today quest completion success path -> `quest_completed`
+- Added test coverage:
+  - `src/tests/api-routes-events.test.ts` (auth, allowlist, size cap, success shape, rate-limit guard)
+  - `src/tests/behavior-event-emitter.test.ts` (client allowlist guard, swallow-on-failure, payload shaping)
+  - `e2e/behavior-event-logging.spec.ts` (stats/today event emission happy path with mocked `POST /api/events`)
+- Validation:
+  - `npm run test:ci` passed (`22/22 files`, `111/111 tests`)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest now includes `/api/events`
+  - `npx playwright test e2e/behavior-event-logging.spec.ts` remains environment-blocked locally because port `3000` is already in use (same caveat as Phases 5.1, 5.2, and 5.3)
+- Scope guardrails held:
+  - no analytics dashboard/aggregation UI (deferred to Phase 5.5)
+  - no third-party analytics SDK integration
+  - no AI/LLM event interpretation
+  - no multi-user/org analytics surface
+  - no server-driven event triggers

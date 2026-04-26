@@ -1,4 +1,10 @@
 import { signIn } from "next-auth/react";
+import {
+  BEHAVIOR_EVENT_NAMES,
+  isBehaviorEventName,
+  sanitizeBehaviorEventProperties,
+  type BehaviorEventName,
+} from "@/lib/behavior-events";
 import type { QuestListQuery } from "@/lib/quest-selectors";
 import type {
   CompleteQuestResponse,
@@ -78,6 +84,9 @@ export type NextBestQuestSuggestion = {
   summaryHeadline: string;
   summaryMessage: string;
 };
+
+export { BEHAVIOR_EVENT_NAMES };
+export type { BehaviorEventName };
 
 export type ActiveFocusSession = {
   _id: string;
@@ -433,6 +442,28 @@ export async function fetchTodaySuggestion(): Promise<ActionResult<{ suggestion:
       return { suggestion: payload.suggestion ?? null };
     },
   );
+}
+
+export async function recordBehaviorEvent(
+  name: BehaviorEventName | string,
+  properties?: Record<string, unknown>,
+): Promise<void> {
+  if (!isBehaviorEventName(name)) {
+    return;
+  }
+
+  const sanitizedProperties = sanitizeBehaviorEventProperties(properties);
+  const payload = sanitizedProperties ? { name, properties: sanitizedProperties } : { name };
+
+  try {
+    await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Best-effort telemetry: never interrupt user flows.
+  }
 }
 
 export async function fetchYouProfile(): Promise<ActionResult<{ profile: YouProfile }>> {

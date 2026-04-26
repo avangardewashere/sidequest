@@ -1,6 +1,7 @@
 "use client";
 
 import type { WeeklyReview } from "@/lib/client-api";
+import { useBehaviorEvent } from "@/hooks/useBehaviorEvent";
 
 type WeeklyReviewCardProps = {
   review: WeeklyReview;
@@ -13,6 +14,14 @@ const STYLE_BADGES: Record<WeeklyReview["encouragementStyle"], string> = {
 };
 
 export function WeeklyReviewCard({ review }: WeeklyReviewCardProps) {
+  useBehaviorEvent("weekly_review_viewed", {
+    rangeStart: review.rangeStart,
+    rangeEnd: review.rangeEnd,
+    completionsLast7d: review.completionsLast7d,
+    weeklyTarget: review.weeklyTarget,
+    progressPct: review.progressPct,
+  });
+
   return (
     <section
       className="rounded-xl border p-4"

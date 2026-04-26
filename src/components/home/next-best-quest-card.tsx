@@ -1,6 +1,7 @@
 "use client";
 
 import type { NextBestQuestSuggestion } from "@/lib/client-api";
+import { useBehaviorEvent } from "@/hooks/useBehaviorEvent";
 
 type NextBestQuestCardProps = {
   suggestion: NextBestQuestSuggestion;
@@ -19,6 +20,12 @@ const REASON_LABELS: Record<NextBestQuestSuggestion["reason"], string> = {
 };
 
 export function NextBestQuestCard({ suggestion }: NextBestQuestCardProps) {
+  useBehaviorEvent("suggestion_viewed", {
+    questId: suggestion.questId,
+    category: suggestion.category,
+    reason: suggestion.reason,
+  });
+
   return (
     <section className="px-4 pt-3" aria-label="Next best quest">
       <div

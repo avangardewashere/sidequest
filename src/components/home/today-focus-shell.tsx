@@ -20,6 +20,7 @@ import {
   actionResultToToast,
   completeQuestById,
   fetchTodaySuggestion,
+  recordBehaviorEvent,
   type NextBestQuestSuggestion,
 } from "@/lib/client-api";
 import {
@@ -179,6 +180,7 @@ export function TodayFocusShell() {
         markCompletionToday();
         setCompletionDateKey(localDateKey());
         setOptimisticDoneIds(new Set());
+        void recordBehaviorEvent("quest_completed", { questId });
         await refresh();
       } finally {
         setCompletingTaskId(null);

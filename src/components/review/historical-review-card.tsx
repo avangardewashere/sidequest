@@ -1,6 +1,7 @@
 "use client";
 
 import type { HistoricalReview } from "@/lib/client-api";
+import { useBehaviorEvent } from "@/hooks/useBehaviorEvent";
 
 type HistoricalReviewCardProps = {
   review: HistoricalReview;
@@ -24,6 +25,12 @@ function formatRange(rangeStart: string, rangeEnd: string): string {
 
 export function HistoricalReviewCard({ review }: HistoricalReviewCardProps) {
   const lastIndex = review.weeks.length - 1;
+  useBehaviorEvent("historical_review_viewed", {
+    trend: review.trend,
+    weeks: review.weeks.length,
+    latestCompletions: review.weeks[lastIndex]?.completions ?? 0,
+  });
+
   return (
     <section
       className="rounded-xl border p-4"
