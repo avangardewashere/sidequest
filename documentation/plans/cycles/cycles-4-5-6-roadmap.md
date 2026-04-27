@@ -35,7 +35,7 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 9. Phase 5.3 - focus-area next-best quest (closed)
 10. Phase 5.4 - behavioral event logging foundation (closed)
 11. Phase 5.5 - event analytics surfaces (closed)
-12. Phase 5.6 in order, capstone Cycle 5 personalization item.
+12. Phase 5.6 - personalization preferences editor (closed)
 
 ### Wave 4 - Cycle 6 platform/distribution
 
@@ -60,4 +60,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Execute documentation/plans/cycle-5/phase-5-6-personalization-preferences-plan.md (final Cycle 5 item).
+- Execute documentation/plans/cycle-6/phase-6-1-pwa-installability-plan.md.

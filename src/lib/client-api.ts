@@ -48,6 +48,12 @@ export type OnboardingState = {
   encouragementStyle: "gentle" | "direct" | "celebration" | null;
 };
 
+export type YouPreferencesPayload = {
+  focusArea: "work" | "health" | "learning" | "life";
+  weeklyTarget: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+};
+
 export type WeeklyReview = {
   rangeStart: string;
   rangeEnd: string;
@@ -552,6 +558,28 @@ export async function changeYouPassword(payload: {
 export async function fetchOnboardingState(): Promise<ActionResult<{ onboarding: OnboardingState }>> {
   return runAction<{ onboarding: OnboardingState }>(
     () => fetch("/api/onboarding"),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
+  );
+}
+
+export const fetchYouPreferences = fetchOnboardingState;
+
+export async function updateYouPreferences(
+  payload: YouPreferencesPayload,
+): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () =>
+      fetch("/api/you/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
     (json) => {
       const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
       if (!onboarding) {

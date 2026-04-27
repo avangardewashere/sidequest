@@ -408,3 +408,45 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no AI/LLM-generated insight narratives
   - no org/team-level analytics
   - no export/share/reporting pipeline
+
+## 22) Cycle 5 - Phase 5.6 closeout (Personalization preferences editor)
+
+- Added a dedicated authenticated personalization update endpoint:
+  - `PATCH /api/you/preferences` (`src/app/api/you/preferences/route.ts`) validates payloads and updates only:
+    - `onboardingFocusArea`
+    - `onboardingWeeklyTarget`
+    - `onboardingEncouragementStyle`
+  - Explicitly does **not** mutate `onboardingCompletedAt`, keeping first-onboarding completion semantics intact.
+  - Returns onboarding payload shape compatible with `GET /api/onboarding` (`{ onboarding: OnboardingState }`).
+- Consolidated onboarding validation/payload utilities:
+  - new `src/lib/onboarding-state.ts` centralizes:
+    - shared Zod constraints for focus area, weekly target, encouragement style
+    - onboarding completion schema
+    - `toOnboardingPayload()` mapper
+  - `src/app/api/onboarding/route.ts` now consumes this shared module to prevent contract drift.
+- Added `/you` personalization UI integration:
+  - `src/app/you/page.tsx` now includes "Personalization preferences" between "Profile basics" and "Password"
+  - loads defaults/current values from `fetchYouPreferences()` (alias of `fetchOnboardingState`)
+  - saves through new `updateYouPreferences()` client action
+  - reuses existing toast pattern and disables save while unchanged or in-flight.
+- Extended client API contract:
+  - `src/lib/client-api.ts` adds:
+    - `YouPreferencesPayload`
+    - `fetchYouPreferences`
+    - `updateYouPreferences(payload)`
+- Added test coverage:
+  - `src/tests/api-routes-you-preferences.test.ts`
+  - `src/tests/you-preferences-section.test.tsx`
+  - `e2e/you-preferences.spec.ts`
+- Validation:
+  - `npm run test:ci -- src/tests/api-routes-you-preferences.test.ts src/tests/you-preferences-section.test.tsx` passed (`2/2 files`, `7/7 tests`)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; route manifest includes `/api/you/preferences`
+  - `npx playwright test e2e/you-preferences.spec.ts` remains environment-blocked locally because port `3000` is already in use
+- Scope guardrails held:
+  - no `User` schema changes
+  - no onboarding re-trigger and no `onboardingCompletedAt` mutation from preferences saves
+  - no new behavior event names
+  - no event analytics surface changes
+  - no AI/LLM tone preview or variant experiments

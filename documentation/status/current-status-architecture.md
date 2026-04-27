@@ -146,3 +146,14 @@ This document reflects the repository's current implementation status.
 
 - Cycle 3 implementation scope across phases 3.1 to 3.5 is documented in `documentation/chapters/chapter-6-cycle-3-summary.md`.
 - Closeout status: Cycle 3 is fully closed with preview and production deployments completed.
+
+## Cycle 5 Summary Status
+
+- Cycle 5 implementation scope across phases 5.1 to 5.6 is now closed.
+- Personalization is durable end-to-end:
+  - onboarding-derived preferences are consumed by weekly review, historical review, and next-best suggestion surfaces
+  - `/you` now provides post-onboarding edits via `PATCH /api/you/preferences` without mutating `onboardingCompletedAt`
+- Behavioral analytics foundation and read-side surfaces are complete:
+  - write-side event capture (`/api/events`) with a fixed allowlist
+  - read-side aggregation (`/api/events/analytics`) and `/stats` card presentation
+- Closeout caveat: targeted Playwright specs remain intermittently blocked locally by port `3000` contention; unit/type/lint/build quality gates for the phase pass.

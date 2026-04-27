@@ -8,8 +8,12 @@ import { useLocalReminders } from "@/hooks/useLocalReminders";
 import {
   actionResultToToast,
   changeYouPassword,
+  fetchYouPreferences,
   fetchYouProfile,
+  type OnboardingState,
+  type YouPreferencesPayload,
   updateYouProfile,
+  updateYouPreferences,
   type YouProfile,
 } from "@/lib/client-api";
 
@@ -22,6 +26,30 @@ const WEEKDAY_OPTIONS: Array<{ key: number; label: string }> = [
   { key: 6, label: "Sat" },
   { key: 0, label: "Sun" },
 ];
+
+const FOCUS_AREA_OPTIONS: Array<{ value: YouPreferencesPayload["focusArea"]; label: string }> = [
+  { value: "work", label: "Work" },
+  { value: "health", label: "Health" },
+  { value: "learning", label: "Learning" },
+  { value: "life", label: "Life" },
+];
+
+const ENCOURAGEMENT_STYLE_OPTIONS: Array<{
+  value: YouPreferencesPayload["encouragementStyle"];
+  label: string;
+}> = [
+  { value: "gentle", label: "Gentle" },
+  { value: "direct", label: "Direct" },
+  { value: "celebration", label: "Celebration" },
+];
+
+function toPreferencesPayload(onboarding: OnboardingState): YouPreferencesPayload {
+  return {
+    focusArea: onboarding.focusArea ?? "work",
+    weeklyTarget: onboarding.weeklyTarget ?? 5,
+    encouragementStyle: onboarding.encouragementStyle ?? "gentle",
+  };
+}
 
 export default function YouPage() {
   const { pushToast } = useToast();
@@ -38,6 +66,17 @@ export default function YouPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [preferences, setPreferences] = useState<YouPreferencesPayload>({
+    focusArea: "work",
+    weeklyTarget: 5,
+    encouragementStyle: "gentle",
+  });
+  const [savedPreferences, setSavedPreferences] = useState<YouPreferencesPayload>({
+    focusArea: "work",
+    weeklyTarget: 5,
+    encouragementStyle: "gentle",
+  });
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
 
   const canSubmitPassword = useMemo(() => {
     return (
@@ -88,6 +127,22 @@ export default function YouPage() {
       cancelled = true;
     };
   }, [pushToast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(async () => {
+      const result = await fetchYouPreferences();
+      if (cancelled || !result.ok || !result.data) {
+        return;
+      }
+      const nextPreferences = toPreferencesPayload(result.data.onboarding);
+      setPreferences(nextPreferences);
+      setSavedPreferences(nextPreferences);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleProfileSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -223,6 +278,32 @@ export default function YouPage() {
     });
   }
 
+  const preferencesDirty = useMemo(() => {
+    return (
+      preferences.focusArea !== savedPreferences.focusArea ||
+      preferences.weeklyTarget !== savedPreferences.weeklyTarget ||
+      preferences.encouragementStyle !== savedPreferences.encouragementStyle
+    );
+  }, [preferences, savedPreferences]);
+
+  async function handlePreferencesSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPreferencesSaving(true);
+    const result = await updateYouPreferences(preferences);
+    setPreferencesSaving(false);
+    pushToast(
+      actionResultToToast(result, {
+        successTitle: "Preferences updated",
+        fallbackErrorTitle: "Could not save preferences",
+      }),
+    );
+    if (result.ok && result.data) {
+      const nextPreferences = toPreferencesPayload(result.data.onboarding);
+      setPreferences(nextPreferences);
+      setSavedPreferences(nextPreferences);
+    }
+  }
+
   return (
     <div className="relative min-h-screen">
       <main className="mx-auto w-full max-w-md px-4 py-6 pb-28">
@@ -265,6 +346,106 @@ export default function YouPage() {
             </label>
             <button className="rounded-lg px-3 py-2 text-sm font-medium" style={{ background: "var(--color-accent)", color: "white" }} type="submit">
               Save profile
+            </button>
+          </form>
+        </section>
+
+        <section className="mt-4 rounded-2xl border p-4" style={{ borderColor: "var(--color-border-subtle)" }}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
+            Personalization preferences
+          </h2>
+          <form className="mt-3 space-y-4" onSubmit={handlePreferencesSave}>
+            <div>
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                Focus area
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {FOCUS_AREA_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className="rounded-md border px-2.5 py-1 text-xs font-medium"
+                    style={{
+                      borderColor: "var(--color-border-subtle)",
+                      color:
+                        preferences.focusArea === option.value
+                          ? "var(--color-primary-on-accent)"
+                          : "var(--color-text-primary)",
+                      background:
+                        preferences.focusArea === option.value
+                          ? "var(--color-primary)"
+                          : "var(--color-bg-surface)",
+                    }}
+                    onClick={() =>
+                      setPreferences((previous) => ({ ...previous, focusArea: option.value }))
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="block text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Weekly target
+              <input
+                type="number"
+                min={1}
+                max={21}
+                step={1}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
+                value={preferences.weeklyTarget}
+                onChange={(event) =>
+                  setPreferences((previous) => ({
+                    ...previous,
+                    weeklyTarget: Number(event.target.value),
+                  }))
+                }
+              />
+              <span className="mt-1 block text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                Choose a goal between 1 and 21 completions per week.
+              </span>
+            </label>
+            <div>
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                Encouragement style
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {ENCOURAGEMENT_STYLE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className="rounded-md border px-2.5 py-1 text-xs font-medium"
+                    style={{
+                      borderColor: "var(--color-border-subtle)",
+                      color:
+                        preferences.encouragementStyle === option.value
+                          ? "var(--color-primary-on-accent)"
+                          : "var(--color-text-primary)",
+                      background:
+                        preferences.encouragementStyle === option.value
+                          ? "var(--color-primary)"
+                          : "var(--color-bg-surface)",
+                    }}
+                    onClick={() =>
+                      setPreferences((previous) => ({
+                        ...previous,
+                        encouragementStyle: option.value,
+                      }))
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-60"
+              style={{ background: "var(--color-accent)", color: "white" }}
+              disabled={preferencesSaving || !preferencesDirty}
+              type="submit"
+            >
+              {preferencesSaving ? "Saving..." : "Save preferences"}
             </button>
           </form>
         </section>
