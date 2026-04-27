@@ -60,4 +60,4 @@ This roadmap turns the post-ship vision into dependency-aware execution waves.
 
 ## Immediate Next Phase
 
-- Draft and execute Phase 5.6 (Cycle 5 capstone) in a follow-up planning round.
+- Execute documentation/plans/cycle-5/phase-5-6-personalization-preferences-plan.md (final Cycle 5 item).
