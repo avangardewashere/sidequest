@@ -27,6 +27,7 @@ export type MetricsSummary = {
     totalXp: number;
     avgXpPerCompletion: number;
     avgCompletionsPerDay: number;
+    focusMinutesLast7d: number;
   };
   previousPeriod: {
     totalCompletions: number;

@@ -1,4 +1,10 @@
 import { signIn } from "next-auth/react";
+import {
+  BEHAVIOR_EVENT_NAMES,
+  isBehaviorEventName,
+  sanitizeBehaviorEventProperties,
+  type BehaviorEventName,
+} from "@/lib/behavior-events";
 import type { QuestListQuery } from "@/lib/quest-selectors";
 import type {
   CompleteQuestResponse,
@@ -15,6 +21,103 @@ type DashboardData = {
   quests: Quest[];
   profile: Profile | null;
   dailies: Quest[];
+};
+
+export type YouProfile = {
+  email: string;
+  displayName: string;
+  level: number;
+  totalXp: number;
+  currentStreak: number;
+  longestStreak: number;
+  reminders: ReminderSettings;
+};
+
+export type ReminderSettings = {
+  enabled: boolean;
+  timeLocal: string | null;
+  days: number[];
+  lastFiredOn: string | null;
+};
+
+export type OnboardingState = {
+  completed: boolean;
+  completedAt: string | null;
+  focusArea: "work" | "health" | "learning" | "life" | null;
+  weeklyTarget: number | null;
+  encouragementStyle: "gentle" | "direct" | "celebration" | null;
+};
+
+export type YouPreferencesPayload = {
+  focusArea: "work" | "health" | "learning" | "life";
+  weeklyTarget: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+};
+
+export type WeeklyReview = {
+  rangeStart: string;
+  rangeEnd: string;
+  completionsLast7d: number;
+  weeklyTarget: number;
+  progressPct: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
+export type HistoricalReviewWeek = {
+  rangeStart: string;
+  rangeEnd: string;
+  completions: number;
+  weeklyTarget: number;
+  progressPct: number;
+};
+
+export type HistoricalReview = {
+  weeks: HistoricalReviewWeek[];
+  trend: "rising" | "steady" | "declining";
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
+export type NextBestQuestSuggestion = {
+  questId: string;
+  title: string;
+  category: Quest["category"];
+  reason: "focus_area_match" | "category_rotation" | "fallback_priority";
+  encouragementStyle: "gentle" | "direct" | "celebration";
+  summaryHeadline: string;
+  summaryMessage: string;
+};
+
+export { BEHAVIOR_EVENT_NAMES };
+export type { BehaviorEventName };
+
+export type EventAnalyticsByName = Record<BehaviorEventName, number>;
+
+export type EventAnalytics = {
+  range: MetricsRange;
+  rangeDays: number;
+  totalEvents: number;
+  byName: EventAnalyticsByName;
+  reviewViews: number;
+  suggestionViews: number;
+  suggestionClicks: number;
+  suggestionClickRatePct: number;
+  questCompletionsAfterSuggestionView: number;
+  latestEventAt: string | null;
+};
+
+export type ActiveFocusSession = {
+  _id: string;
+  startedAt: string;
+  questId: string | null;
+};
+
+export type ClosedFocusSession = ActiveFocusSession & {
+  endedAt: string;
+  durationSec: number;
 };
 
 export type ActionResult<T = null> = {
@@ -170,16 +273,18 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
 /** Per-request defaults when a leg fails (non-OK or malformed): empty slice / null for that leg only. */
 export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
-  const [questRes, progressionRes, dailiesRes] = await Promise.all([
+  const [questRes, progressionRes, dailiesRes, metricsRes] = await Promise.all([
     fetch("/api/quests?status=active&sort=priority_due"),
     fetch("/api/progression"),
     fetch("/api/dailies"),
+    fetch("/api/metrics/summary?range=7d"),
   ]);
 
-  const [questData, progressionData, dailiesData] = await Promise.all([
+  const [questData, progressionData, dailiesData, metricsData] = await Promise.all([
     questRes.ok ? parseJsonSafe(questRes) : null,
     progressionRes.ok ? parseJsonSafe(progressionRes) : null,
     dailiesRes.ok ? parseJsonSafe(dailiesRes) : null,
+    metricsRes.ok ? parseJsonSafe(metricsRes) : null,
   ]);
 
   const profile =
@@ -209,11 +314,23 @@ export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
       ? dailiesData.dailyKey
       : null;
 
+  const focusMinutesLast7d =
+    metricsData &&
+    typeof metricsData === "object" &&
+    "kpis" in metricsData &&
+    metricsData.kpis &&
+    typeof metricsData.kpis === "object" &&
+    "focusMinutesLast7d" in metricsData.kpis &&
+    typeof metricsData.kpis.focusMinutesLast7d === "number"
+      ? metricsData.kpis.focusMinutesLast7d
+      : 0;
+
   return {
     profile,
     activeQuests,
     dailies,
     dailyKey,
+    focusMinutesLast7d,
   };
 }
 
@@ -304,5 +421,233 @@ export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionRe
   return runAction<MetricsSummary>(
     () => fetch(`/api/metrics/summary?range=${encodeURIComponent(range)}`),
     (json) => (json as MetricsSummary | null) ?? null,
+  );
+}
+
+export async function fetchWeeklyReview(): Promise<ActionResult<{ weeklyReview: WeeklyReview }>> {
+  return runAction<{ weeklyReview: WeeklyReview }>(
+    () => fetch("/api/review/weekly"),
+    (json) => {
+      const weeklyReview = (json as { weeklyReview?: WeeklyReview } | null)?.weeklyReview;
+      if (!weeklyReview) {
+        return null;
+      }
+      return { weeklyReview };
+    },
+  );
+}
+
+export async function fetchHistoricalReview(
+  weeks: number = 4,
+): Promise<ActionResult<{ historicalReview: HistoricalReview }>> {
+  return runAction<{ historicalReview: HistoricalReview }>(
+    () => fetch(`/api/review/historical?weeks=${encodeURIComponent(String(weeks))}`),
+    (json) => {
+      const historicalReview = (json as { historicalReview?: HistoricalReview } | null)?.historicalReview;
+      if (!historicalReview) {
+        return null;
+      }
+      return { historicalReview };
+    },
+  );
+}
+
+export async function fetchTodaySuggestion(): Promise<ActionResult<{ suggestion: NextBestQuestSuggestion | null }>> {
+  return runAction<{ suggestion: NextBestQuestSuggestion | null }>(
+    () => fetch("/api/today/suggestion"),
+    (json) => {
+      const payload = json as { suggestion?: NextBestQuestSuggestion | null } | null;
+      if (!payload || !("suggestion" in payload)) {
+        return null;
+      }
+      return { suggestion: payload.suggestion ?? null };
+    },
+  );
+}
+
+export async function fetchEventAnalytics(
+  range: MetricsRange = "7d",
+): Promise<ActionResult<{ analytics: EventAnalytics }>> {
+  return runAction<{ analytics: EventAnalytics }>(
+    () => fetch(`/api/events/analytics?range=${encodeURIComponent(range)}`),
+    (json) => {
+      const analytics = (json as { analytics?: EventAnalytics } | null)?.analytics;
+      if (!analytics) {
+        return null;
+      }
+      return { analytics };
+    },
+  );
+}
+
+export async function recordBehaviorEvent(
+  name: BehaviorEventName | string,
+  properties?: Record<string, unknown>,
+): Promise<void> {
+  if (!isBehaviorEventName(name)) {
+    return;
+  }
+
+  const sanitizedProperties = sanitizeBehaviorEventProperties(properties);
+  const payload = sanitizedProperties ? { name, properties: sanitizedProperties } : { name };
+
+  try {
+    await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Best-effort telemetry: never interrupt user flows.
+  }
+}
+
+export async function fetchYouProfile(): Promise<ActionResult<{ profile: YouProfile }>> {
+  return runAction<{ profile: YouProfile }>(
+    () => fetch("/api/you/profile"),
+    (json) => {
+      const profile = (json as { profile?: YouProfile } | null)?.profile;
+      if (!profile) {
+        return null;
+      }
+      return { profile };
+    },
+  );
+}
+
+export async function updateYouProfile(payload: {
+  displayName?: string;
+  remindersEnabled?: boolean;
+  reminderTimeLocal?: string | null;
+  reminderDays?: number[];
+  reminderLastFiredOn?: string | null;
+}): Promise<ActionResult<{ profile: YouProfile }>> {
+  return runAction<{ profile: YouProfile }>(
+    () =>
+      fetch("/api/you/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => {
+      const profile = (json as { profile?: YouProfile } | null)?.profile;
+      if (!profile) {
+        return null;
+      }
+      return { profile };
+    },
+  );
+}
+
+export async function changeYouPassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<ActionResult> {
+  return runAction(
+    () =>
+      fetch("/api/you/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    () => null,
+  );
+}
+
+export async function fetchOnboardingState(): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () => fetch("/api/onboarding"),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
+  );
+}
+
+export const fetchYouPreferences = fetchOnboardingState;
+
+export async function updateYouPreferences(
+  payload: YouPreferencesPayload,
+): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () =>
+      fetch("/api/you/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
+  );
+}
+
+export async function completeOnboarding(payload: {
+  focusArea: "work" | "health" | "learning" | "life";
+  weeklyTarget: number;
+  encouragementStyle: "gentle" | "direct" | "celebration";
+}): Promise<ActionResult<{ onboarding: OnboardingState }>> {
+  return runAction<{ onboarding: OnboardingState }>(
+    () =>
+      fetch("/api/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          complete: true,
+        }),
+      }),
+    (json) => {
+      const onboarding = (json as { onboarding?: OnboardingState } | null)?.onboarding;
+      if (!onboarding) {
+        return null;
+      }
+      return { onboarding };
+    },
+  );
+}
+
+export async function startFocusSession(
+  questId?: string,
+): Promise<ActionResult<{ session: ActiveFocusSession }>> {
+  return runAction<{ session: ActiveFocusSession }>(
+    () =>
+      fetch("/api/focus/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(questId ? { questId } : {}),
+      }),
+    (json) => (json as { session?: ActiveFocusSession } | null)?.session ? (json as { session: ActiveFocusSession }) : null,
+  );
+}
+
+export async function stopFocusSession(): Promise<ActionResult<{ session: ClosedFocusSession }>> {
+  return runAction<{ session: ClosedFocusSession }>(
+    () =>
+      fetch("/api/focus/stop", {
+        method: "POST",
+      }),
+    (json) => (json as { session?: ClosedFocusSession } | null)?.session ? (json as { session: ClosedFocusSession }) : null,
+  );
+}
+
+export async function getActiveFocusSession(): Promise<ActionResult<{ session: ActiveFocusSession | null }>> {
+  return runAction<{ session: ActiveFocusSession | null }>(
+    () => fetch("/api/focus/active"),
+    (json) => {
+      const payload = json as { session?: ActiveFocusSession | null } | null;
+      if (!payload || !("session" in payload)) {
+        return null;
+      }
+      return { session: payload.session ?? null };
+    },
   );
 }

@@ -34,4 +34,5 @@ export type TodayDashboardSnapshot = {
   activeQuests: Quest[];
   dailies: Quest[];
   dailyKey: string | null;
+  focusMinutesLast7d: number;
 };

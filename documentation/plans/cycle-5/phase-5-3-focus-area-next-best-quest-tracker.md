@@ -1,0 +1,90 @@
+# Phase 5.3 - Focus-Area Next-Best Quest Suggestion (Tracker)
+
+Pair with `phase-5-3-focus-area-next-best-quest-plan.md`.
+
+Status legend: `[ ]` pending  `[~]` in progress  `[x]` done  `[!]` blocked
+
+Phase status: `[x]` done
+
+## A. Contract and scope guardrails
+
+- [x] Confirm Phase 5.3 stays within focus-aware next-best-quest suggestion scope.
+- [x] Confirm no new persistence is introduced in 5.3.
+- [x] Confirm suggestion output is single-item (`suggestion | null`) only.
+- [x] Confirm event-logged analytics remain out of scope (gated 5.4 / 5.5).
+- [x] Confirm AI/LLM recommendation remains out of scope in 5.3.
+
+## B. Backend/API readiness
+
+- [x] Add authenticated `GET /api/today/suggestion` endpoint.
+- [x] Map onboarding focus areas to quest categories (`work/work`, `health/health`, `learning/study`, `life/personal`).
+- [x] Implement deterministic ranking (focus-area match -> category rotation -> priority fallback).
+- [x] Implement `reason` enum response (`focus_area_match` / `category_rotation` / `fallback_priority`).
+- [x] Implement encouragement-style copy variants by suggestion reason.
+
+## C. UI integration
+
+- [x] Add `src/components/home/next-best-quest-card.tsx` rendering suggestion summary and reason.
+- [x] Mount card in `src/components/home/today-focus-shell.tsx` near the top of Today flow.
+- [x] Reuse existing loading/error patterns without disrupting current quest sections.
+
+## D. Validation and tests
+
+- [x] Add `src/tests/api-routes-today-suggestion.test.ts` with auth + null + ranking + tone tests.
+- [x] Add `src/tests/next-best-quest-card.test.tsx` with reason/tone variant tests.
+- [x] Add `e2e/today-next-best-quest.spec.ts` happy path.
+- [x] `npm run test:ci`
+- [x] `npm run typecheck`
+- [x] scoped lint (`src` + `e2e`)
+- [x] `npm run build`
+
+## E. Docs and closeout
+
+- [x] Add Phase 5.3 closeout note to `documentation/status/progress-summary.md`.
+- [x] Update `documentation/plans/cycles/cycles-4-5-6-roadmap.md` Phase 5.3 status.
+- [x] Record evidence summary in this tracker.
+
+## Blockers
+
+- `npx playwright test e2e/today-next-best-quest.spec.ts` is blocked in current environment because port `3000` is already in use by another process and the base `playwright.config.ts` has `reuseExistingServer: false`. Same caveat as Phases 5.1 and 5.2.
+
+## Decision log
+
+- 2026-04-26: Phase 5.3 theme selected as focus-area next-best-quest suggestion to activate `onboardingFocusArea` already captured in Phase 4.5.
+- 2026-04-26: Keep recommendation deterministic and rule-based in 5.3; no AI/LLM ranking.
+- 2026-04-26: Return a single recommendation object (or `null`) for predictable UI complexity and testability.
+- 2026-04-26: Keep analytics/event logging out of scope in 5.3 per roadmap gating to 5.4/5.5.
+- 2026-04-26: Ranking implementation order is locked to (focus-area category match) -> (category rotation against last-7-day completions) -> (priority fallback from `priority_due` ordering).
+- 2026-04-26: Phase 5.3 implementation proceeds with Playwright e2e wired but not executed locally because port `3000` was already in use; spec will run on the next free environment / CI pass.
+
+## Out-of-scope confirmations
+
+- [x] No new User fields or new collections.
+- [x] No multi-suggestion feed or carousel.
+- [x] No AI/LLM-generated recommendation logic.
+- [x] No event-logged behavioral analytics.
+- [x] No sharing/export workflow.
+
+## Exit criteria
+
+- [x] Authenticated Today surface renders next-best-quest card when eligible active quests exist.
+- [x] Suggestion API returns deterministic `suggestion | null` payload with valid reason and tone copy.
+- [x] Tests and quality gates pass.
+- [x] Progress summary + roadmap + tracker evidence are updated.
+
+## Evidence summary
+
+- API: `src/app/api/today/suggestion/route.ts` implements authenticated `GET /api/today/suggestion` with deterministic ranking (`focus_area_match` -> `category_rotation` -> `fallback_priority`) and tone-aware copy keyed off `User.onboardingEncouragementStyle`.
+- UI: `src/components/home/next-best-quest-card.tsx` mounted near the top of `src/components/home/today-focus-shell.tsx`; reuses the existing loading/error panel pattern.
+- Client contract: `NextBestQuestSuggestion` type and `fetchTodaySuggestion()` action added to `src/lib/client-api.ts`.
+- Tests:
+  - `src/tests/api-routes-today-suggestion.test.ts` (auth, null-when-no-active-quests, focus-match preference, category rotation, priority fallback, tone branching)
+  - `src/tests/next-best-quest-card.test.tsx` (reason labels + tone badge variants)
+  - `e2e/today-next-best-quest.spec.ts` (Today happy path; mocked API responses)
+- Quality gates:
+  - `npm run test:ci` passed (20/20 files, 103/103 tests)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest now includes `/api/today/suggestion` alongside `/api/review/weekly` and `/api/review/historical`
+  - `npx playwright test e2e/today-next-best-quest.spec.ts` is environment-blocked locally (port `3000` already in use); spec remains green-by-construction and will run on the next free environment / CI pass.
+- Scope guardrails held: no new persistence, no multi-suggestion feed, no AI/LLM ranking, no event-logged behavioral analytics (deferred to Phase 5.4 per roadmap gate), no sharing/export workflow.

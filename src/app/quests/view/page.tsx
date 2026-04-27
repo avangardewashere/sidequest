@@ -4,6 +4,8 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
+import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
 import { fetchQuestsList } from "@/lib/client-api";
 import type {
@@ -216,7 +218,8 @@ export default function ViewQuestsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6 text-black">
+    <div className="relative min-h-screen">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-6 pb-28 text-black">
       <DashboardNav onLogout={() => void signOut({ redirect: false })} />
 
       <h1 className="text-2xl font-semibold">View Quests</h1>
@@ -306,6 +309,8 @@ export default function ViewQuestsPage() {
           {feedback}
         </div>
       ) : null}
-    </main>
+      </main>
+      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
+    </div>
   );
 }

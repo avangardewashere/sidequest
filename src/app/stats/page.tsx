@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Bar,
@@ -22,7 +22,20 @@ import { levelFromTotalXp } from "@/lib/xp";
 import { ChartShell, ThemedChartTooltip } from "@/components/stats/chart-shell";
 import { RangeSwitcher } from "@/components/stats/range-switcher";
 import { StatCard } from "@/components/stats/stat-card";
+import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
+import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
+import { WeeklyReviewCard } from "@/components/review/weekly-review-card";
+import { HistoricalReviewCard } from "@/components/review/historical-review-card";
+import { EventAnalyticsCard } from "@/components/stats/event-analytics-card";
 import { useStats } from "@/hooks/useStats";
+import {
+  fetchEventAnalytics,
+  fetchHistoricalReview,
+  fetchWeeklyReview,
+  type EventAnalytics,
+  type HistoricalReview,
+  type WeeklyReview,
+} from "@/lib/client-api";
 
 function percentDelta(current: number, previous: number): number {
   if (previous === 0 && current === 0) {
@@ -66,6 +79,15 @@ type StatsChartPoint = {
 
 export default function StatsPage() {
   const { data, isLoading, error, range, setRange, refresh } = useStats("7d");
+  const [weeklyReview, setWeeklyReview] = useState<WeeklyReview | null>(null);
+  const [weeklyReviewLoading, setWeeklyReviewLoading] = useState(true);
+  const [weeklyReviewError, setWeeklyReviewError] = useState<string | null>(null);
+  const [historicalReview, setHistoricalReview] = useState<HistoricalReview | null>(null);
+  const [historicalReviewLoading, setHistoricalReviewLoading] = useState(true);
+  const [historicalReviewError, setHistoricalReviewError] = useState<string | null>(null);
+  const [eventAnalytics, setEventAnalytics] = useState<EventAnalytics | null>(null);
+  const [eventAnalyticsLoading, setEventAnalyticsLoading] = useState(true);
+  const [eventAnalyticsError, setEventAnalyticsError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const completionsSparkline = data?.completionsByDay.map((point) => point.value) ?? [];
@@ -137,6 +159,72 @@ export default function StatsPage() {
     [xpLineData],
   );
 
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setWeeklyReviewLoading(true);
+      setWeeklyReviewError(null);
+      const result = await fetchWeeklyReview();
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setWeeklyReviewError(result.message ?? "Failed to load weekly review.");
+        setWeeklyReviewLoading(false);
+        return;
+      }
+      setWeeklyReview(result.data.weeklyReview);
+      setWeeklyReviewLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setHistoricalReviewLoading(true);
+      setHistoricalReviewError(null);
+      const result = await fetchHistoricalReview(4);
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setHistoricalReviewError(result.message ?? "Failed to load historical review.");
+        setHistoricalReviewLoading(false);
+        return;
+      }
+      setHistoricalReview(result.data.historicalReview);
+      setHistoricalReviewLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setEventAnalyticsLoading(true);
+      setEventAnalyticsError(null);
+      const result = await fetchEventAnalytics(range);
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setEventAnalyticsError(result.message ?? "Failed to load event analytics.");
+        setEventAnalyticsLoading(false);
+        return;
+      }
+      setEventAnalytics(result.data.analytics);
+      setEventAnalyticsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [range]);
+
   function handleResetStatsClick() {
     const confirmed = window.confirm(
       "Reset stats is not wired yet. This is a preview action only. Continue?",
@@ -149,7 +237,8 @@ export default function StatsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6">
+    <div className="relative min-h-screen">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-28">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
@@ -161,6 +250,84 @@ export default function StatsPage() {
         </div>
         <RangeSwitcher value={range} onChange={setRange} disabled={isLoading} />
       </div>
+
+      {weeklyReviewLoading ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+        >
+          <p style={{ color: "var(--color-text-secondary)" }}>Loading weekly review...</p>
+        </section>
+      ) : null}
+
+      {!weeklyReviewLoading && weeklyReviewError ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{
+            borderColor: "var(--color-warning)",
+            background: "var(--color-warning-subtle)",
+            color: "var(--color-warning)",
+          }}
+        >
+          <p>{weeklyReviewError}</p>
+        </section>
+      ) : null}
+
+      {!weeklyReviewLoading && !weeklyReviewError && weeklyReview ? (
+        <WeeklyReviewCard review={weeklyReview} />
+      ) : null}
+
+      {historicalReviewLoading ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+        >
+          <p style={{ color: "var(--color-text-secondary)" }}>Loading historical review...</p>
+        </section>
+      ) : null}
+
+      {!historicalReviewLoading && historicalReviewError ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{
+            borderColor: "var(--color-warning)",
+            background: "var(--color-warning-subtle)",
+            color: "var(--color-warning)",
+          }}
+        >
+          <p>{historicalReviewError}</p>
+        </section>
+      ) : null}
+
+      {!historicalReviewLoading && !historicalReviewError && historicalReview ? (
+        <HistoricalReviewCard review={historicalReview} />
+      ) : null}
+
+      {eventAnalyticsLoading ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+        >
+          <p style={{ color: "var(--color-text-secondary)" }}>Loading event analytics...</p>
+        </section>
+      ) : null}
+
+      {!eventAnalyticsLoading && eventAnalyticsError ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{
+            borderColor: "var(--color-warning)",
+            background: "var(--color-warning-subtle)",
+            color: "var(--color-warning)",
+          }}
+        >
+          <p>{eventAnalyticsError}</p>
+        </section>
+      ) : null}
+
+      {!eventAnalyticsLoading && !eventAnalyticsError && eventAnalytics ? (
+        <EventAnalyticsCard analytics={eventAnalytics} />
+      ) : null}
 
       {error ? (
         <div
@@ -502,6 +669,8 @@ export default function StatsPage() {
           </p>
         ) : null}
       </div>
-    </main>
+      </main>
+      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
+    </div>
   );
 }
