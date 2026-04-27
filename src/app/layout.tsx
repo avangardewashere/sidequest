@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/session-provider";
@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Inter — Phase 7.1 design-token font. Used by the new design system.
+// Geist stays for backwards compatibility with Cycle 0-6 pages until Cycle 9.2 sweeps them.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "SideQuest",
   description: "Gamified quest-style todo app",
@@ -31,7 +39,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthSessionProvider>

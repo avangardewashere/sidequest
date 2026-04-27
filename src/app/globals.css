@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+ * SideQuest design tokens — Phase 7.1
+ *
+ * Source: Stitch mockups (cycles-7-8-9-plan.md, phase-7-1-design-tokens-plan.md).
+ * Light theme only this phase; dark theme deferred to Phase 9.2.
+ *
+ * Tailwind v4 auto-emits every `@theme` token onto `:root` AND generates the
+ * matching utility (bg-X, text-X, p-X, rounded-X, font-X, …). So `bg-canvas`
+ * and `var(--color-canvas)` both resolve from a single source of truth here.
+ *
+ * Legacy `--background` / `--foreground` tokens from Cycle 0 stay untouched so
+ * existing zinc-themed pages keep rendering identically. Cycle 9.2 sweeps them.
+ * ------------------------------------------------------------------------- */
+
 :root {
   --color-bg-base: #fafaf7;
   --color-bg-surface: #ffffff;
@@ -33,6 +47,7 @@
 }
 
 @theme inline {
+  /* Legacy aliases (unchanged) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-bg-base: var(--color-bg-base);
@@ -60,6 +75,79 @@
   --color-danger-subtle: var(--color-danger-subtle);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+@theme {
+  /* ---- Surfaces ---- */
+  --color-canvas: #fafaf7;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #f5f4ef;
+
+  /* ---- Brand ---- */
+  --color-primary: #5b5bd6;
+  --color-primary-strong: #4241bc;
+  --color-primary-subtle: #eeeefb;
+  --color-ember: #9b4513;
+  --color-ember-subtle: #fbead9;
+
+  /* ---- Text ---- */
+  --color-text-primary: #1a1a17;
+  --color-text-secondary: #5a5954;
+  --color-text-tertiary: #8e8c85;
+
+  /* ---- Borders ---- */
+  --color-border-subtle: #edece6;
+  --color-border-default: #d8d6ce;
+
+  /* ---- Semantic ---- */
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-info: #2563eb;
+
+  /* ---- Display font (Inter, wired in layout.tsx via --font-inter) ---- */
+  --font-display: var(--font-inter);
+
+  /* ---- Type scale ---- */
+  --text-display: 1.75rem;
+  --text-display--line-height: 2.25rem;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.02em;
+
+  --text-hero-title: 1.25rem;
+  --text-hero-title--line-height: 1.75rem;
+  --text-hero-title--font-weight: 600;
+
+  --text-body-primary: 1rem;
+  --text-body-primary--line-height: 1.5rem;
+  --text-body-primary--font-weight: 400;
+
+  --text-body-secondary: 0.875rem;
+  --text-body-secondary--line-height: 1.25rem;
+  --text-body-secondary--font-weight: 400;
+
+  --text-label-caps: 0.75rem;
+  --text-label-caps--line-height: 1rem;
+  --text-label-caps--font-weight: 600;
+  --text-label-caps--letter-spacing: 0.05em;
+
+  --text-badge-label: 0.6875rem;
+  --text-badge-label--line-height: 0.875rem;
+  --text-badge-label--font-weight: 700;
+
+  /* ---- Spacing ---- */
+  --spacing-stack-sm: 0.5rem;
+  --spacing-stack-md: 1rem;
+  --spacing-stack-lg: 1.5rem;
+  --spacing-section-gap: 2rem;
+  --spacing-gutter: 1rem;
+  --spacing-container-margin: 1.5rem;
+
+  /* ---- Radii ---- */
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
 }
 
 @media (prefers-color-scheme: dark) {
