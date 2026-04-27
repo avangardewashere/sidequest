@@ -26,10 +26,13 @@ import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
 import { WeeklyReviewCard } from "@/components/review/weekly-review-card";
 import { HistoricalReviewCard } from "@/components/review/historical-review-card";
+import { EventAnalyticsCard } from "@/components/stats/event-analytics-card";
 import { useStats } from "@/hooks/useStats";
 import {
+  fetchEventAnalytics,
   fetchHistoricalReview,
   fetchWeeklyReview,
+  type EventAnalytics,
   type HistoricalReview,
   type WeeklyReview,
 } from "@/lib/client-api";
@@ -82,6 +85,9 @@ export default function StatsPage() {
   const [historicalReview, setHistoricalReview] = useState<HistoricalReview | null>(null);
   const [historicalReviewLoading, setHistoricalReviewLoading] = useState(true);
   const [historicalReviewError, setHistoricalReviewError] = useState<string | null>(null);
+  const [eventAnalytics, setEventAnalytics] = useState<EventAnalytics | null>(null);
+  const [eventAnalyticsLoading, setEventAnalyticsLoading] = useState(true);
+  const [eventAnalyticsError, setEventAnalyticsError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const completionsSparkline = data?.completionsByDay.map((point) => point.value) ?? [];
@@ -197,6 +203,28 @@ export default function StatsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve().then(async () => {
+      setEventAnalyticsLoading(true);
+      setEventAnalyticsError(null);
+      const result = await fetchEventAnalytics(range);
+      if (!active) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setEventAnalyticsError(result.message ?? "Failed to load event analytics.");
+        setEventAnalyticsLoading(false);
+        return;
+      }
+      setEventAnalytics(result.data.analytics);
+      setEventAnalyticsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [range]);
+
   function handleResetStatsClick() {
     const confirmed = window.confirm(
       "Reset stats is not wired yet. This is a preview action only. Continue?",
@@ -273,6 +301,32 @@ export default function StatsPage() {
 
       {!historicalReviewLoading && !historicalReviewError && historicalReview ? (
         <HistoricalReviewCard review={historicalReview} />
+      ) : null}
+
+      {eventAnalyticsLoading ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+        >
+          <p style={{ color: "var(--color-text-secondary)" }}>Loading event analytics...</p>
+        </section>
+      ) : null}
+
+      {!eventAnalyticsLoading && eventAnalyticsError ? (
+        <section
+          className="rounded-xl border p-4 text-sm"
+          style={{
+            borderColor: "var(--color-warning)",
+            background: "var(--color-warning-subtle)",
+            color: "var(--color-warning)",
+          }}
+        >
+          <p>{eventAnalyticsError}</p>
+        </section>
+      ) : null}
+
+      {!eventAnalyticsLoading && !eventAnalyticsError && eventAnalytics ? (
+        <EventAnalyticsCard analytics={eventAnalytics} />
       ) : null}
 
       {error ? (

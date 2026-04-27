@@ -375,3 +375,36 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no AI/LLM event interpretation
   - no multi-user/org analytics surface
   - no server-driven event triggers
+
+## 21) Cycle 5 - Phase 5.5 closeout (Event analytics surfaces)
+
+- Added authenticated per-user event analytics API:
+  - `GET /api/events/analytics?range=7d|30d|90d` (`src/app/api/events/analytics/route.ts`) loads the signed-in user's `BehaviorEvent` documents within a UTC-anchored window via `find().sort({ createdAt: 1 }).lean()`
+  - Zod-validates `range`, returns `400` on invalid/missing values, `401` on missing session
+  - Composes a deterministic analytics payload through the new pure helper
+- Added pure aggregation helper:
+  - `src/lib/event-analytics.ts` -> `summarizeEvents()` returns `totalEvents`, zero-filled `byName` keyed off `BEHAVIOR_EVENT_NAMES`, `reviewViews`, `suggestionViews`, `suggestionClicks`, `suggestionClickRatePct` (`Math.round(clicks / views * 100)`, `0/0 -> 0`), `questCompletionsAfterSuggestionView` (count of `quest_completed` strictly after the earliest `suggestion_viewed`), and an ISO `latestEventAt`
+- Added stats UI integration:
+  - new `src/components/stats/event-analytics-card.tsx` (range badge, total events line, CTR / review views / suggestion views / quests-after-view stat strip, per-name list, deterministic UTC `latestEventAt` footer, `data-testid` hooks for tests)
+  - mounted on `/stats` between `HistoricalReviewCard` and the KPI strip via `src/app/stats/page.tsx`
+  - re-fetches analytics whenever the page-level `RangeSwitcher` changes (`useEffect` keyed on `range`)
+- Extended client contract:
+  - `EventAnalytics` / `EventAnalyticsByName` types and `fetchEventAnalytics(range)` in `src/lib/client-api.ts`
+- Added test coverage:
+  - `src/tests/event-analytics-summarize.test.ts` (8 cases: empty, allowlist filtering, CTR `0/0` and rounding, after-view counting, no-suggestion baseline, max-`createdAt` regardless of order, ISO-string input)
+  - `src/tests/api-routes-events-analytics.test.ts` (6 cases: 401, 400 missing range, 400 invalid range, empty window, populated window with derived metrics, ISO `latestEventAt`)
+  - `src/tests/event-analytics-card.test.tsx` (populated payload + empty payload renders)
+  - `e2e/event-analytics-surface.spec.ts` (`/stats` happy-path with mocked `/api/events/analytics` + supporting dashboards)
+- Validation:
+  - `npm run test:ci` passed (`25/25 files`, `127/127 tests`)
+  - `npm run typecheck` passed
+  - `npx eslint src e2e --ext .ts,.tsx` passed
+  - `npm run build` passed; build manifest includes `/api/events/analytics` alongside `/api/events`
+  - `npx playwright test e2e/event-analytics-surface.spec.ts` remains environment-blocked locally because port `3000` is already in use (same caveat as Phases 5.1 - 5.4)
+- Scope guardrails held:
+  - no new persistence (consumes existing `BehaviorEvent` documents only)
+  - no new event capture names beyond the 5.4 allowlist
+  - no third-party analytics SDK integration
+  - no AI/LLM-generated insight narratives
+  - no org/team-level analytics
+  - no export/share/reporting pipeline

@@ -88,6 +88,21 @@ export type NextBestQuestSuggestion = {
 export { BEHAVIOR_EVENT_NAMES };
 export type { BehaviorEventName };
 
+export type EventAnalyticsByName = Record<BehaviorEventName, number>;
+
+export type EventAnalytics = {
+  range: MetricsRange;
+  rangeDays: number;
+  totalEvents: number;
+  byName: EventAnalyticsByName;
+  reviewViews: number;
+  suggestionViews: number;
+  suggestionClicks: number;
+  suggestionClickRatePct: number;
+  questCompletionsAfterSuggestionView: number;
+  latestEventAt: string | null;
+};
+
 export type ActiveFocusSession = {
   _id: string;
   startedAt: string;
@@ -440,6 +455,21 @@ export async function fetchTodaySuggestion(): Promise<ActionResult<{ suggestion:
         return null;
       }
       return { suggestion: payload.suggestion ?? null };
+    },
+  );
+}
+
+export async function fetchEventAnalytics(
+  range: MetricsRange = "7d",
+): Promise<ActionResult<{ analytics: EventAnalytics }>> {
+  return runAction<{ analytics: EventAnalytics }>(
+    () => fetch(`/api/events/analytics?range=${encodeURIComponent(range)}`),
+    (json) => {
+      const analytics = (json as { analytics?: EventAnalytics } | null)?.analytics;
+      if (!analytics) {
+        return null;
+      }
+      return { analytics };
     },
   );
 }
