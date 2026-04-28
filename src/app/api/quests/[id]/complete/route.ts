@@ -9,6 +9,7 @@ import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
 import { applyQuestCompletion, getMilestoneBonus } from "@/lib/progression";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { levelFromTotalXp } from "@/lib/xp";
+import { isHabitCadence, normalizeQuestCadence, toUtcDateKey } from "@/lib/cadence";
 
 class ApiConflictError extends Error {}
 class ApiNotFoundError extends Error {}
@@ -52,7 +53,9 @@ export async function PATCH(
       if (!quest) {
         throw new ApiNotFoundError("Quest not found");
       }
-      if (quest.status === "completed") {
+      const cadence = normalizeQuestCadence(quest);
+      const isHabitQuest = isHabitCadence(cadence.kind);
+      if (!isHabitQuest && quest.status === "completed") {
         throw new ApiConflictError("Quest already completed");
       }
 
@@ -61,8 +64,16 @@ export async function PATCH(
         throw new ApiNotFoundError("User not found");
       }
 
-      quest.status = "completed";
-      quest.completedAt = new Date();
+      const completedAt = new Date();
+      const completionDate = toUtcDateKey(completedAt);
+
+      if (!isHabitQuest) {
+        quest.status = "completed";
+        quest.completedAt = completedAt;
+      } else {
+        quest.lastCompletedDate = completionDate;
+      }
+
       await quest.save({ session: dbSession });
 
       const progression = applyQuestCompletion({
@@ -115,7 +126,8 @@ export async function PATCH(
             userId: user._id,
             xpEarned: quest.xpReward,
             difficulty: quest.difficulty,
-            completedAt: quest.completedAt,
+            completedAt,
+            completionDate,
           },
         ],
         { session: dbSession },

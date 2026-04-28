@@ -1,5 +1,12 @@
 import mongoose, { InferSchemaType, Model } from "mongoose";
 
+function formatUtcDateKey(timestamp: Date): string {
+  const year = timestamp.getUTCFullYear();
+  const month = String(timestamp.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(timestamp.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const completionLogSchema = new mongoose.Schema(
   {
     questId: {
@@ -21,12 +28,19 @@ const completionLogSchema = new mongoose.Schema(
       required: true,
     },
     completedAt: { type: Date, required: true, default: Date.now },
+    completionDate: {
+      type: String,
+      required: true,
+      default: function deriveCompletionDate(this: { completedAt: Date }) {
+        return formatUtcDateKey(this.completedAt ?? new Date());
+      },
+    },
   },
   { timestamps: true },
 );
 
 completionLogSchema.index({ userId: 1, completedAt: -1 });
-completionLogSchema.index({ questId: 1, userId: 1 }, { unique: true });
+completionLogSchema.index({ questId: 1, userId: 1, completionDate: 1 }, { unique: true });
 
 export type CompletionLogDocument = InferSchemaType<typeof completionLogSchema> & {
   _id: mongoose.Types.ObjectId;

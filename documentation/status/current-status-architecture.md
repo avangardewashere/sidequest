@@ -4,12 +4,24 @@ This document reflects the repository's current implementation status.
 
 ## Project Snapshot
 
-- **Type:** gamified task app (quests, XP, levels, streaks)
+- **Type:** quest-centric productivity app (todo + habit + second-brain trajectory)
 - **Frontend:** Next.js App Router + React + TypeScript (`src/app/**`)
 - **Backend:** Next.js route handlers (`src/app/api/**`)
 - **Auth:** NextAuth credentials flow with JWT sessions (`src/lib/auth.ts`)
 - **Data store:** MongoDB via Mongoose (`src/lib/db.ts`, `src/models/**`)
-- **Main loop:** create quest -> complete quest -> award XP -> update progression
+- **Main loop (current):** create quest -> complete quest -> award XP -> update progression
+- **Main loop (next):** cadence-aware quest completions + durable quest context (tags/notes/links)
+
+## Strategic Direction (Cycles 7-9)
+
+The active roadmap is now the quest, habit, and second-brain pivot documented in
+`documentation/plans/cycles-7-8-9-plan.md`.
+
+- **7.1** design tokens: complete.
+- **7.2** quest hierarchy foundation (`parentQuestId`, child routes, selector helpers): complete.
+- **7.3 next:** cadence + completion-history contract (schema + migration + behavior split).
+
+Cycle 6 remains parked except for the minimum PWA shell slice planned in 9.6.
 
 ## Implemented Application Surfaces
 
@@ -100,10 +112,10 @@ This document reflects the repository's current implementation status.
 
 ## Current Priorities (Recommended)
 
-1. Monitor production stability on `/`, `/quests/view`, and `/stats`
-2. Verify Vercel Analytics event flow in dashboard after normal traffic window
-3. Triage post-Cycle-3 backlog (minor polish and warning cleanup)
-4. Prepare next planning cycle based on production feedback
+1. Execute Phase 7.3 (cadence + completion history) as the next schema milestone.
+2. Run 7.4 (tags/notes/links schema) in parallel only after 7.3 migration contract is frozen.
+3. Start 7.5 core primitives as an independent UI lane; 7.6 follows on top of 7.5.
+4. Keep documentation synchronized with each 7.x phase closeout to prevent roadmap drift.
 
 ## Documentation Trackers
 
@@ -127,7 +139,7 @@ This document reflects the repository's current implementation status.
 
 ## One-Line Summary
 
-**SideQuest is a working route-based gamified task platform with authenticated quest workflows and progression logic; the home surface is a Today/Focus hub wired to live progression and quests (plus quick-add and inline complete) on a tokenized Indigo + Ember theme, and `/stats` now delivers range-aware personal analytics with KPI deltas and chart fallbacks; Cycle 3 hardening and ship-readiness are the next major steps.**
+**SideQuest is a working authenticated quest platform with live Today and Stats surfaces, now aligned to a Cycle 7-9 pivot where hierarchy foundations are complete (7.1/7.2) and cadence-driven habit history (7.3) is the immediate implementation target.**
 
 ## Cycle 1 Closeout
 

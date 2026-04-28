@@ -12,6 +12,7 @@ export type QuestListQuery = {
 };
 
 type QuestQuery = QuestListQuery;
+export type QuestWithChildren = Quest & { children: Quest[] };
 
 function mergeQuestLists(
   dailies: Quest[],
@@ -65,4 +66,24 @@ export function selectQuests(
     }
     return b._id.localeCompare(a._id);
   });
+}
+
+export function withChildren(quests: Quest[], parentId: string): QuestWithChildren | null {
+  const parent = quests.find((quest) => quest._id === parentId);
+  if (!parent) {
+    return null;
+  }
+
+  const children = quests.filter((quest) => quest.parentQuestId === parentId);
+  return { ...parent, children };
+}
+
+export function siblingsOf(quests: Quest[], questId: string): Quest[] {
+  const quest = quests.find((item) => item._id === questId);
+  if (!quest) {
+    return [];
+  }
+
+  const parentQuestId = quest.parentQuestId ?? null;
+  return quests.filter((item) => item._id !== questId && (item.parentQuestId ?? null) === parentQuestId);
 }

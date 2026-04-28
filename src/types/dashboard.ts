@@ -1,3 +1,11 @@
+export type QuestCadenceKind = "oneoff" | "daily" | "weekdays" | "weekly" | "custom";
+
+export type QuestCadence = {
+  kind: QuestCadenceKind;
+  daysOfWeek?: number[];
+  everyNDays?: number;
+};
+
 export type Quest = {
   _id: string;
   title: string;
@@ -9,6 +17,9 @@ export type Quest = {
   dueDate?: string | null;
   isDaily?: boolean;
   dailyKey?: string | null;
+  parentQuestId?: string | null;
+  cadence?: QuestCadence;
+  lastCompletedDate?: string | null;
 };
 
 export type Profile = {
@@ -34,9 +45,15 @@ export type CreateQuestPayload = {
   description: string;
   difficulty: Quest["difficulty"];
   category: Quest["category"];
+  dueDate?: string | null;
+  cadence?: QuestCadence;
 };
 
 export type UpdateQuestPayload = CreateQuestPayload;
+
+export type CreateChildQuestPayload = CreateQuestPayload & {
+  dueDate?: string | null;
+};
 
 export type CompleteQuestResponse = {
   xpGained?: number;

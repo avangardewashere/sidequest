@@ -450,3 +450,50 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no new behavior event names
   - no event analytics surface changes
   - no AI/LLM tone preview or variant experiments
+
+## 23) Cycle 7 sequencing refinement (Phase 7.2 first)
+
+- Confirmed Phase 7.1 (`design tokens`) as complete baseline via tracker.
+- Published a dedicated Phase 7.2 implementation plan and tracker:
+  - `documentation/plans/phase-7-2-schema-migration-parent-quest-plan.md`
+  - `documentation/plans/phase-7-2-schema-migration-parent-quest-tracker.md`
+- Refined `cycles-7-8-9-plan.md` sequencing (scope unchanged):
+  - 7.2 now starts immediately after 7.1 closeout (no parallel overlap).
+  - 7.3 starts only after 7.2 schema + endpoint contracts are stable.
+  - Cycle 8 waits for 7.2 deployment/validation gates.
+
+## 24) Cycle 7-9 alignment pass (7.3 kickoff readiness)
+
+- Synced architecture/status framing to match the updated cycle pivot:
+  - `documentation/status/current-status-architecture.md` now reflects todo + habit + second-brain direction.
+  - 7.1/7.2 marked as complete baseline and 7.3 marked as immediate next phase.
+- Added dedicated 7.3 implementation docs:
+  - `documentation/plans/phase-7-3-habit-cadence-completion-history-plan.md`
+  - `documentation/plans/phase-7-3-habit-cadence-completion-history-tracker.md`
+- Locked execution lane boundaries to keep work aligned:
+  - backend lane (7.3 migration + behavior split) first
+  - 7.4 allowed in parallel only after migration contract freeze
+  - 7.5 -> 7.6 UI lane can progress independently
+- Added explicit Cycle 8 start gate language to avoid implementation drift before 7.3 readiness approval.
+
+## 25) Cycle 7 closeout update - Phases 7.2 and 7.3 complete
+
+- Phase 7.2 (`parentQuestId` hierarchy) is now fully closed:
+  - schema/index + depth/daily-parent guardrails
+  - children routes (`GET/POST /api/quests/[id]/children`)
+  - selector helpers (`withChildren`, `siblingsOf`) with tests
+- Phase 7.3 (cadence + completion history) is now fully closed:
+  - `Quest.cadence` and `Quest.lastCompletedDate` landed
+  - `CompletionLog.completionDate` landed with migration utility/script and unique index transition support
+  - completion behavior split for one-off vs habit semantics in `/api/quests/[id]/complete`
+  - new history route `GET /api/quests/[id]/history?days=N`
+  - cadence helper library `src/lib/cadence.ts` and supporting tests
+- Environment/tooling blockers were resolved during closeout:
+  - Next type artifacts regenerated via `npx next typegen`
+  - Vitest execution stabilized for CI path by running with controlled worker/memory settings
+- Validation evidence:
+  - `npm run test:ci` passed (`33/33 files`, `155/155 tests`)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: Phase 7.4 (`tags`, `notes`, `links`) is now the immediate implementation target.

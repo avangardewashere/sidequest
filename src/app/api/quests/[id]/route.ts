@@ -5,11 +5,35 @@ import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { QuestModel } from "@/models/Quest";
 
+const cadenceSchema = z
+  .object({
+    kind: z.enum(["oneoff", "daily", "weekdays", "weekly", "custom"]),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+    everyNDays: z.number().int().min(1).optional(),
+  })
+  .superRefine((cadence, ctx) => {
+    if ((cadence.kind === "weekdays" || cadence.kind === "weekly" || cadence.kind === "custom") && (!cadence.daysOfWeek || cadence.daysOfWeek.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["daysOfWeek"],
+        message: "daysOfWeek is required for weekdays/weekly/custom cadence",
+      });
+    }
+    if (cadence.kind === "custom" && cadence.everyNDays == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["everyNDays"],
+        message: "everyNDays is required for custom cadence",
+      });
+    }
+  });
+
 const updateQuestSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(500),
   difficulty: z.enum(["easy", "medium", "hard"]),
   category: z.enum(["work", "study", "health", "personal", "other"]),
+  cadence: cadenceSchema.optional(),
 });
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -67,6 +91,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           description: parsed.data.description,
           difficulty: parsed.data.difficulty,
           category: parsed.data.category,
+          cadence: parsed.data.cadence ?? { kind: "oneoff" },
         },
       },
       { new: true },

@@ -8,8 +8,10 @@ import {
 import type { QuestListQuery } from "@/lib/quest-selectors";
 import type {
   CompleteQuestResponse,
+  CreateChildQuestPayload,
   CreateQuestPayload,
   Profile,
+  QuestCadence,
   Quest,
   RegisterPayload,
   UpdateQuestPayload,
@@ -118,6 +120,12 @@ export type ActiveFocusSession = {
 export type ClosedFocusSession = ActiveFocusSession & {
   endedAt: string;
   durationSec: number;
+};
+
+export type QuestCompletionHistoryPoint = {
+  date: string;
+  xp: number;
+  completedAt: string;
 };
 
 export type ActionResult<T = null> = {
@@ -390,6 +398,64 @@ export async function updateQuestById(
       }),
     (json) => (json as { quest?: Quest } | null)?.quest ?? null,
   );
+}
+
+export async function fetchQuestChildren(
+  questId: string,
+): Promise<ActionResult<{ children: Quest[] }>> {
+  return runAction<{ children: Quest[] }>(
+    () => fetch(`/api/quests/${questId}/children`),
+    (json) => {
+      const children = (json as { children?: Quest[] } | null)?.children;
+      if (!Array.isArray(children)) {
+        return null;
+      }
+      return { children };
+    },
+  );
+}
+
+export async function createChildQuest(
+  questId: string,
+  payload: CreateChildQuestPayload,
+): Promise<ActionResult<Quest>> {
+  return runAction<Quest>(
+    () =>
+      fetch(`/api/quests/${questId}/children`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => (json as { quest?: Quest } | null)?.quest ?? null,
+  );
+}
+
+export async function fetchQuestHistory(
+  questId: string,
+  days: number = 90,
+): Promise<ActionResult<{ completions: QuestCompletionHistoryPoint[] }>> {
+  return runAction<{ completions: QuestCompletionHistoryPoint[] }>(
+    () => fetch(`/api/quests/${questId}/history?days=${encodeURIComponent(String(days))}`),
+    (json) => {
+      const completions = (json as { completions?: QuestCompletionHistoryPoint[] } | null)?.completions;
+      if (!Array.isArray(completions)) {
+        return null;
+      }
+      return { completions };
+    },
+  );
+}
+
+export function normalizeQuestCadenceForClient(
+  quest: Pick<Quest, "cadence" | "isDaily">,
+): QuestCadence {
+  if (quest.cadence?.kind) {
+    return quest.cadence;
+  }
+  if (quest.isDaily) {
+    return { kind: "daily" };
+  }
+  return { kind: "oneoff" };
 }
 
 export async function deleteQuestById(

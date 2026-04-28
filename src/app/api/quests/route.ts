@@ -7,12 +7,36 @@ import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { QuestModel } from "@/models/Quest";
 import { getXpReward, QuestDifficulty } from "@/lib/xp";
 
+const cadenceSchema = z
+  .object({
+    kind: z.enum(["oneoff", "daily", "weekdays", "weekly", "custom"]),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+    everyNDays: z.number().int().min(1).optional(),
+  })
+  .superRefine((cadence, ctx) => {
+    if ((cadence.kind === "weekdays" || cadence.kind === "weekly" || cadence.kind === "custom") && (!cadence.daysOfWeek || cadence.daysOfWeek.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["daysOfWeek"],
+        message: "daysOfWeek is required for weekdays/weekly/custom cadence",
+      });
+    }
+    if (cadence.kind === "custom" && cadence.everyNDays == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["everyNDays"],
+        message: "everyNDays is required for custom cadence",
+      });
+    }
+  });
+
 const createQuestSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(500),
   difficulty: z.enum(["easy", "medium", "hard"]),
   category: z.enum(["work", "study", "health", "personal", "other"]),
   dueDate: z.string().datetime().optional().nullable(),
+  cadence: cadenceSchema.optional(),
 });
 
 const questListQuerySchema = z.object({
@@ -133,6 +157,7 @@ export async function POST(request: Request) {
       category: parsed.data.category,
       xpReward: getXpReward(difficulty),
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+      cadence: parsed.data.cadence ?? { kind: "oneoff" },
       createdBy: userId,
     });
 
