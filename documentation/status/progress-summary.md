@@ -497,3 +497,33 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run lint` passed
   - `npm run build` passed
 - Active next step: Phase 7.4 (`tags`, `notes`, `links`) is now the immediate implementation target.
+
+## 26) Cycle 7 - Phase 7.4 closeout (Tags, notes, links schema)
+
+- Added second-brain schema fields on `Quest`:
+  - `tags: string[]` with max-8 and per-tag length validation
+  - `notes: { id, body, createdAt }[]` with max-50 and body-length guardrails
+  - `links: { questId, kind }[]` with max-32 and enum-constrained link kinds
+- Added 7.4 endpoints:
+  - `PATCH /api/quests/[id]/tags`
+  - `POST /api/quests/[id]/notes`
+  - `PATCH /api/quests/[id]/notes/[noteId]`
+  - `DELETE /api/quests/[id]/notes/[noteId]`
+  - `POST /api/quests/[id]/links`
+  - `DELETE /api/quests/[id]/links/[linkId]`
+- Added `src/lib/quest-tags.ts`:
+  - `normalizeTags(input)` for lowercase/trim/dedupe/cap behavior
+  - `userTagSuggestions(userId, prefix)` for tag autocomplete support
+- Added test coverage:
+  - `src/tests/quest-tags.test.ts`
+  - `src/tests/api-routes-quest-second-brain.test.ts`
+- Validation:
+  - `npx next typegen` passed
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run test:ci` passed (`35/35 files`, `163/163 tests`; includes pre-existing `act()` warnings in unrelated dashboard tests)
+  - `npm run build` passed; route manifest includes all new 7.4 endpoints
+- Scope guardrails held:
+  - no reciprocal link writes (deferred to 8.6)
+  - no search/linked-from UI surfaces
+  - no reflection note subtype changes

@@ -71,7 +71,7 @@ Make a quest a habit by giving it a cadence and allowing many completions over t
 
 ### Phase 7.4 — Tags, notes & links schema (3 days)
 
-Status: next up.
+Status: done (schema, routes, helper, and quality gates complete).
 
 Second-brain context attaches to every quest. Implementation now, UI in 8.x.
 
