@@ -20,6 +20,31 @@ const cadenceSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const questNoteSchema = new mongoose.Schema(
+  {
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      default: () => new mongoose.Types.ObjectId(),
+    },
+    body: { type: String, required: true, trim: true, maxlength: 4096 },
+    createdAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: false },
+);
+
+const questLinkSchema = new mongoose.Schema(
+  {
+    questId: { type: mongoose.Schema.Types.ObjectId, ref: "Quest", required: true },
+    kind: {
+      type: String,
+      enum: ["related", "blocks", "depends-on"],
+      required: true,
+    },
+  },
+  { _id: true },
+);
+
 const questSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -47,6 +72,9 @@ const questSchema = new mongoose.Schema(
     dailyKey: { type: String, default: null },
     cadence: { type: cadenceSchema, default: () => ({ kind: "oneoff" }) },
     lastCompletedDate: { type: String, default: null },
+    tags: { type: [String], default: [] },
+    notes: { type: [questNoteSchema], default: [] },
+    links: { type: [questLinkSchema], default: [] },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -131,6 +159,46 @@ questSchema.pre("validate", function validateCadence(this: QuestHierarchyValidat
     if (!cadence.everyNDays || cadence.everyNDays < 1 || !Number.isInteger(cadence.everyNDays)) {
       this.invalidate("cadence.everyNDays", "everyNDays is required for custom cadence and must be >= 1");
     }
+  }
+});
+
+questSchema.pre("validate", function validateSecondBrainFields(this: mongoose.Document & {
+  tags?: string[];
+  notes?: Array<{ body?: string }>;
+  links?: Array<{ questId?: mongoose.Types.ObjectId; kind?: string }>;
+  invalidate(path: string, errorMsg: string): void;
+}) {
+  const tags = this.tags ?? [];
+  if (tags.length > 8) {
+    this.invalidate("tags", "A quest can have at most 8 tags");
+  }
+  for (const tag of tags) {
+    const trimmed = (tag ?? "").trim();
+    if (trimmed.length < 1 || trimmed.length > 32) {
+      this.invalidate("tags", "Each tag must be between 1 and 32 characters");
+      break;
+    }
+  }
+
+  const notes = this.notes ?? [];
+  if (notes.length > 50) {
+    this.invalidate("notes", "A quest can have at most 50 notes");
+  }
+  for (const note of notes) {
+    const body = (note.body ?? "").trim();
+    if (body.length < 1 || body.length > 4096) {
+      this.invalidate("notes", "Each note body must be between 1 and 4096 characters");
+      break;
+    }
+    if (/[<][^>]+[>]/.test(body)) {
+      this.invalidate("notes", "HTML tags are not allowed in note bodies");
+      break;
+    }
+  }
+
+  const links = this.links ?? [];
+  if (links.length > 32) {
+    this.invalidate("links", "A quest can have at most 32 links");
   }
 });
 
