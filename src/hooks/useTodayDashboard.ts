@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchTodayDashboard } from "@/lib/client-api";
-import type { TodayDashboardSnapshot } from "@/types/today-dashboard";
+import { emptyTodayHabitSurface, type TodayDashboardSnapshot } from "@/types/today-dashboard";
 
 const TODAY_CACHE_PREFIX = "today-dashboard:v2:";
 const LAST_KNOWN_CACHE_KEY = "today-dashboard:v2:last-known";
@@ -22,6 +22,21 @@ function isSnapshotShape(value: unknown): value is TodayDashboardSnapshot {
     Array.isArray(candidate.dailies) &&
     typeof candidate.focusMinutesLast7d === "number"
   );
+}
+
+/** Ensure `habitSurface` exists (older cached snapshots omit it). */
+function normalizeSnapshot(raw: TodayDashboardSnapshot): TodayDashboardSnapshot {
+  const hs = raw.habitSurface;
+  if (
+    hs &&
+    typeof hs === "object" &&
+    Array.isArray(hs.habitsDue) &&
+    Array.isArray(hs.atRisk) &&
+    Array.isArray(hs.captured)
+  ) {
+    return raw;
+  }
+  return { ...raw, habitSurface: emptyTodayHabitSurface };
 }
 
 function cacheKeyByDate(date: Date = new Date()): string {
@@ -45,7 +60,7 @@ function readSessionSnapshot(date: Date = new Date()): TodayDashboardSnapshot | 
     return null;
   }
   const parsed = readJsonFromStorage(window.sessionStorage, cacheKeyByDate(date));
-  return isSnapshotShape(parsed) ? parsed : null;
+  return isSnapshotShape(parsed) ? normalizeSnapshot(parsed) : null;
 }
 
 function writeSessionSnapshot(snapshot: TodayDashboardSnapshot, date: Date = new Date()) {
@@ -64,7 +79,7 @@ function readLastKnownSnapshot(): TodayDashboardSnapshot | null {
     return null;
   }
   const parsed = readJsonFromStorage(window.localStorage, LAST_KNOWN_CACHE_KEY);
-  return isSnapshotShape(parsed) ? parsed : null;
+  return isSnapshotShape(parsed) ? normalizeSnapshot(parsed) : null;
 }
 
 function writeLastKnownSnapshot(snapshot: TodayDashboardSnapshot) {
@@ -93,7 +108,7 @@ export function useTodayDashboard() {
 
   const applySnapshot = useCallback((next: TodayDashboardSnapshot) => {
     if (mountedRef.current) {
-      setData(next);
+      setData(normalizeSnapshot(next));
       setError(null);
     }
   }, []);

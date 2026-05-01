@@ -25,6 +25,26 @@ export type DailiesApiResponse = {
   dailies: Quest[];
 };
 
+/** One habit row for Today home (Phase 8.3). */
+export type TodayHabitSurfaceRow = {
+  quest: Quest;
+  streak: number;
+  completedTodayUtc: boolean;
+};
+
+/** Server-built habit + capture slices for the Today home. */
+export type TodayHabitSurfacePayload = {
+  habitsDue: TodayHabitSurfaceRow[];
+  atRisk: TodayHabitSurfaceRow[];
+  captured: Quest[];
+};
+
+export const emptyTodayHabitSurface: TodayHabitSurfacePayload = {
+  habitsDue: [],
+  atRisk: [],
+  captured: [],
+};
+
 /**
  * Aggregated client bundle for the authenticated home (Cycle 1 Phase 1.1).
  * Each leg may be empty if that request failed; callers map to UI in later phases.
@@ -35,4 +55,6 @@ export type TodayDashboardSnapshot = {
   dailies: Quest[];
   dailyKey: string | null;
   focusMinutesLast7d: number;
+  /** Present when `GET /api/today/habit-surface` succeeds; otherwise treat as empty buckets. */
+  habitSurface: TodayHabitSurfacePayload;
 };

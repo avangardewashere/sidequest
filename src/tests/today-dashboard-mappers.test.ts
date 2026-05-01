@@ -9,7 +9,7 @@ import {
   sortActiveQuestsForMain,
 } from "@/lib/today-dashboard-mappers";
 import type { Quest } from "@/types/dashboard";
-import type { ProgressionProfile, TodayDashboardSnapshot } from "@/types/today-dashboard";
+import { emptyTodayHabitSurface, type ProgressionProfile, type TodayDashboardSnapshot } from "@/types/today-dashboard";
 
 const baseQuest = (overrides: Partial<Quest>): Quest => ({
   _id: "q1",
@@ -73,6 +73,7 @@ describe("snapshotToTodayStats", () => {
       dailies: [],
       dailyKey: "k",
       focusMinutesLast7d: 73,
+      habitSurface: emptyTodayHabitSurface,
     };
     const stats = snapshotToTodayStats(snapshot, snapshot.profile);
     expect(stats[0].value).toBe("1");
@@ -92,6 +93,7 @@ describe("sortActiveQuestsForMain and snapshotToMainQuest", () => {
       dailies: [],
       dailyKey: null,
       focusMinutesLast7d: 0,
+      habitSurface: emptyTodayHabitSurface,
     };
     const sorted = sortActiveQuestsForMain(snapshot.activeQuests);
     expect(sorted[0]._id).toBe("hard");
@@ -106,6 +108,7 @@ describe("sortActiveQuestsForMain and snapshotToMainQuest", () => {
       dailies: [],
       dailyKey: null,
       focusMinutesLast7d: 0,
+      habitSurface: emptyTodayHabitSurface,
     };
     expect(snapshotToMainQuest(snapshot)).toBeNull();
   });
@@ -119,6 +122,7 @@ describe("snapshotToTaskSections", () => {
       dailies: [baseQuest({ _id: "d1", isDaily: true, status: "active" })],
       dailyKey: "dk",
       focusMinutesLast7d: 0,
+      habitSurface: emptyTodayHabitSurface,
     };
     const sections = snapshotToTaskSections(snapshot);
     expect(sections[0].tasks).toHaveLength(1);
@@ -139,6 +143,7 @@ describe("snapshotToTaskSections", () => {
       dailies: [],
       dailyKey: null,
       focusMinutesLast7d: 0,
+      habitSurface: emptyTodayHabitSurface,
     };
     const sections = snapshotToTaskSections(snapshot);
     expect(sections[0].tasks.map((t) => t.id)).toEqual(["hard-soon", "hard-no-due", "late-medium"]);

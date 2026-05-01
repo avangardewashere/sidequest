@@ -143,7 +143,7 @@ Create `src/app/quests/[id]/page.tsx` (new route). Sections, ordered:
 
 ### Phase 8.3 — Today surface: habits due, at-risk streaks (3 days)
 
-Status: next up.
+Status: done (see `phase-8-3-today-surface-plan.md` + `phase-8-3-today-surface-tracker.md`).
 
 Augment the existing home (`/`) Today shell:
 
@@ -154,6 +154,8 @@ Augment the existing home (`/`) Today shell:
 - `useTodayDashboard` hook extended to surface today's habit list + at-risk + recent captures.
 
 ### Phase 8.4 — Quest/habit form redesign (4 days)
+
+Status: next up.
 
 Single `<QuestForm>` for create + edit, replacing the current cramped form.
 

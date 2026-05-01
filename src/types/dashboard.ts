@@ -39,6 +39,8 @@ export type Quest = {
   notes?: QuestNote[];
   links?: QuestLink[];
   completedAt?: string | null;
+  /** ISO timestamp when present on API payloads (e.g. list + habit-surface). */
+  createdAt?: string;
 };
 
 export type Profile = {

@@ -558,7 +558,7 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Phase 8.1 quest list redesign is complete; see §29. Phase 8.2 quest detail is complete; see §30. Active next step: **Phase 8.3** — Today surface habits due / at-risk.
+- Phase 8.1 quest list redesign is complete; see §29. Phase 8.2 quest detail is complete; see §30. Phase 8.3 Today surface is complete; see §31. Active next step: **Phase 8.4** — Quest/habit form redesign.
 
 ## 29) Cycle 8 — Phase 8.1 closeout (Quest list redesign)
 
@@ -593,4 +593,18 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: **Phase 8.3** — Today surface: habits due, at-risk streaks, captured-this-week per roadmap.
+
+## 31) Cycle 8 — Phase 8.3 closeout (Today surface)
+
+- Added `GET /api/today/habit-surface`: server-side **habits due** (`isDueToday` + no UTC completion today), **at-risk** (subset with per-quest `streakFromLogs` ≥ 3), **captured this week** (active one-off, empty tags, `createdAt` within 7 UTC days, cap 10).
+- Extended [`TodayDashboardSnapshot`](src/types/today-dashboard.ts) with `habitSurface` + `emptyTodayHabitSurface`; [`Quest`](src/types/dashboard.ts) optional `createdAt`.
+- [`fetchTodayDashboard`](src/lib/client-api.ts) parallel-fetches habit-surface; [`useTodayDashboard`](src/hooks/useTodayDashboard.ts) normalizes older cached snapshots missing `habitSurface`.
+- UI: [`today-focus-habit-surface-sections.tsx`](src/components/home/today-focus-habit-surface-sections.tsx) + integration in [`today-focus-shell.tsx`](src/components/home/today-focus-shell.tsx) **above** header/XP (HabitChip, StreakFlame, complete uses existing `handleCompleteTask` + `refresh`).
+- Tests: [`api-routes-today-habit-surface.test.ts`](src/tests/api-routes-today-habit-surface.test.ts); updated [`client-api-today-dashboard.test.ts`](src/tests/client-api-today-dashboard.test.ts), [`today-dashboard-mappers.test.ts`](src/tests/today-dashboard-mappers.test.ts).
+- Documentation: `phase-8-3-today-surface-plan.md`, tracker; cycles **8.3 done** / **8.4 next**.
+- Validation:
+  - `npm run test:ci` passed (`41/41` files, `198/198` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: **Phase 8.4** — unified QuestForm redesign per roadmap.

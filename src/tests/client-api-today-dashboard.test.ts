@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { fetchTodayDashboard } from "@/lib/client-api";
 import { useTodayDashboard } from "@/hooks/useTodayDashboard";
+import { emptyTodayHabitSurface } from "@/types/today-dashboard";
 
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
@@ -47,18 +48,21 @@ describe("fetchTodayDashboard", () => {
       }
       if (url.includes("/api/dailies")) return jsonResponse({ dailyKey: "2026-04-25", dailies: [] });
       if (url.includes("/api/metrics/summary?range=7d")) return jsonResponse({ kpis: { focusMinutesLast7d: 42 } });
+      if (url.includes("/api/today/habit-surface")) return jsonResponse(emptyTodayHabitSurface);
       return jsonResponse({ error: "unexpected" }, 404);
     });
 
     const snap = await fetchTodayDashboard();
 
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
     expect(fetchSpy).toHaveBeenCalledWith("/api/quests?status=active&sort=priority_due");
+    expect(fetchSpy).toHaveBeenCalledWith("/api/today/habit-surface");
     expect(snap.profile).toEqual(sampleProfile);
     expect(snap.activeQuests).toEqual([sampleQuest]);
     expect(snap.dailies).toEqual([]);
     expect(snap.dailyKey).toBe("2026-04-25");
     expect(snap.focusMinutesLast7d).toBe(42);
+    expect(snap.habitSurface.habitsDue).toEqual([]);
   });
 
   it("returns empty legs when individual requests fail", async () => {
@@ -68,6 +72,7 @@ describe("fetchTodayDashboard", () => {
       if (url.includes("/api/quests")) return jsonResponse({ quests: [sampleQuest] });
       if (url.includes("/api/dailies")) return jsonResponse({ error: "nope" }, 500);
       if (url.includes("/api/metrics/summary?range=7d")) return jsonResponse({ error: "nope" }, 500);
+      if (url.includes("/api/today/habit-surface")) return jsonResponse({ error: "nope" }, 500);
       return jsonResponse({}, 500);
     });
 
@@ -78,6 +83,7 @@ describe("fetchTodayDashboard", () => {
     expect(snap.dailies).toEqual([]);
     expect(snap.dailyKey).toBeNull();
     expect(snap.focusMinutesLast7d).toBe(0);
+    expect(snap.habitSurface.captured).toEqual([]);
   });
 });
 
@@ -96,6 +102,8 @@ describe("useTodayDashboard", () => {
         return jsonResponse({ quests: [sampleQuest] });
       }
       if (url.includes("/api/dailies")) return jsonResponse({ dailyKey: "k", dailies: [sampleQuest] });
+      if (url.includes("/api/metrics/summary?range=7d")) return jsonResponse({ kpis: { focusMinutesLast7d: 0 } });
+      if (url.includes("/api/today/habit-surface")) return jsonResponse(emptyTodayHabitSurface);
       return jsonResponse({}, 500);
     });
 
@@ -118,6 +126,7 @@ describe("useTodayDashboard", () => {
       dailies: [],
       dailyKey: "cached-key",
       focusMinutesLast7d: 12,
+      habitSurface: emptyTodayHabitSurface,
     };
     const dayKey = `today-dashboard:v2:${new Date().toISOString().slice(0, 10)}`;
     window.sessionStorage.setItem(dayKey, JSON.stringify(cachedSnapshot));
@@ -141,6 +150,7 @@ describe("useTodayDashboard", () => {
       if (url.includes("/api/metrics/summary?range=7d")) {
         return jsonResponse({ kpis: { focusMinutesLast7d: 30 } });
       }
+      if (url.includes("/api/today/habit-surface")) return jsonResponse(emptyTodayHabitSurface);
       return jsonResponse({}, 500);
     });
 
@@ -162,6 +172,7 @@ describe("useTodayDashboard", () => {
       dailies: [sampleQuest],
       dailyKey: "last-known",
       focusMinutesLast7d: 7,
+      habitSurface: emptyTodayHabitSurface,
     };
     window.localStorage.setItem("today-dashboard:v2:last-known", JSON.stringify(fallbackSnapshot));
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
@@ -197,6 +208,7 @@ describe("useTodayDashboard", () => {
       if (url.includes("/api/metrics/summary?range=7d")) {
         return jsonResponse({ kpis: { focusMinutesLast7d: 5 } });
       }
+      if (url.includes("/api/today/habit-surface")) return jsonResponse(emptyTodayHabitSurface);
       return jsonResponse({}, 500);
     });
 
@@ -230,6 +242,7 @@ describe("useTodayDashboard", () => {
       if (url.includes("/api/metrics/summary?range=7d")) {
         return jsonResponse({ kpis: { focusMinutesLast7d: level === 2 ? 10 : 22 } });
       }
+      if (url.includes("/api/today/habit-surface")) return jsonResponse(emptyTodayHabitSurface);
       return jsonResponse({}, 500);
     });
 

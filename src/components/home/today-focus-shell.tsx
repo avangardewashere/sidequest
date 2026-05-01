@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TodayFocusHabitSurfaceSections } from "@/components/home/today-focus-habit-surface-sections";
 import { TodayFocusFab } from "@/components/home/today-focus-fab";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
 import { TodayFocusMainQuest } from "@/components/home/today-focus-main-quest";
@@ -38,7 +39,7 @@ import {
   snapshotToTaskSections,
   snapshotToTodayStats,
 } from "@/lib/today-dashboard-mappers";
-import type { TodayDashboardSnapshot } from "@/types/today-dashboard";
+import { emptyTodayHabitSurface, type TodayDashboardSnapshot } from "@/types/today-dashboard";
 
 const EMPTY_SNAPSHOT: TodayDashboardSnapshot = {
   profile: null,
@@ -46,6 +47,7 @@ const EMPTY_SNAPSHOT: TodayDashboardSnapshot = {
   dailies: [],
   dailyKey: null,
   focusMinutesLast7d: 0,
+  habitSurface: emptyTodayHabitSurface,
 };
 
 const SECTION_EMPTY: Record<string, string> = {
@@ -324,6 +326,11 @@ export function TodayFocusShell() {
                 </button>
               </div>
             ) : null}
+            <TodayFocusHabitSurfaceSections
+              habitSurface={snapshot.habitSurface}
+              completingId={completingTaskId}
+              onCompleteHabit={handleCompleteTask}
+            />
             <TodayFocusHeader data={header} onMenuClick={handleMenuClick} onSearchClick={handleSearchClick} />
             <TodayFocusXpStats xp={xp} stats={stats} />
             {streakAtRisk ? (

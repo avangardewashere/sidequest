@@ -18,7 +18,12 @@ import type {
   RegisterPayload,
   UpdateQuestPayload,
 } from "@/types/dashboard";
-import type { ProgressionProfile, TodayDashboardSnapshot } from "@/types/today-dashboard";
+import {
+  emptyTodayHabitSurface,
+  type ProgressionProfile,
+  type TodayDashboardSnapshot,
+  type TodayHabitSurfacePayload,
+} from "@/types/today-dashboard";
 import type { MetricsRange, MetricsSummary } from "@/types/metrics-summary";
 
 type DashboardData = {
@@ -283,18 +288,20 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
 /** Per-request defaults when a leg fails (non-OK or malformed): empty slice / null for that leg only. */
 export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
-  const [questRes, progressionRes, dailiesRes, metricsRes] = await Promise.all([
+  const [questRes, progressionRes, dailiesRes, metricsRes, habitSurfaceRes] = await Promise.all([
     fetch("/api/quests?status=active&sort=priority_due"),
     fetch("/api/progression"),
     fetch("/api/dailies"),
     fetch("/api/metrics/summary?range=7d"),
+    fetch("/api/today/habit-surface"),
   ]);
 
-  const [questData, progressionData, dailiesData, metricsData] = await Promise.all([
+  const [questData, progressionData, dailiesData, metricsData, habitSurfaceData] = await Promise.all([
     questRes.ok ? parseJsonSafe(questRes) : null,
     progressionRes.ok ? parseJsonSafe(progressionRes) : null,
     dailiesRes.ok ? parseJsonSafe(dailiesRes) : null,
     metricsRes.ok ? parseJsonSafe(metricsRes) : null,
+    habitSurfaceRes.ok ? parseJsonSafe(habitSurfaceRes) : null,
   ]);
 
   const profile =
@@ -335,12 +342,27 @@ export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
       ? metricsData.kpis.focusMinutesLast7d
       : 0;
 
+  let habitSurface: TodayHabitSurfacePayload = emptyTodayHabitSurface;
+  if (
+    habitSurfaceData &&
+    typeof habitSurfaceData === "object" &&
+    "habitsDue" in habitSurfaceData &&
+    "atRisk" in habitSurfaceData &&
+    "captured" in habitSurfaceData &&
+    Array.isArray((habitSurfaceData as { habitsDue: unknown }).habitsDue) &&
+    Array.isArray((habitSurfaceData as { atRisk: unknown }).atRisk) &&
+    Array.isArray((habitSurfaceData as { captured: unknown }).captured)
+  ) {
+    habitSurface = habitSurfaceData as TodayHabitSurfacePayload;
+  }
+
   return {
     profile,
     activeQuests,
     dailies,
     dailyKey,
     focusMinutesLast7d,
+    habitSurface,
   };
 }
 
