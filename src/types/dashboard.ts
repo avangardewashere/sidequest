@@ -6,6 +6,20 @@ export type QuestCadence = {
   everyNDays?: number;
 };
 
+export type QuestNote = {
+  id: string;
+  body: string;
+  createdAt: string;
+};
+
+export type QuestLinkKind = "related" | "blocks" | "depends-on";
+
+export type QuestLink = {
+  id: string;
+  questId: string;
+  kind: QuestLinkKind;
+};
+
 export type Quest = {
   _id: string;
   title: string;
@@ -22,6 +36,9 @@ export type Quest = {
   lastCompletedDate?: string | null;
   /** Present when API returns second-brain fields (Phase 7.4+). */
   tags?: string[];
+  notes?: QuestNote[];
+  links?: QuestLink[];
+  completedAt?: string | null;
 };
 
 export type Profile = {

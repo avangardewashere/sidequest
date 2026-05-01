@@ -558,7 +558,7 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Phase 8.1 quest list redesign is complete; see §29. Active next step: **Phase 8.2** — quest detail page.
+- Phase 8.1 quest list redesign is complete; see §29. Phase 8.2 quest detail is complete; see §30. Active next step: **Phase 8.3** — Today surface habits due / at-risk.
 
 ## 29) Cycle 8 — Phase 8.1 closeout (Quest list redesign)
 
@@ -573,4 +573,24 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: **Phase 8.2** — quest detail page (`src/app/quests/[id]/page.tsx`) with heatmap, streak, undo completion, notes, and links per roadmap.
+- Phase 8.2 shipped; see §30.
+
+## 30) Cycle 8 — Phase 8.2 closeout (Quest detail page)
+
+- Added `src/app/quests/[id]/page.tsx` + `quest-detail-client.tsx`: hero (`Card`, `Badge`, `ProgressRing` for subtasks, `HabitChip` / `StreakFlame` for habits), link to edit, complete action, **undo** (one-off terminal; habit by UTC day via heatmap selection).
+- Habit strip: `fetchQuestHistory` + `CalendarHeatmap`; streak from `streakFromLogs` + cadence.
+- Children: list + `Sheet` composer + `createChildQuest`.
+- Second brain: tags (`updateQuestTags` + deep links to `/quests/view?tag=`), notes (`NoteCard`, create/delete), links (minimal id + kind form, titles resolved via `getQuestById`).
+- Hierarchy: collapsible parent + sibling chips when `parentQuestId` is set.
+- API: `DELETE /api/quests/[id]/complete` with optional `?date=` for habits; `replayStreakFromCompletionLogs` / `nextStreakInChain` in `src/lib/progression.ts`; milestone bonus removal in a short time window after the undone log.
+- Client API: `undoQuestCompletion`, `updateQuestTags`, `createQuestNote`, `deleteQuestNote`, `createQuestLink`, `deleteQuestLink`.
+- Types: `QuestNote`, `QuestLink`, `QuestLinkKind`, `notes` / `links` / `completedAt` on `Quest`.
+- Nav: list rows and Today shell open `/quests/[id]` (edit remains on detail).
+- Tests: `src/tests/progression-replay.test.ts`.
+- Documentation: `phase-8-2-quest-detail-plan.md`, `phase-8-2-quest-detail-tracker.md`; cycles plan 8.2 done / 8.3 next.
+- Validation:
+  - `npm run test:ci` passed (`40/40` files, `196/196` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: **Phase 8.3** — Today surface: habits due, at-risk streaks, captured-this-week per roadmap.

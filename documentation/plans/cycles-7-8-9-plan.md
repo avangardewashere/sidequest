@@ -128,7 +128,7 @@ Rewrite `src/app/quests/view/page.tsx` using new primitives. Three-tab top secti
 
 ### Phase 8.2 — Quest detail page (5 days)
 
-Status: next up.
+Status: done (see `phase-8-2-quest-detail-plan.md` + `phase-8-2-quest-detail-tracker.md`).
 
 Create `src/app/quests/[id]/page.tsx` (new route). Sections, ordered:
 
@@ -142,6 +142,8 @@ Create `src/app/quests/[id]/page.tsx` (new route). Sections, ordered:
 8. **Undo completion** — after a mistaken complete, the user can undo: **one-off** quests return to `active` with XP rolled back to match removal of the terminal completion; **habits** remove the completion for a selected UTC calendar day (delete matching `CompletionLog`, recompute `lastCompletedDate` / streak from remaining logs). Expose a clear control on the detail hero (and document parity rules for list-row quick-complete vs detail-only undo in implementation).
 
 ### Phase 8.3 — Today surface: habits due, at-risk streaks (3 days)
+
+Status: next up.
 
 Augment the existing home (`/`) Today shell:
 

@@ -13,6 +13,8 @@ import type {
   Profile,
   QuestCadence,
   Quest,
+  QuestLinkKind,
+  QuestNote,
   RegisterPayload,
   UpdateQuestPayload,
 } from "@/types/dashboard";
@@ -480,6 +482,129 @@ export async function completeQuestById(questId: string): Promise<ActionResult<C
         method: "PATCH",
       }),
     (json) => (json as CompleteQuestResponse | null) ?? {},
+  );
+}
+
+export type UndoQuestCompletionResult = {
+  quest: Quest;
+  progression: {
+    totalXp: number;
+    level: number;
+    currentStreak: number;
+    longestStreak: number;
+  };
+  xpRemoved: number;
+};
+
+/** One-off: omit `date`. Habit: pass UTC `completionDate` as `YYYY-MM-DD`. */
+export async function undoQuestCompletion(
+  questId: string,
+  options?: { date?: string },
+): Promise<ActionResult<UndoQuestCompletionResult>> {
+  const qs = options?.date ? `?date=${encodeURIComponent(options.date)}` : "";
+  return runAction<UndoQuestCompletionResult>(
+    () =>
+      fetch(`/api/quests/${questId}/complete${qs}`, {
+        method: "DELETE",
+      }),
+    (json) => {
+      const body = json as UndoQuestCompletionResult | null;
+      if (!body || typeof body !== "object" || !("quest" in body)) {
+        return null;
+      }
+      return body;
+    },
+  );
+}
+
+export async function updateQuestTags(questId: string, tags: string[]): Promise<ActionResult<{ tags: string[] }>> {
+  return runAction<{ tags: string[] }>(
+    () =>
+      fetch(`/api/quests/${questId}/tags`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags }),
+      }),
+    (json) => {
+      const tagsOut = (json as { tags?: string[] } | null)?.tags;
+      if (!Array.isArray(tagsOut)) {
+        return null;
+      }
+      return { tags: tagsOut };
+    },
+  );
+}
+
+export async function createQuestNote(
+  questId: string,
+  body: string,
+): Promise<ActionResult<{ note: QuestNote }>> {
+  return runAction<{ note: QuestNote }>(
+    () =>
+      fetch(`/api/quests/${questId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      }),
+    (json) => {
+      const raw = (json as { note?: { id?: unknown; body?: string; createdAt?: unknown } } | null)?.note;
+      if (!raw?.body) {
+        return null;
+      }
+      const createdAt =
+        typeof raw.createdAt === "string"
+          ? raw.createdAt
+          : raw.createdAt
+            ? new Date(raw.createdAt as Date).toISOString()
+            : new Date().toISOString();
+      const note: QuestNote = {
+        id: typeof raw.id === "string" ? raw.id : String(raw.id),
+        body: raw.body,
+        createdAt,
+      };
+      return { note };
+    },
+  );
+}
+
+export async function deleteQuestNote(questId: string, noteId: string): Promise<ActionResult> {
+  return runAction(
+    () =>
+      fetch(`/api/quests/${questId}/notes/${encodeURIComponent(noteId)}`, {
+        method: "DELETE",
+      }),
+    () => null,
+  );
+}
+
+export async function createQuestLink(
+  questId: string,
+  payload: { questId: string; kind: QuestLinkKind },
+): Promise<ActionResult<{ link: { id: string; questId: string; kind: QuestLinkKind } }>> {
+  return runAction(
+    () =>
+      fetch(`/api/quests/${questId}/links`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => {
+      const link = (json as { link?: { id: string; questId: string; kind: QuestLinkKind } } | null)?.link;
+      if (!link) {
+        return null;
+      }
+      return { link };
+    },
+  );
+}
+
+export async function deleteQuestLink(questId: string, linkId: string): Promise<ActionResult> {
+  return runAction(
+    () =>
+      fetch(`/api/quests/${questId}/links/${encodeURIComponent(linkId)}`, {
+        method: "DELETE",
+      }),
+    () => null,
   );
 }
 

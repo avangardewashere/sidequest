@@ -132,13 +132,13 @@ export function TodayFocusShell() {
   }, [pomodoro, pushToast]);
   const handleOpenQuest = useCallback(() => {
     if (mainQuest?.id) {
-      router.push(`/quests/${mainQuest.id}/edit`);
+      router.push(`/quests/${mainQuest.id}`);
     }
   }, [mainQuest?.id, router]);
 
   const handleTaskClick = useCallback(
     (taskId: string) => {
-      router.push(`/quests/${taskId}/edit`);
+      router.push(`/quests/${taskId}`);
     },
     [router],
   );

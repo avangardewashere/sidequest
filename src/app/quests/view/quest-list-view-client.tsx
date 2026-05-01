@@ -118,7 +118,7 @@ const QuestListRow = memo(function QuestListRow({
           {quest.status === "active" ? (
             <>
               <Link
-                href={`/quests/${quest._id}/edit`}
+                href={`/quests/${quest._id}`}
                 className="inline-flex min-h-8 cursor-pointer items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                 style={{
                   background: "var(--color-bg-elevated)",
@@ -135,7 +135,7 @@ const QuestListRow = memo(function QuestListRow({
           ) : (
             <>
               <Link
-                href={`/quests/${quest._id}/edit`}
+                href={`/quests/${quest._id}`}
                 className="inline-flex min-h-8 cursor-pointer items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                 style={{
                   background: "var(--color-bg-elevated)",
