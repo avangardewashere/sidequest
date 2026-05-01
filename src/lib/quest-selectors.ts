@@ -1,6 +1,8 @@
+import { normalizeQuestCadence, type CadenceQuestLike } from "@/lib/cadence";
 import type { Quest } from "@/types/dashboard";
 
-export type QuestStatusFilter = "all" | "active" | "completed" | "daily";
+/** API list status filter (legacy `daily` removed from client sends; API may still accept it). */
+export type QuestStatusFilter = "all" | "active" | "completed";
 export type QuestCategoryFilter = "all" | Quest["category"];
 export type QuestSortOption = "newest" | "oldest" | "highest_xp" | "category";
 
@@ -9,6 +11,16 @@ export type QuestListQuery = {
   category: QuestCategoryFilter;
   sort: QuestSortOption;
   limit?: number;
+};
+
+export type QuestListTab = "habits" | "todos" | "all";
+
+export type QuestListViewFilters = {
+  tab: QuestListTab;
+  /** When true, only quests with no parent (`parentQuestId` null/undefined). */
+  topLevelOnly: boolean;
+  /** Normalized lowercase tag, or null for no tag filter. */
+  tag: string | null;
 };
 
 type QuestQuery = QuestListQuery;
@@ -26,6 +38,44 @@ function mergeQuestLists(
   return Array.from(byId.values());
 }
 
+/** True when the quest is a habit (any cadence other than oneoff). */
+export function isHabitQuest(quest: CadenceQuestLike): boolean {
+  return normalizeQuestCadence(quest).kind !== "oneoff";
+}
+
+/** Count direct children per parent id from a flat quest list. */
+export function computeChildCounts(quests: Quest[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const q of quests) {
+    const pid = q.parentQuestId;
+    if (pid) {
+      counts.set(pid, (counts.get(pid) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/**
+ * Client-side filters for the quest list page (tabs, top-level, tag).
+ * Assumes `quests` is already narrowed by API status/category/sort.
+ */
+export function filterQuestsForListView(quests: Quest[], filters: QuestListViewFilters): Quest[] {
+  let out = quests;
+  if (filters.topLevelOnly) {
+    out = out.filter((q) => !q.parentQuestId);
+  }
+  if (filters.tab === "habits") {
+    out = out.filter((q) => isHabitQuest(q));
+  } else if (filters.tab === "todos") {
+    out = out.filter((q) => !isHabitQuest(q));
+  }
+  if (filters.tag) {
+    const needle = filters.tag.toLowerCase();
+    out = out.filter((q) => (q.tags ?? []).some((t) => t.toLowerCase() === needle));
+  }
+  return out;
+}
+
 export function selectQuests(
   dailies: Quest[],
   activeQuests: Quest[],
@@ -35,9 +85,6 @@ export function selectQuests(
   const merged = mergeQuestLists(dailies, activeQuests, completedQuests);
 
   const filtered = merged.filter((quest) => {
-    if (query.status === "daily" && !quest.isDaily) {
-      return false;
-    }
     if (query.status === "active" && quest.status !== "active") {
       return false;
     }

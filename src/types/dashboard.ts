@@ -20,6 +20,8 @@ export type Quest = {
   parentQuestId?: string | null;
   cadence?: QuestCadence;
   lastCompletedDate?: string | null;
+  /** Present when API returns second-brain fields (Phase 7.4+). */
+  tags?: string[];
 };
 
 export type Profile = {

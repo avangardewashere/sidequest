@@ -558,4 +558,19 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: **Phase 8.1** — quest list redesign (`src/app/quests/view/page.tsx`) using 7.5 + 7.6 primitives.
+- Phase 8.1 quest list redesign is complete; see §29. Active next step: **Phase 8.2** — quest detail page.
+
+## 29) Cycle 8 — Phase 8.1 closeout (Quest list redesign)
+
+- Extended `Quest` in `src/types/dashboard.ts` with optional `tags?: string[]` for list-safe typing aligned with the API.
+- Refined `src/lib/quest-selectors.ts`: `QuestStatusFilter` without legacy list “daily”; added `QuestListTab`, `QuestListViewFilters`, `isHabitQuest`, `computeChildCounts`, and `filterQuestsForListView` (Habits / Todos / All, top-level only, optional tag filter).
+- Rebuilt the quest list UI in `src/app/quests/view/quest-list-view-client.tsx` (Cycle 7 `Card`, `Badge`, `Button`, `TagChip`, `HabitChip`, `StreakFlame`), with Habits / Todos / All tabs, sticky filter strip, due-date line for todos, child-count badges, and `?tag=` sync via `useSearchParams` / `router.replace`.
+- Stabilized list reload `useEffect` / `reloadQuestList` dependencies on `session?.user?.id` so incidental session object churn does not refetch or leave the list stuck in a loading state.
+- Tests: `src/tests/quest-list-view-filters.test.ts`, `src/tests/quest-list-view-page.test.tsx`.
+- Documentation: `documentation/plans/phase-8-1-quest-list-redesign-plan.md`, `phase-8-1-quest-list-redesign-tracker.md`; `documentation/plans/cycles-7-8-9-plan.md` marks 8.1 done and 8.2 next up.
+- Validation:
+  - `npm run test:ci` passed (`39/39` files, `191/191` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: **Phase 8.2** — quest detail page (`src/app/quests/[id]/page.tsx`) with heatmap, streak, undo completion, notes, and links per roadmap.

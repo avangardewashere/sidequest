@@ -122,11 +122,13 @@ Habit-and-second-brain-specific UI atoms. Still no business logic — these cons
 
 ### Phase 8.1 — Quest list redesign (Habits / Todos / All) (4 days)
 
-Status: next up (first Cycle 8 implementation phase after 7.6 primitives).
+Status: done (see `phase-8-1-quest-list-redesign-plan.md` + `phase-8-1-quest-list-redesign-tracker.md`).
 
 Rewrite `src/app/quests/view/page.tsx` using new primitives. Three-tab top section: **Habits** (cadence != 'oneoff'), **Todos** (cadence == 'oneoff'), **All**. Top-level only by default (`parentQuestId: null`); child count badge on rows that have children. Habits show `StreakFlame` and `HabitChip` inline; todos show due date. Sticky filter bar (category, tag, status). Tag chips render inline and are clickable to filter.
 
 ### Phase 8.2 — Quest detail page (5 days)
+
+Status: next up.
 
 Create `src/app/quests/[id]/page.tsx` (new route). Sections, ordered:
 
