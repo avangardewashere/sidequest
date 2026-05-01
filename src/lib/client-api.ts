@@ -25,6 +25,7 @@ import {
   type TodayHabitSurfacePayload,
 } from "@/types/today-dashboard";
 import type { MetricsRange, MetricsSummary } from "@/types/metrics-summary";
+import type { QuestLinkedFromHit, QuestSearchHit, QuestSearchKind, QuestSearchResult } from "@/types/quest-search";
 
 type DashboardData = {
   quests: Quest[];
@@ -552,6 +553,53 @@ export async function fetchTagSuggestions(prefix: string): Promise<ActionResult<
         return null;
       }
       return { suggestions };
+    },
+  );
+}
+
+export async function searchQuests(params: {
+  q: string;
+  kind?: QuestSearchKind;
+  limit?: number;
+  cursor?: string | null;
+}): Promise<ActionResult<QuestSearchResult>> {
+  const qs = new URLSearchParams();
+  qs.set("q", params.q.trim());
+  if (params.kind) {
+    qs.set("kind", params.kind);
+  }
+  if (params.limit != null) {
+    qs.set("limit", String(params.limit));
+  }
+  if (params.cursor) {
+    qs.set("cursor", params.cursor);
+  }
+  return runAction<QuestSearchResult>(
+    () => fetch(`/api/quests/search?${qs.toString()}`),
+    (json) => {
+      const body = json as { quests?: QuestSearchHit[]; nextCursor?: string | null } | null;
+      if (!body || !Array.isArray(body.quests)) {
+        return null;
+      }
+      return {
+        quests: body.quests,
+        nextCursor: body.nextCursor ?? null,
+      };
+    },
+  );
+}
+
+export async function fetchQuestsLinkedFrom(
+  questId: string,
+): Promise<ActionResult<{ quests: QuestLinkedFromHit[] }>> {
+  return runAction<{ quests: QuestLinkedFromHit[] }>(
+    () => fetch(`/api/quests/${encodeURIComponent(questId)}/linked-from`),
+    (json) => {
+      const quests = (json as { quests?: QuestLinkedFromHit[] } | null)?.quests;
+      if (!Array.isArray(quests)) {
+        return null;
+      }
+      return { quests };
     },
   );
 }
