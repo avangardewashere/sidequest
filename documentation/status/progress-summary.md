@@ -607,7 +607,7 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: **Phase 8.6** — search + cross-linking per roadmap.
+- Active next step: **Phase 9.1** — cascade and XP integrity per roadmap.
 
 ## 32) Cycle 8 — Phase 8.4 closeout (Quest / habit form)
 
@@ -634,6 +634,21 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - Documentation: `phase-8-5-bottom-nav-plan.md`, `phase-8-5-bottom-nav-tracker.md`; cycles **8.5 done** / **8.6 next**.
 - Validation:
   - `npm run test:ci` passed (`45/45` files, `216/216` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+
+## 34) Cycle 8 — Phase 8.6 closeout (Search + cross-linking)
+
+- **API:** `GET /api/quests/search` (`src/app/api/quests/search/route.ts`) with Zod query, `createdBy` scope, escaped regex, cursor pagination; `GET /api/quests/[id]/linked-from` (`src/app/api/quests/[id]/linked-from/route.ts`). Tests: `quest-search-route.test.ts`, `quest-linked-from-route.test.ts`.
+- **Client:** `searchQuests`, `fetchQuestsLinkedFrom` in `src/lib/client-api.ts`; types in `src/types/quest-search.ts`.
+- **Shell:** `GlobalSearchDialog` (`src/components/layout/global-search-dialog.tsx`) + Search control and Cmd/Ctrl+K (`isTypingInFormField` guard) in `authenticated-app-shell.tsx`. Tests: `global-search-dialog.test.tsx`, `authenticated-app-shell-search.test.tsx`.
+- **Detail:** `quest-detail-client.tsx` — `LinkPicker` with debounced `searchQuests`, linked-from rail, removed paste-id link flow.
+- **Edit form:** `quest-form.tsx` — edit-only linked quests list, `LinkPicker`, `createQuestLink` / `deleteQuestLink`, `onLinksMutated` from edit page to reload quest.
+- **Tags:** Quest detail tags already deep-link to `/quests/view?tag=`; list view uses `router.replace` with `tag` param (verified in audit).
+- Documentation: `phase-8-6-search-tracker.md` complete; cycles plan **8.6 done** / **9.1 next**.
+- Validation:
+  - `npm run test:ci` passed
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed

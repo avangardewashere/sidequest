@@ -171,7 +171,7 @@ Single `<QuestForm>` for create + edit, replacing the current cramped form.
 
 ### Phase 8.5 — Bottom nav + Capture FAB (4 days)
 
-Status: **done** (see `phase-8-5-bottom-nav-plan.md` + `phase-8-5-bottom-nav-tracker.md`). **Next:** Phase 8.6.
+Status: **done** (see `phase-8-5-bottom-nav-plan.md` + `phase-8-5-bottom-nav-tracker.md`). **Next:** Phase 9.1.
 
 Replace `dashboard-nav.tsx` with a mobile-first bottom nav:
 
@@ -181,6 +181,8 @@ Replace `dashboard-nav.tsx` with a mobile-first bottom nav:
 - FAB hides on `/quests/[id]` detail (where its own composer takes over) and on auth pages.
 
 ### Phase 8.6 — Search + cross-linking (4 days)
+
+Status: **done** (see `phase-8-6-search-plan.md` + `phase-8-6-search-tracker.md`). **Next:** Phase 9.1.
 
 Make the second brain searchable.
 
