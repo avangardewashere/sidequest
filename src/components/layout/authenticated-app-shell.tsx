@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { CaptureQuestSheet } from "@/components/layout/capture-quest-sheet";
+import { GlobalSearchDialog, isTypingInFormField } from "@/components/layout/global-search-dialog";
 import { appShellTitle, shouldHideCaptureFab } from "@/lib/app-shell";
 
 export type AuthenticatedAppShellProps = {
@@ -19,6 +20,25 @@ export function AuthenticatedAppShell({ children, title: titleProp }: Authentica
   const { data: session, status } = useSession();
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureMountKey, setCaptureMountKey] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.key === "k" || event.key === "K")) {
+        return;
+      }
+      if (!(event.metaKey || event.ctrlKey)) {
+        return;
+      }
+      if (isTypingInFormField(event.target)) {
+        return;
+      }
+      event.preventDefault();
+      setSearchOpen(true);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const resolvedTitle = titleProp ?? appShellTitle(pathname);
   const showChrome = status === "authenticated" && Boolean(session?.user);
@@ -49,10 +69,9 @@ export function AuthenticatedAppShell({ children, title: titleProp }: Authentica
             type="button"
             variant="ghost"
             size="sm"
-            disabled
-            className="opacity-50"
-            title="Search (coming in a later release)"
-            aria-disabled
+            aria-haspopup="dialog"
+            title="Search (⌘K / Ctrl+K)"
+            onClick={() => setSearchOpen(true)}
           >
             Search
           </Button>
@@ -73,7 +92,7 @@ export function AuthenticatedAppShell({ children, title: titleProp }: Authentica
         </div>
       </header>
     ),
-    [handleSignOut, resolvedTitle],
+    [handleSignOut, resolvedTitle, setSearchOpen],
   );
 
   if (!showChrome) {
@@ -108,6 +127,7 @@ export function AuthenticatedAppShell({ children, title: titleProp }: Authentica
       <BottomNav className="fixed bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom,0px)]" />
 
       <CaptureQuestSheet key={captureMountKey} open={captureOpen} onOpenChange={setCaptureOpen} />
+      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }
