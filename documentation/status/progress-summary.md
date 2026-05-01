@@ -541,4 +541,21 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: Phase 7.6 (habit- and capture-specific atoms consuming this layer).
+- Follow-up: Phase 7.6 completed — see §28.
+
+## 28) Cycle 7 — Phase 7.6 closeout (Habit & capture primitives)
+
+- Added habit/capture atoms under `src/components/ui/`:
+  - `TagChip`, `TagInput`, `CadencePicker`, `HabitChip`, `NoteCard`, `CalendarHeatmap`, `StreakFlame`, `LinkPicker`
+- Added `src/lib/format-cadence-label.ts` (`formatCadenceShort`) for chip and list copy.
+- `NoteCard` ships plain-text body with `white-space: pre-wrap` plus optional `renderBody` for Cycle 8 markdown.
+- `LinkPicker` is fully props-driven (`query` / `options` / `onQueryChange` / `onSelect`) until 8.6 search API wiring.
+- `CalendarHeatmap` uses UTC `YYYY-MM-DD` keys aligned with `toUtcDateKey` / history payloads.
+- Extended dev harness `src/app/_dev/components/page.tsx` with Phase 7.6 sections.
+- Tests: `src/tests/ui-habit-atoms.test.tsx` (TagInput, CadencePicker, heatmap, NoteCard, LinkPicker, format helper).
+- Validation:
+  - `npm run test:ci` passed
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: **Phase 8.1** — quest list redesign (`src/app/quests/view/page.tsx`) using 7.5 + 7.6 primitives.

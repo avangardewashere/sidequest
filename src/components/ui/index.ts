@@ -1,8 +1,16 @@
 export { Badge, type BadgeProps, type BadgeVariant } from "./badge";
 export { BottomNav, type BottomNavItem, type BottomNavProps } from "./bottom-nav";
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./button";
+export { CalendarHeatmap, type CalendarHeatmapProps, type HeatmapCell } from "./calendar-heatmap";
 export { Card, type CardProps, type CardVariant } from "./card";
+export { CadencePicker, type CadencePickerProps } from "./cadence-picker";
 export { FormField, type FormFieldProps } from "./form-field";
+export { HabitChip, type HabitChipProps } from "./habit-chip";
+export { LinkPicker, type LinkPickerOption, type LinkPickerProps } from "./link-picker";
+export { NoteCard, type NoteCardProps } from "./note-card";
 export { ProgressRing, type ProgressRingProps } from "./progress-ring";
 export { Sheet, type SheetPlacement, type SheetProps } from "./sheet";
+export { StreakFlame, type StreakFlameProps } from "./streak-flame";
+export { TagChip, type TagChipProps, type TagChipTone } from "./tag-chip";
+export { TagInput, type TagInputProps } from "./tag-input";
 export { TaskRow, type TaskRowProps } from "./task-row";

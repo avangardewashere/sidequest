@@ -45,7 +45,7 @@ The quest tab has been carrying raw Tailwind defaults with no design tokens, no 
 
 ## Cycle 7 — Foundation: Habit & Second-Brain Schema + Primitives
 
-> Theme: tokens, schema, primitives. No user-visible redesign yet.
+> Theme: tokens, schema, primitives. No user-visible redesign yet. **Phases 7.1–7.6 are complete**; Cycle 8 begins the user-visible quest redesign.
 
 ### Phase 7.1 — Design tokens ✓ DONE
 
@@ -101,7 +101,7 @@ Pure components. No business logic. Built in `src/components/ui/`.
 
 ### Phase 7.6 — Habit & capture primitives (4 days)
 
-Status: next up (starts after 7.5 primitive layer; see roadmap checklist below).
+Status: done (see `phase-7-6-habit-capture-primitives-plan.md` + `phase-7-6-habit-capture-primitives-tracker.md`).
 
 Habit-and-second-brain-specific UI atoms. Still no business logic — these consume props and emit events.
 
@@ -121,6 +121,8 @@ Habit-and-second-brain-specific UI atoms. Still no business logic — these cons
 > Theme: the user-facing transformation. Replace the ugly quest pages, add habit + capture surfaces.
 
 ### Phase 8.1 — Quest list redesign (Habits / Todos / All) (4 days)
+
+Status: next up (first Cycle 8 implementation phase after 7.6 primitives).
 
 Rewrite `src/app/quests/view/page.tsx` using new primitives. Three-tab top section: **Habits** (cadence != 'oneoff'), **Todos** (cadence == 'oneoff'), **All**. Top-level only by default (`parentQuestId: null`); child count badge on rows that have children. Habits show `StreakFlame` and `HabitChip` inline; todos show due date. Sticky filter bar (category, tag, status). Tag chips render inline and are clickable to filter.
 
