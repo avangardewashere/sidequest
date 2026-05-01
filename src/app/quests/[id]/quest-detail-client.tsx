@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { NoteCard } from "@/components/ui/note-card";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Sheet } from "@/components/ui/sheet";
 import { StreakFlame } from "@/components/ui/streak-flame";
+import { LinkPicker } from "@/components/ui/link-picker";
 import { TagChip } from "@/components/ui/tag-chip";
 import { useToast } from "@/components/feedback/toast-provider";
 import {
@@ -25,7 +26,9 @@ import {
   deleteQuestNote,
   fetchQuestChildren,
   fetchQuestHistory,
+  fetchQuestsLinkedFrom,
   getQuestById,
+  searchQuests,
   undoQuestCompletion,
   updateQuestTags,
 } from "@/lib/client-api";
@@ -91,9 +94,13 @@ export default function QuestDetailClient() {
   const [tagsBusy, setTagsBusy] = useState(false);
   const [newNoteBody, setNewNoteBody] = useState("");
   const [noteBusy, setNoteBusy] = useState(false);
-  const [newLinkTargetId, setNewLinkTargetId] = useState("");
+  const linkPickerFieldId = useId();
+  const [linkSearchQuery, setLinkSearchQuery] = useState("");
+  const [linkSearchOptions, setLinkSearchOptions] = useState<{ id: string; title: string }[]>([]);
   const [newLinkKind, setNewLinkKind] = useState<QuestLinkKind>("related");
   const [linkBusy, setLinkBusy] = useState(false);
+  const [linkedFrom, setLinkedFrom] = useState<{ _id: string; title: string }[]>([]);
+  const linkSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hierarchyOpen, setHierarchyOpen] = useState(true);
   const [selectedHabitUndoDate, setSelectedHabitUndoDate] = useState<string | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
@@ -159,6 +166,13 @@ export default function QuestDetailClient() {
         }),
       );
       setLinkTitles(titles);
+
+      const lf = await fetchQuestsLinkedFrom(questId);
+      if (lf.ok && lf.data) {
+        setLinkedFrom(lf.data.quests);
+      } else {
+        setLinkedFrom([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -167,6 +181,37 @@ export default function QuestDetailClient() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (linkSearchDebounceRef.current) {
+      clearTimeout(linkSearchDebounceRef.current);
+    }
+    const q = linkSearchQuery.trim();
+    if (!q || !quest) {
+      setLinkSearchOptions([]);
+      return;
+    }
+    linkSearchDebounceRef.current = setTimeout(() => {
+      void (async () => {
+        const res = await searchQuests({ q, limit: 24 });
+        if (!res.ok || !res.data) {
+          setLinkSearchOptions([]);
+          return;
+        }
+        const linkedIds = new Set((quest.links ?? []).map((l) => l.questId));
+        linkedIds.add(quest._id);
+        const opts = res.data.quests
+          .filter((h) => !linkedIds.has(h._id))
+          .map((h) => ({ id: h._id, title: h.title }));
+        setLinkSearchOptions(opts);
+      })();
+    }, 220);
+    return () => {
+      if (linkSearchDebounceRef.current) {
+        clearTimeout(linkSearchDebounceRef.current);
+      }
+    };
+  }, [linkSearchQuery, quest]);
 
   const cadence = useMemo(() => (quest ? normalizeQuestCadence(quest) : null), [quest]);
   const habit = quest ? isHabitQuest(quest) : false;
@@ -245,19 +290,21 @@ export default function QuestDetailClient() {
     await reload();
   }
 
-  async function handleAddLink() {
-    if (!quest || !newLinkTargetId.trim()) return;
+  async function handleLinkPickerSelect(id: string | null) {
+    if (!quest || !id) {
+      return;
+    }
     setLinkBusy(true);
     try {
       const res = await createQuestLink(quest._id, {
-        questId: newLinkTargetId.trim(),
+        questId: id,
         kind: newLinkKind,
       });
       if (!res.ok) {
         pushToast(actionResultToToast(res, { fallbackErrorTitle: "Link failed" }));
         return;
       }
-      setNewLinkTargetId("");
+      setLinkSearchQuery("");
       await reload();
     } finally {
       setLinkBusy(false);
@@ -612,10 +659,33 @@ export default function QuestDetailClient() {
         </Card>
 
         <Card variant="surface" className="space-y-3 p-4">
+          <h2 className="text-sm font-semibold">Linked from</h2>
+          {linkedFrom.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              No other quests link here yet.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {linkedFrom.map((q) => (
+                <li key={q._id}>
+                  <Link
+                    href={`/quests/${q._id}`}
+                    className="block rounded-lg border px-3 py-2 text-sm font-medium underline"
+                    style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-elevated)" }}
+                  >
+                    {q.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card variant="surface" className="space-y-3 p-4">
           <h2 className="text-sm font-semibold">Linked quests</h2>
           {(quest.links ?? []).length === 0 ? (
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              No links yet. Paste another quest&apos;s id (same format as the URL).
+              No links yet. Search below to link another quest.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -640,27 +710,37 @@ export default function QuestDetailClient() {
               ))}
             </ul>
           )}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <input
-              value={newLinkTargetId}
-              onChange={(e) => setNewLinkTargetId(e.target.value)}
-              className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
-              style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
-              placeholder="Target quest id"
+          <div className="flex flex-col gap-3">
+            <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>
+              Link kind
+              <select
+                value={newLinkKind}
+                onChange={(e) => setNewLinkKind(e.target.value as QuestLinkKind)}
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm sm:max-w-xs"
+                style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+              >
+                <option value="related">related</option>
+                <option value="blocks">blocks</option>
+                <option value="depends-on">depends-on</option>
+              </select>
+            </label>
+            <LinkPicker
+              id={linkPickerFieldId}
+              label="Add link"
+              query={linkSearchQuery}
+              onQueryChange={setLinkSearchQuery}
+              options={linkSearchOptions}
+              selectedId={null}
+              onSelect={(id) => void handleLinkPickerSelect(id)}
+              placeholder="Search by title, tag, or note…"
+              emptyLabel="No quests match that search."
+              helperText="Pick a quest to create the link. Escape clears the field."
             />
-            <select
-              value={newLinkKind}
-              onChange={(e) => setNewLinkKind(e.target.value as QuestLinkKind)}
-              className="rounded-md border px-3 py-2 text-sm"
-              style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
-            >
-              <option value="related">related</option>
-              <option value="blocks">blocks</option>
-              <option value="depends-on">depends-on</option>
-            </select>
-            <Button type="button" variant="secondary" size="sm" disabled={linkBusy} onClick={() => void handleAddLink()}>
-              {linkBusy ? "…" : "Add link"}
-            </Button>
+            {linkBusy ? (
+              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                Saving link…
+              </p>
+            ) : null}
           </div>
         </Card>
       </main>
