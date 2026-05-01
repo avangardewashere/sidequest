@@ -1,15 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { CadencePicker } from "@/components/ui/cadence-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { LinkPicker } from "@/components/ui/link-picker";
 import { NoteCard } from "@/components/ui/note-card";
 import { TagInput } from "@/components/ui/tag-input";
+import { useToast } from "@/components/feedback/toast-provider";
 import {
+  actionResultToToast,
+  createQuestLink,
+  deleteQuestLink,
   fetchTagSuggestions,
+  getQuestById,
   normalizeQuestCadenceForClient,
+  searchQuests,
 } from "@/lib/client-api";
 import {
   validateCadence,
@@ -17,7 +24,7 @@ import {
   validateQuestTitleDescription,
   validateTags,
 } from "@/lib/quest-form-validation";
-import type { Quest, QuestCadence } from "@/types/dashboard";
+import type { Quest, QuestCadence, QuestLink, QuestLinkKind } from "@/types/dashboard";
 
 const inputClass =
   "w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]";
@@ -52,6 +59,8 @@ export type QuestFormProps = {
   footer?: ReactNode;
   onSubmit: (values: QuestFormSnapshot) => Promise<void>;
   onDeleteQuest?: (confirmTitle: string) => Promise<void>;
+  /** Called after a link is created or removed so the parent can refresh `initialQuest`. */
+  onLinksMutated?: () => void | Promise<void>;
 };
 
 function isoToDatetimeLocalValue(iso: string | null | undefined): string {
@@ -89,7 +98,10 @@ export function QuestForm({
   footer,
   onSubmit,
   onDeleteQuest,
+  onLinksMutated,
 }: QuestFormProps) {
+  const { pushToast } = useToast();
+  const linkPickerId = useId();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("easy");
@@ -104,6 +116,13 @@ export function QuestForm({
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const tagDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editLinks, setEditLinks] = useState<QuestLink[]>([]);
+  const [linkTitles, setLinkTitles] = useState<Record<string, string>>({});
+  const [linkSearchQuery, setLinkSearchQuery] = useState("");
+  const [linkSearchOptions, setLinkSearchOptions] = useState<{ id: string; title: string }[]>([]);
+  const [newLinkKind, setNewLinkKind] = useState<QuestLinkKind>("related");
+  const [linkBusy, setLinkBusy] = useState(false);
+  const linkSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (mode !== "create") return;
@@ -121,6 +140,14 @@ export function QuestForm({
 
   useEffect(() => {
     if (mode !== "edit" || !initialQuest) return;
+    const links = (initialQuest.links ?? []).map((l) => ({
+      id: typeof l.id === "string" ? l.id : String(l.id),
+      questId: typeof l.questId === "string" ? l.questId : String(l.questId),
+      kind: l.kind,
+    }));
+    setEditLinks(links);
+    setLinkSearchQuery("");
+    setLinkSearchOptions([]);
     setTitle(initialQuest.title);
     setDescription(initialQuest.description);
     setDifficulty(initialQuest.difficulty);
@@ -158,6 +185,64 @@ export function QuestForm({
       }
     };
   }, [tagQuery]);
+
+  useEffect(() => {
+    if (mode !== "edit") {
+      return;
+    }
+    const ids = [...new Set(editLinks.map((l) => l.questId))];
+    if (ids.length === 0) {
+      setLinkTitles({});
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      ids.map(async (id) => {
+        const tq = await getQuestById(id);
+        return [id, tq?.title ?? `Quest ${id.slice(-6)}`] as const;
+      }),
+    ).then((pairs) => {
+      if (cancelled) return;
+      setLinkTitles(Object.fromEntries(pairs));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, editLinks]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !initialQuest) {
+      return;
+    }
+    if (linkSearchDebounceRef.current) {
+      clearTimeout(linkSearchDebounceRef.current);
+    }
+    const q = linkSearchQuery.trim();
+    if (!q) {
+      setLinkSearchOptions([]);
+      return;
+    }
+    linkSearchDebounceRef.current = setTimeout(() => {
+      void (async () => {
+        const res = await searchQuests({ q, limit: 24 });
+        if (!res.ok || !res.data) {
+          setLinkSearchOptions([]);
+          return;
+        }
+        const blocked = new Set(editLinks.map((l) => l.questId));
+        blocked.add(initialQuest._id);
+        const opts = res.data.quests
+          .filter((h) => !blocked.has(h._id))
+          .map((h) => ({ id: h._id, title: h.title }));
+        setLinkSearchOptions(opts);
+      })();
+    }, 220);
+    return () => {
+      if (linkSearchDebounceRef.current) {
+        clearTimeout(linkSearchDebounceRef.current);
+      }
+    };
+  }, [linkSearchQuery, mode, initialQuest, editLinks]);
 
   const dueDateIso = cadence.kind === "oneoff" ? datetimeLocalToIso(dueLocal) : null;
 
@@ -227,6 +312,39 @@ export function QuestForm({
       await onDeleteQuest(deleteConfirmTitle.trim());
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleFormLinkPick(id: string | null) {
+    if (!id || !initialQuest?._id) {
+      return;
+    }
+    setLinkBusy(true);
+    try {
+      const res = await createQuestLink(initialQuest._id, { questId: id, kind: newLinkKind });
+      if (!res.ok) {
+        pushToast(actionResultToToast(res, { fallbackErrorTitle: "Link failed" }));
+        return;
+      }
+      setLinkSearchQuery("");
+      await onLinksMutated?.();
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+
+  async function handleFormDeleteLink(linkId: string) {
+    if (!initialQuest?._id) return;
+    setLinkBusy(true);
+    try {
+      const res = await deleteQuestLink(initialQuest._id, linkId);
+      if (!res.ok) {
+        pushToast(actionResultToToast(res, { fallbackErrorTitle: "Remove link failed" }));
+        return;
+      }
+      await onLinksMutated?.();
+    } finally {
+      setLinkBusy(false);
     }
   }
 
@@ -393,6 +511,75 @@ export function QuestForm({
           {footer}
         </div>
       </Card>
+
+      {mode === "edit" && initialQuest?._id ? (
+        <Card variant="surface" className="space-y-4 p-5">
+          <h2 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+            Linked quests
+          </h2>
+          {editLinks.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              No links yet. Search below to link another quest.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {editLinks.map((l) => (
+                <li
+                  key={l.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+                  style={{ borderColor: "var(--color-border-subtle)" }}
+                >
+                  <div className="min-w-0">
+                    <span className="font-medium">{linkTitles[l.questId] ?? l.questId}</span>
+                    <span className="ms-2 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                      {l.kind}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={linkBusy}
+                    onClick={() => void handleFormDeleteLink(l.id)}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>
+            Link kind
+            <select
+              value={newLinkKind}
+              onChange={(e) => setNewLinkKind(e.target.value as QuestLinkKind)}
+              className="mt-1 w-full max-w-xs rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+            >
+              <option value="related">related</option>
+              <option value="blocks">blocks</option>
+              <option value="depends-on">depends-on</option>
+            </select>
+          </label>
+          <LinkPicker
+            id={linkPickerId}
+            label="Add link"
+            query={linkSearchQuery}
+            onQueryChange={setLinkSearchQuery}
+            options={linkSearchOptions}
+            selectedId={null}
+            onSelect={(id) => void handleFormLinkPick(id)}
+            placeholder="Search by title, tag, or note…"
+            emptyLabel="No quests match that search."
+            helperText="Pick a quest to create the link."
+          />
+          {linkBusy ? (
+            <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              Updating links…
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
 
       {mode === "edit" && onDeleteQuest ? (
         <Card variant="surface" className="space-y-3 p-5">

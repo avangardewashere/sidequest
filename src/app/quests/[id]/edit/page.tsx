@@ -177,6 +177,7 @@ export default function EditQuestPage() {
             errorMessage={formError}
             onSubmit={handleSubmit}
             onDeleteQuest={handleDeleteQuest}
+            onLinksMutated={() => void reloadQuest()}
           />
         )}
 

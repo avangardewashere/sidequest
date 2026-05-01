@@ -16,6 +16,10 @@ vi.mock("@/lib/client-api", async () => {
   };
 });
 
+vi.mock("@/components/feedback/toast-provider", () => ({
+  useToast: () => ({ pushToast: vi.fn() }),
+}));
+
 describe("QuestForm", () => {
   it("disables submit until required fields and cadence are valid", async () => {
     const onSubmit = vi.fn();
