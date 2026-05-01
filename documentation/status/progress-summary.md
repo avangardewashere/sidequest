@@ -527,3 +527,18 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - no reciprocal link writes (deferred to 8.6)
   - no search/linked-from UI surfaces
   - no reflection note subtype changes
+
+## 27) Cycle 7 — Phase 7.5 closeout (Core UI primitives)
+
+- Added presentational primitives under `src/components/ui/`:
+  - `Button`, `Badge`, `Card`, `FormField`, `TaskRow`, `ProgressRing`, `Sheet`, `BottomNav`, and a barrel `index.ts`
+- `Sheet` supports `placement="drawer"` (bottom on small viewports, end drawer on `md+`), plus forced `bottom` and `end` for harness and future shells.
+- `BottomNav` mirrors app tab routes via `TAB_ROUTE_MAP` / `activeTabFromPathname` (Today / Quests / Stats / You); production shell swap remains deferred to Cycle 8.5.
+- Dev-only harness: `src/app/_dev/components/page.tsx` behind `src/app/_dev/layout.tsx` (`notFound` in production).
+- Tests: `src/tests/ui-primitives.test.tsx` (RTL smoke for primitives + `BottomNav` / `Sheet` behavior).
+- Validation:
+  - `npm run test:ci` passed
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+- Active next step: Phase 7.6 (habit- and capture-specific atoms consuming this layer).

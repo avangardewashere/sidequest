@@ -85,6 +85,8 @@ Second-brain context attaches to every quest. Implementation now, UI in 8.x.
 
 ### Phase 7.5 — Core UI primitives (4 days)
 
+Status: done (see `phase-7-5-core-ui-primitives-plan.md` + `phase-7-5-core-ui-primitives-tracker.md`).
+
 Pure components. No business logic. Built in `src/components/ui/`.
 
 - `Button` (variants: primary / secondary / ghost / destructive; sizes: sm / md / lg).
@@ -98,6 +100,8 @@ Pure components. No business logic. Built in `src/components/ui/`.
 - Dev harness page at `src/app/_dev/components/page.tsx` for visual review.
 
 ### Phase 7.6 — Habit & capture primitives (4 days)
+
+Status: next up (starts after 7.5 primitive layer; see roadmap checklist below).
 
 Habit-and-second-brain-specific UI atoms. Still no business logic — these consume props and emit events.
 
@@ -131,6 +135,7 @@ Create `src/app/quests/[id]/page.tsx` (new route). Sections, ordered:
 5. Notes section (chronological journal feed; add-note composer at bottom).
 6. Linked quests rail (rendered if `links.length > 0` or backrefs exist).
 7. Collapsible parent-context strip + horizontal sibling rail when nested.
+8. **Undo completion** — after a mistaken complete, the user can undo: **one-off** quests return to `active` with XP rolled back to match removal of the terminal completion; **habits** remove the completion for a selected UTC calendar day (delete matching `CompletionLog`, recompute `lastCompletedDate` / streak from remaining logs). Expose a clear control on the detail hero (and document parity rules for list-row quick-complete vs detail-only undo in implementation).
 
 ### Phase 8.3 — Today surface: habits due, at-risk streaks (3 days)
 
