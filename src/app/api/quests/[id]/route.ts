@@ -33,6 +33,7 @@ const updateQuestSchema = z.object({
   description: z.string().trim().min(1).max(500),
   difficulty: z.enum(["easy", "medium", "hard"]),
   category: z.enum(["work", "study", "health", "personal", "other"]),
+  dueDate: z.string().datetime().optional().nullable(),
   cadence: cadenceSchema.optional(),
 });
 
@@ -83,19 +84,17 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     const { id } = await context.params;
     await connectToDatabase();
-    const quest = await QuestModel.findOneAndUpdate(
-      { _id: id, createdBy: userId },
-      {
-        $set: {
-          title: parsed.data.title,
-          description: parsed.data.description,
-          difficulty: parsed.data.difficulty,
-          category: parsed.data.category,
-          cadence: parsed.data.cadence ?? { kind: "oneoff" },
-        },
-      },
-      { new: true },
-    );
+    const setDoc: Record<string, unknown> = {
+      title: parsed.data.title,
+      description: parsed.data.description,
+      difficulty: parsed.data.difficulty,
+      category: parsed.data.category,
+      cadence: parsed.data.cadence ?? { kind: "oneoff" },
+    };
+    if (parsed.data.dueDate !== undefined) {
+      setDoc.dueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null;
+    }
+    const quest = await QuestModel.findOneAndUpdate({ _id: id, createdBy: userId }, { $set: setDoc }, { new: true });
     if (!quest) {
       logger.warn("api.quests.update.not_found", { questId: id });
       return NextResponse.json({ error: "Quest not found" }, { status: 404 });

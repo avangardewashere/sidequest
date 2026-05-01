@@ -19,7 +19,6 @@ vi.mock("next-auth/react", () => ({
     data: { user: { id: "u1", email: "u@test.dev", name: "User" } },
     status: "authenticated" as const,
   }),
-  signOut: vi.fn(),
 }));
 
 vi.mock("@/lib/client-api", async (importOriginal) => {
@@ -32,14 +31,6 @@ vi.mock("@/lib/client-api", async (importOriginal) => {
 
 vi.mock("@/hooks/useDashboardActions", () => ({
   useDashboardActions: () => ({ feedback: null, completeQuest: vi.fn() }),
-}));
-
-vi.mock("@/components/dashboard-nav", () => ({
-  DashboardNav: () => null,
-}));
-
-vi.mock("@/components/home/today-focus-tab-bar", () => ({
-  TodayFocusTabBar: () => null,
 }));
 
 vi.mock("@/components/feedback/toast-provider", () => ({

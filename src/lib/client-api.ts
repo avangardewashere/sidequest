@@ -539,6 +539,23 @@ export async function undoQuestCompletion(
   );
 }
 
+export async function fetchTagSuggestions(prefix: string): Promise<ActionResult<{ suggestions: string[] }>> {
+  const qs = new URLSearchParams();
+  if (prefix.trim()) {
+    qs.set("prefix", prefix.trim());
+  }
+  return runAction<{ suggestions: string[] }>(
+    () => fetch(`/api/quests/tag-suggestions?${qs.toString()}`),
+    (json) => {
+      const suggestions = (json as { suggestions?: string[] } | null)?.suggestions;
+      if (!Array.isArray(suggestions)) {
+        return null;
+      }
+      return { suggestions };
+    },
+  );
+}
+
 export async function updateQuestTags(questId: string, tags: string[]): Promise<ActionResult<{ tags: string[] }>> {
   return runAction<{ tags: string[] }>(
     () =>

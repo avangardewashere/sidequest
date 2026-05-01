@@ -2,30 +2,40 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { AuthenticatedAppShell } from "@/components/layout/authenticated-app-shell";
+import { QuestForm, type QuestFormSnapshot } from "@/components/quests/quest-form";
 import { useToast } from "@/components/feedback/toast-provider";
-import { actionResultToToast, createQuest } from "@/lib/client-api";
-import type { Quest } from "@/types/dashboard";
+import { dispatchCaptureCreated } from "@/lib/app-shell";
+import { actionResultToToast, createQuest, createQuestNote, updateQuestTags } from "@/lib/client-api";
 
 export default function CreateQuestPage() {
   const router = useRouter();
   const { pushToast } = useToast();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [difficulty, setDifficulty] = useState<Quest["difficulty"]>("easy");
-  const [category, setCategory] = useState<Quest["category"]>("personal");
   const [feedback, setFeedback] = useState("");
   const [redirectAfterCreate, setRedirectAfterCreate] = useState(false);
   const [createdQuest, setCreatedQuest] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formKey, setFormKey] = useState(0);
 
-  async function handleCreateQuest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(values: QuestFormSnapshot) {
+    setFormError("");
     setFeedback("");
     setCreatedQuest(false);
 
-    const created = await createQuest({ title, description, difficulty, category });
-    if (!created.ok) {
-      setFeedback(created.message ?? "Could not create quest.");
+    const dueDate = values.cadence.kind === "oneoff" ? values.dueDateIso : null;
+    const created = await createQuest({
+      title: values.title,
+      description: values.description,
+      difficulty: values.difficulty,
+      category: values.category,
+      cadence: values.cadence,
+      dueDate,
+    });
+
+    if (!created.ok || !created.data) {
+      const msg = created.message ?? "Could not create quest.";
+      setFormError(msg);
       pushToast(
         actionResultToToast(created, {
           fallbackErrorTitle: "Create quest failed",
@@ -34,12 +44,37 @@ export default function CreateQuestPage() {
       return;
     }
 
-    setTitle("");
-    setDescription("");
-    setCategory("personal");
-    setDifficulty("easy");
+    const questId = created.data._id;
+
+    if (values.tags.length > 0) {
+      const tagRes = await updateQuestTags(questId, values.tags);
+      if (!tagRes.ok) {
+        setFormError(tagRes.message ?? "Quest was created but tags could not be saved.");
+        pushToast(
+          actionResultToToast(tagRes, {
+            fallbackErrorTitle: "Tags not saved",
+          }),
+        );
+        return;
+      }
+    }
+
+    if (values.firstNoteBody.trim()) {
+      const noteRes = await createQuestNote(questId, values.firstNoteBody.trim());
+      if (!noteRes.ok) {
+        setFormError(noteRes.message ?? "Quest was created but the first note could not be saved.");
+        pushToast(
+          actionResultToToast(noteRes, {
+            fallbackErrorTitle: "Note not saved",
+          }),
+        );
+        return;
+      }
+    }
+
     setCreatedQuest(true);
     setFeedback("Quest created successfully.");
+    dispatchCaptureCreated();
     pushToast({
       tone: "success",
       title: "Quest created",
@@ -51,111 +86,105 @@ export default function CreateQuestPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 p-6 text-zinc-100">
-      <h1 className="text-2xl font-semibold">Create Quest</h1>
-      <p className="text-sm text-zinc-400">Create a new quest and assign a category.</p>
-      <form
-        onSubmit={handleCreateQuest}
-        className="rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100"
-      >
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="md:col-span-3">
-            <label htmlFor="quest-title" className="mb-1 block text-sm text-zinc-300">
-              Quest Title
-            </label>
-            <input
-              id="quest-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Defeat bug dragon"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
-              required
-            />
+    <AuthenticatedAppShell>
+      <div className="relative min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
+        <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 pb-6">
+          <div>
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Add a quest or habit with cadence, optional due date, tags, and a first note.
+            </p>
           </div>
-          <div className="md:col-span-3">
-            <label htmlFor="quest-description" className="mb-1 block text-sm text-zinc-300">
-              Quest Description
+
+        <QuestForm
+          key={formKey}
+          mode="create"
+          submitLabel="Create quest"
+          errorMessage={formError}
+          onSubmit={handleSubmit}
+          footer={
+            <label
+              className="inline-flex cursor-pointer items-center gap-2 text-sm"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              <input
+                type="checkbox"
+                checked={redirectAfterCreate}
+                onChange={(e) => setRedirectAfterCreate(e.target.checked)}
+                className="accent-[var(--color-primary)]"
+              />
+              Go to view quests after create
             </label>
-            <textarea
-              id="quest-description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Describe what needs to be done to complete this quest."
-              className="min-h-28 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
-              required
-            />
+          }
+        />
+
+        {feedback ? (
+          <p
+            className="rounded-lg border px-4 py-3 text-sm"
+            style={{
+              borderColor: "var(--color-border-subtle)",
+              background: "var(--color-primary-subtle)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            {feedback}
+          </p>
+        ) : null}
+
+        {createdQuest && !redirectAfterCreate ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/quests/view"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{
+                background: "var(--color-bg-elevated)",
+                color: "var(--color-text-primary)",
+                borderColor: "var(--color-border-default)",
+              }}
+            >
+              View quests
+            </Link>
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{ color: "var(--color-text-primary)" }}
+              onClick={() => {
+                setFeedback("");
+                setCreatedQuest(false);
+                setFormError("");
+                setFormKey((k) => k + 1);
+              }}
+            >
+              Create another
+            </button>
           </div>
-          <select
-            value={difficulty}
-            onChange={(event) => setDifficulty(event.target.value as Quest["difficulty"])}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+            style={{
+              background: "var(--color-bg-elevated)",
+              color: "var(--color-text-primary)",
+              borderColor: "var(--color-border-default)",
+            }}
           >
-            <option value="easy">Easy (+10 XP)</option>
-            <option value="medium">Medium (+20 XP)</option>
-            <option value="hard">Hard (+35 XP)</option>
-          </select>
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value as Quest["category"])}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2"
-          >
-            <option value="work">Work</option>
-            <option value="study">Study</option>
-            <option value="health">Health</option>
-            <option value="personal">Personal</option>
-            <option value="other">Other</option>
-          </select>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-500 px-4 py-2 font-medium hover:bg-emerald-400"
-          >
-            Add Quest
-          </button>
-          <label className="flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={redirectAfterCreate}
-              onChange={(event) => setRedirectAfterCreate(event.target.checked)}
-            />
-            Go to View Quests after create
-          </label>
-        </div>
-      </form>
-      {feedback ? (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          {feedback}
-        </div>
-      ) : null}
-      {createdQuest && !redirectAfterCreate ? (
-        <div className="flex gap-2">
+            Back to dashboard
+          </Link>
           <Link
             href="/quests/view"
-            className="rounded-md bg-indigo-500 px-3 py-2 text-sm hover:bg-indigo-400"
-          >
-            View Quests
-          </Link>
-          <button
-            onClick={() => {
-              setFeedback("");
-              setCreatedQuest(false);
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+            style={{
+              background: "var(--color-primary)",
+              color: "var(--color-primary-on-accent)",
+              borderColor: "var(--color-primary-hover)",
             }}
-            className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700"
           >
-            Create Another
-          </button>
+            View quests
+          </Link>
         </div>
-      ) : null}
-      <div className="flex gap-2">
-        <Link href="/" className="rounded-md bg-zinc-800 px-3 py-2 text-sm hover:bg-zinc-700">
-          Back to Dashboard
-        </Link>
-        <Link
-          href="/quests/view"
-          className="rounded-md bg-indigo-500 px-3 py-2 text-sm hover:bg-indigo-400"
-        >
-          Go to View Quests
-        </Link>
+        </main>
       </div>
-    </main>
+    </AuthenticatedAppShell>
   );
 }

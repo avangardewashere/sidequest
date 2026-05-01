@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
-import { DashboardNav } from "@/components/dashboard-nav";
-import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
-import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarHeatmap, type HeatmapCell } from "@/components/ui/calendar-heatmap";
@@ -379,9 +376,7 @@ export default function QuestDetailClient() {
 
   return (
     <div className="relative min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
-      <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6 pb-28">
-        <DashboardNav onLogout={() => void signOut({ redirect: false })} />
-
+      <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6 pb-6">
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/quests/view"
@@ -696,8 +691,6 @@ export default function QuestDetailClient() {
           </Button>
         </div>
       </Sheet>
-
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
     </div>
   );
 }

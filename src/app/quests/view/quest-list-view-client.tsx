@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
-import { DashboardNav } from "@/components/dashboard-nav";
-import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
-import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +12,7 @@ import { StreakFlame } from "@/components/ui/streak-flame";
 import { TagChip, type TagChipTone } from "@/components/ui/tag-chip";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
 import { fetchQuestsList } from "@/lib/client-api";
+import { CAPTURE_CREATED_EVENT } from "@/lib/app-shell";
 import { normalizeQuestCadence } from "@/lib/cadence";
 import {
   type QuestCategoryFilter,
@@ -243,6 +241,12 @@ export default function QuestListViewClient() {
     };
   }, [sessionUserId, statusFilter, categoryFilter, sortOption]);
 
+  useEffect(() => {
+    const onCapture = () => void reloadQuestList();
+    window.addEventListener(CAPTURE_CREATED_EVENT, onCapture);
+    return () => window.removeEventListener(CAPTURE_CREATED_EVENT, onCapture);
+  }, [reloadQuestList]);
+
   const handleComplete = useCallback(
     (questId: string) => {
       void completeQuest(questId);
@@ -310,11 +314,7 @@ export default function QuestListViewClient() {
 
   return (
     <div className="relative min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-28">
-        <DashboardNav onLogout={() => void signOut({ redirect: false })} />
-
-        <h1 className="text-2xl font-semibold">Quests</h1>
-
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-6">
         <div
           className="sticky top-0 z-20 -mx-6 border-b px-6 py-3 backdrop-blur-md"
           style={{
@@ -434,7 +434,6 @@ export default function QuestListViewClient() {
           </div>
         ) : null}
       </main>
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
     </div>
   );
 }

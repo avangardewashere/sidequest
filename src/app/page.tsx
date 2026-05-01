@@ -5,6 +5,7 @@ import localFont from "next/font/local";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { TodayFocusShell } from "@/components/home/today-focus-shell";
+import { AuthenticatedAppShell } from "@/components/layout/authenticated-app-shell";
 import { useDashboardActions } from "@/hooks/useDashboardActions";
 import { fetchOnboardingState } from "@/lib/client-api";
 
@@ -174,5 +175,9 @@ export default function Home() {
     );
   }
 
-  return <TodayFocusShell />;
+  return (
+    <AuthenticatedAppShell>
+      <TodayFocusShell />
+    </AuthenticatedAppShell>
+  );
 }

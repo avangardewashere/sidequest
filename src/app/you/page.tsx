@@ -2,8 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/feedback/toast-provider";
-import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
-import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
+import { AuthenticatedAppShell } from "@/components/layout/authenticated-app-shell";
 import { useLocalReminders } from "@/hooks/useLocalReminders";
 import {
   actionResultToToast,
@@ -305,13 +304,10 @@ export default function YouPage() {
   }
 
   return (
-    <div className="relative min-h-screen">
-      <main className="mx-auto w-full max-w-md px-4 py-6 pb-28">
-        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
-          You
-        </h1>
-
-        <section className="mt-4 rounded-2xl border p-4" style={{ borderColor: "var(--color-border-subtle)" }}>
+    <AuthenticatedAppShell>
+      <div className="relative min-h-screen">
+        <main className="mx-auto w-full max-w-md px-4 py-6 pb-6">
+        <section className="rounded-2xl border p-4" style={{ borderColor: "var(--color-border-subtle)" }}>
           <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
             Profile summary
           </h2>
@@ -570,8 +566,8 @@ export default function YouPage() {
             </button>
           </form>
         </section>
-      </main>
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
-    </div>
+        </main>
+      </div>
+    </AuthenticatedAppShell>
   );
 }

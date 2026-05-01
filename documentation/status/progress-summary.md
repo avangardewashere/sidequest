@@ -607,4 +607,33 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
-- Active next step: **Phase 8.4** — unified QuestForm redesign per roadmap.
+- Active next step: **Phase 8.6** — search + cross-linking per roadmap.
+
+## 32) Cycle 8 — Phase 8.4 closeout (Quest / habit form)
+
+- Added shared [`QuestForm`](src/components/quests/quest-form.tsx) for [`/quests/create`](src/app/quests/create/page.tsx) and [`/quests/[id]/edit`](src/app/quests/[id]/edit/page.tsx): `CadencePicker`, optional due date for one-offs, `TagInput` with debounced `GET /api/quests/tag-suggestions`, difficulty/category, first note on create, notes list + add on edit, danger-zone delete with destructive `Button`.
+- Client: [`fetchTagSuggestions`](src/lib/client-api.ts); pure tag normalization moved to [`normalize-quest-tags.ts`](src/lib/normalize-quest-tags.ts) so the client bundle does not pull Mongoose (`quest-form-validation` + form).
+- API: [`tag-suggestions/route.ts`](src/app/api/quests/tag-suggestions/route.ts); `PATCH /api/quests/[id]` now accepts optional `dueDate` (clears when set to `null`).
+- Validation helper: [`quest-form-validation.ts`](src/lib/quest-form-validation.ts); tests: `quest-form-validation.test.ts`, `quest-form.test.tsx`, `quest-tag-suggestions-route.test.ts`.
+- UI: [`TagInput`](src/components/ui/tag-input.tsx) optional `onDraftChange` for server-driven suggestions.
+- Documentation: `phase-8-4-quest-form-plan.md`, `phase-8-4-quest-form-tracker.md`; cycles plan **8.4 done** / **8.5 next**.
+- Validation:
+  - `npm run test:ci` passed (`44/44` files, `212/212` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+
+## 33) Cycle 8 — Phase 8.5 closeout (Bottom nav + Capture FAB)
+
+- Added [`AuthenticatedAppShell`](src/components/layout/authenticated-app-shell.tsx): sticky app bar (route title, disabled Search/Settings placeholders, **Sign out**), fixed [`BottomNav`](src/components/ui/bottom-nav.tsx), global **Capture** FAB + [`CaptureQuestSheet`](src/components/layout/capture-quest-sheet.tsx) using [`Sheet`](src/components/ui/sheet.tsx) (title + `TagInput` + `createQuest` one-off + `updateQuestTags`).
+- Helpers: [`app-shell.ts`](src/lib/app-shell.ts) (`appShellTitle`, `shouldHideCaptureFab`, `dispatchCaptureCreated`); Today + quest list listen for `CAPTURE_CREATED_EVENT` to refresh; full create flow also dispatches after success.
+- Wrapped authenticated surfaces: [`page.tsx`](src/app/page.tsx), [`quests/view/page.tsx`](src/app/quests/view/page.tsx), [`quests/[id]/page.tsx`](src/app/quests/[id]/page.tsx), [`quests/create`](src/app/quests/create/page.tsx), [`quests/[id]/edit`](src/app/quests/[id]/edit/page.tsx), [`stats/page.tsx`](src/app/stats/page.tsx), [`you/page.tsx`](src/app/you/page.tsx).
+- Removed duplicate home chrome from [`today-focus-shell.tsx`](src/components/home/today-focus-shell.tsx) (`TodayFocusFab`, `TodayFocusTabBar`, `TodayFocusQuickAddSheet`); removed legacy `src/components/dashboard-nav.tsx` and bottom tab duplicates from quest list/detail.
+- Fourth tab remains **You** at `/you` (roadmap `/profile` not added).
+- Tests: [`app-shell.test.ts`](src/tests/app-shell.test.ts); updated [`quest-list-view-page.test.tsx`](src/tests/quest-list-view-page.test.tsx), [`you-preferences-section.test.tsx`](src/tests/you-preferences-section.test.tsx).
+- Documentation: `phase-8-5-bottom-nav-plan.md`, `phase-8-5-bottom-nav-tracker.md`; cycles **8.5 done** / **8.6 next**.
+- Validation:
+  - `npm run test:ci` passed (`45/45` files, `216/216` tests)
+  - `npm run typecheck` passed
+  - `npm run lint` passed
+  - `npm run build` passed

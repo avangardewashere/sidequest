@@ -22,8 +22,7 @@ import { levelFromTotalXp } from "@/lib/xp";
 import { ChartShell, ThemedChartTooltip } from "@/components/stats/chart-shell";
 import { RangeSwitcher } from "@/components/stats/range-switcher";
 import { StatCard } from "@/components/stats/stat-card";
-import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
-import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
+import { AuthenticatedAppShell } from "@/components/layout/authenticated-app-shell";
 import { WeeklyReviewCard } from "@/components/review/weekly-review-card";
 import { HistoricalReviewCard } from "@/components/review/historical-review-card";
 import { EventAnalyticsCard } from "@/components/stats/event-analytics-card";
@@ -237,13 +236,14 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="relative min-h-screen">
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-28">
+    <AuthenticatedAppShell>
+      <div className="relative min-h-screen">
+        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6 pb-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="text-2xl font-semibold" style={{ color: "var(--color-text-primary)" }}>
             Progress Stats
-          </h1>
+          </h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Personal analytics for completions, XP, streaks, and categories.
           </p>
@@ -669,8 +669,8 @@ export default function StatsPage() {
           </p>
         ) : null}
       </div>
-      </main>
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
-    </div>
+        </main>
+      </div>
+    </AuthenticatedAppShell>
   );
 }

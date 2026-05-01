@@ -155,7 +155,7 @@ Augment the existing home (`/`) Today shell:
 
 ### Phase 8.4 — Quest/habit form redesign (4 days)
 
-Status: next up.
+Status: **done** (see `phase-8-4-quest-form-plan.md` + `phase-8-4-quest-form-tracker.md`). **Next:** Phase 8.5.
 
 Single `<QuestForm>` for create + edit, replacing the current cramped form.
 
@@ -170,6 +170,8 @@ Single `<QuestForm>` for create + edit, replacing the current cramped form.
 - Form is a controlled component; submission goes through existing API + new `7.4` endpoints.
 
 ### Phase 8.5 — Bottom nav + Capture FAB (4 days)
+
+Status: **done** (see `phase-8-5-bottom-nav-plan.md` + `phase-8-5-bottom-nav-tracker.md`). **Next:** Phase 8.6.
 
 Replace `dashboard-nav.tsx` with a mobile-first bottom nav:
 

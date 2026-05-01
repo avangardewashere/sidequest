@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
-import { normalizeTags } from "@/lib/quest-tags";
+import { normalizeTags } from "@/lib/normalize-quest-tags";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { QuestModel } from "@/models/Quest";
 

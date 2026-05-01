@@ -3,13 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TodayFocusHabitSurfaceSections } from "@/components/home/today-focus-habit-surface-sections";
-import { TodayFocusFab } from "@/components/home/today-focus-fab";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
 import { TodayFocusMainQuest } from "@/components/home/today-focus-main-quest";
 import { TodayFocusHeaderXpSkeleton, TodayFocusTaskRowsSkeleton } from "@/components/home/today-focus-loading-skeleton";
-import { todayFocusMockData } from "@/components/home/today-focus-mock-data";
-import { TodayFocusQuickAddSheet } from "@/components/home/today-focus-quick-add-sheet";
-import { TodayFocusTabBar } from "@/components/home/today-focus-tab-bar";
 import { TodayFocusTaskSection } from "@/components/home/today-focus-task-section";
 import { TodayFocusXpStats } from "@/components/home/today-focus-xp-stats";
 import { NextBestQuestCard } from "@/components/home/next-best-quest-card";
@@ -24,6 +20,7 @@ import {
   recordBehaviorEvent,
   type NextBestQuestSuggestion,
 } from "@/lib/client-api";
+import { CAPTURE_CREATED_EVENT } from "@/lib/app-shell";
 import {
   consumeDailyCue,
   consumeLevelUpCelebration,
@@ -61,8 +58,6 @@ export function TodayFocusShell() {
   const { pushToast } = useToast();
   const { data, isLoading, error, refresh } = useTodayDashboard();
   const { state: focusState, start: startFocus, stop: stopFocus, hydratedWithActive } = useFocusTimer();
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [quickAddSession, setQuickAddSession] = useState(0);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [optimisticDoneIds, setOptimisticDoneIds] = useState<Set<string>>(() => new Set());
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -145,11 +140,6 @@ export function TodayFocusShell() {
     [router],
   );
 
-  const handleFabClick = () => {
-    setQuickAddSession((n) => n + 1);
-    setQuickAddOpen(true);
-  };
-
   const handleCompleteTask = useCallback(
     async (questId: string) => {
       if (completingTaskId || completeInFlightRef.current) {
@@ -192,8 +182,10 @@ export function TodayFocusShell() {
     [completingTaskId, pushToast, refresh],
   );
 
-  const handleQuickAddCreated = useCallback(() => {
-    void refresh();
+  useEffect(() => {
+    const onCapture = () => void refresh();
+    window.addEventListener(CAPTURE_CREATED_EVENT, onCapture);
+    return () => window.removeEventListener(CAPTURE_CREATED_EVENT, onCapture);
   }, [refresh]);
 
   const showError = Boolean(error && !data);
@@ -289,7 +281,7 @@ export function TodayFocusShell() {
 
   return (
     <div className="relative min-h-screen">
-      <main className="mx-auto w-full max-w-md pb-28">
+      <main className="mx-auto w-full max-w-md pb-6">
         {showError ? (
           <div className="px-4 pt-5">
             <p className="text-sm" style={{ color: "var(--color-danger)" }}>
@@ -392,7 +384,7 @@ export function TodayFocusShell() {
                   className="rounded-xl border px-4 py-6 text-center text-sm"
                   style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
                 >
-                  No active quest yet. Tap + to forge your first one.
+                  No active quest yet. Use Capture (+) or create a quest from the Quests tab.
                 </p>
               </section>
             )}
@@ -529,14 +521,6 @@ export function TodayFocusShell() {
         )}
       </main>
 
-      <TodayFocusFab onClick={handleFabClick} />
-      <TodayFocusTabBar tabs={todayFocusMockData.tabs} />
-      <TodayFocusQuickAddSheet
-        key={quickAddSession}
-        open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
-        onCreated={handleQuickAddCreated}
-      />
     </div>
   );
 }

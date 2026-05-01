@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import YouPage from "@/app/you/page";
 
@@ -22,8 +23,8 @@ vi.mock("@/components/feedback/toast-provider", () => ({
   useToast: () => ({ pushToast }),
 }));
 
-vi.mock("@/components/home/today-focus-tab-bar", () => ({
-  TodayFocusTabBar: () => null,
+vi.mock("@/components/layout/authenticated-app-shell", () => ({
+  AuthenticatedAppShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("@/hooks/useLocalReminders", () => ({

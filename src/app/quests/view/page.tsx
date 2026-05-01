@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AuthenticatedAppShell } from "@/components/layout/authenticated-app-shell";
 import QuestListViewClient from "./quest-list-view-client";
 
 export default function ViewQuestsPage() {
@@ -10,7 +11,9 @@ export default function ViewQuestsPage() {
         </main>
       }
     >
-      <QuestListViewClient />
+      <AuthenticatedAppShell>
+        <QuestListViewClient />
+      </AuthenticatedAppShell>
     </Suspense>
   );
 }

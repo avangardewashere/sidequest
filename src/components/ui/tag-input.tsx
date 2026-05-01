@@ -16,6 +16,8 @@ export type TagInputProps = {
   value: string[];
   onChange: (tags: string[]) => void;
   suggestions?: string[];
+  /** Fires on each keystroke in the draft input (e.g. debounced server suggestions). */
+  onDraftChange?: (draft: string) => void;
   maxTags?: number;
   placeholder?: string;
   helperText?: string;
@@ -34,6 +36,7 @@ export function TagInput({
   label,
   value,
   onChange,
+  onDraftChange,
   suggestions = [],
   maxTags = 8,
   placeholder = "Add tag…",
@@ -65,8 +68,9 @@ export function TagInput({
       if (!next || value.includes(next) || value.length >= maxTags) return;
       onChange([...value, next]);
       setDraft("");
+      onDraftChange?.("");
     },
-    [maxTags, onChange, value],
+    [maxTags, onChange, onDraftChange, value],
   );
 
   const removeAt = useCallback(
@@ -111,7 +115,11 @@ export function TagInput({
           id={id}
           type="text"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setDraft(next);
+            onDraftChange?.(next);
+          }}
           onKeyDown={onKeyDown}
           placeholder={value.length >= maxTags ? "" : placeholder}
           disabled={value.length >= maxTags}
