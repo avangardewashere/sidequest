@@ -32,6 +32,8 @@ export type Quest = {
   isDaily?: boolean;
   dailyKey?: string | null;
   parentQuestId?: string | null;
+  /** Sort order among sibling subtasks (same parent). */
+  order?: number;
   cadence?: QuestCadence;
   lastCompletedDate?: string | null;
   /** Present when API returns second-brain fields (Phase 7.4+). */
@@ -83,4 +85,6 @@ export type CompleteQuestResponse = {
     streakMilestone: number;
     bonusXp: number;
   };
+  /** Present when completing a parent also completed one-off subtasks. */
+  cascadeCompletedOneoffCount?: number;
 };

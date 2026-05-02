@@ -171,12 +171,12 @@ Single `<QuestForm>` for create + edit, replacing the current cramped form.
 
 ### Phase 8.5 — Bottom nav + Capture FAB (4 days)
 
-Status: **done** (see `phase-8-5-bottom-nav-plan.md` + `phase-8-5-bottom-nav-tracker.md`). **Next:** Phase 9.1.
+Status: **done** (see `phase-8-5-bottom-nav-plan.md` + `phase-8-5-bottom-nav-tracker.md`). **Then:** Phase 8.6 shipped search + linking; **Cycle 8 complete.** **Next:** Phase 9.1.
 
 Replace `dashboard-nav.tsx` with a mobile-first bottom nav:
 
-- 4 tabs: **Today** (`/`), **Quests** (`/quests/view`), **Stats** (`/stats`), **Profile** (`/profile` — new stub holding logout, theme toggle later).
-- Top app-bar carries title + secondary actions (search, settings).
+- 4 tabs: **Today** (`/`), **Quests** (`/quests/view`), **Stats** (`/stats`), **You** (`/you` — profile/preferences stub; original roadmap label “Profile” / `/profile` not used).
+- Top app-bar carries title + secondary actions (search after 8.6; settings placeholder until a later cycle).
 - Persistent **Capture FAB** above the bottom nav: opens a `Sheet` with a fast quick-add (title + tags only). Submission posts to `/api/quests` with `cadence='oneoff'` and no due date — these are inbox items the user triages later.
 - FAB hides on `/quests/[id]` detail (where its own composer takes over) and on auth pages.
 
@@ -198,19 +198,27 @@ Make the second brain searchable.
 
 > Theme: turn the data into insight, harden cascade rules, polish the design system end-to-end, ship a minimum PWA shell.
 
-### Phase 9.1 — Cascade & XP integrity (3 days)
+### Phase 9.1 — Cascade & XP integrity (3 days) ✓ DONE
+
+Status: **done** (see `phase-9-1-cascade-xp-tracker.md`).
 
 - Completing a parent prompts "complete N children?" (default no).
 - Deleting a parent prompts re-parent vs cascade-delete.
 - XP rule: parents with children no longer carry their own XP — XP rolls up from leaves. Activates on first child added; existing XP preserved on parents that never gain a child.
 - Habit XP rule: each completion log awards XP per the cadence rate (no per-streak-day double-counting; streak bonuses come through `MilestoneRewardLog`).
 
-### Phase 9.2 — Habit progressions & insights (4 days)
+**Next:** Phase 9.2.
+
+### Phase 9.2 — Habit progressions & insights (4 days) ✓ DONE
+
+Status: **done** (see `phase-9-2-habit-insights-tracker.md`).
 
 - Per-quest analytics surface inside detail page: completion rate over time, best day of week, longest vs current streak, XP per week.
 - Stats page additions: top habits by streak, aggregated completion heatmap across all habits, weekly XP trend line.
 - New endpoint: `GET /api/quests/[id]/insights` returning a typed payload consumed by detail + stats.
 - Add `order: number` field on Quest for manual child ordering (up/down buttons; drag-reorder still deferred).
+
+**Next:** Phase 9.3.
 
 ### Phase 9.3 — Streak resilience (3 days)
 
@@ -271,7 +279,7 @@ Same as cycles 4-5-6: green CI (`test:ci`, `typecheck`, `lint`, `build`), update
 - **Migration risk in 7.3** — `CompletionLog` unique-index swap requires a backfill ahead of the new index. Plan: write migration script that backfills `completionDate` first, then drop old index, then add new. Keep idempotent.
 - **`isDaily` deprecation** spans cycles. Reads normalize across both shapes through 9.5; writes stop using `isDaily` in 7.3.
 - **Embedded notes/links arrays** can grow if a user is prolific. Caps at 50 / 32 are early guardrails; if a power user hits the cap, promote to a separate collection in a future cycle.
-- **Search endpoint** in 8.6 starts as title + tag + note body via Mongo `$text` index; if performance lags, swap to a typesense/atlas-search backend in a follow-up.
+- **Search endpoint** in 8.6: shipped implementation uses scoped regex (escaped user input, capped limits); optional Mongo `$text` / Atlas Search later if performance lags (see `phase-8-6-search-plan.md`).
 - **Capture FAB inbox drift** — captured items pile up if the user doesn't triage. Mitigation: 8.3 surface "captured this week" prompt; 9.4 weekly review forces triage.
 - **Backwards compat during dual styling era** (Cycles 7-8) — zinc-themed Home/Stats pages coexist with redesigned tokens. Swept in 9.5.
 

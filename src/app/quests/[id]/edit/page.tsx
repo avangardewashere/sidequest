@@ -119,7 +119,10 @@ export default function EditQuestPage() {
     });
   }
 
-  async function handleDeleteQuest(confirmTitle: string) {
+  async function handleDeleteQuest(
+    confirmTitle: string,
+    options?: { childDisposition?: "reparent-to-root" | "cascade-delete" },
+  ) {
     const confirmed = window.confirm("Delete this quest? This action cannot be undone.");
     if (!confirmed) {
       return;
@@ -135,7 +138,7 @@ export default function EditQuestPage() {
       return;
     }
 
-    const deleted = await deleteQuestById(questId, confirmTitle.trim());
+    const deleted = await deleteQuestById(questId, confirmTitle.trim(), options);
     if (!deleted.ok) {
       setFeedback(deleted.message ?? "Could not delete quest. Check the title matches exactly.");
       pushToast(

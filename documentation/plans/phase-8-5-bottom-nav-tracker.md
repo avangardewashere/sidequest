@@ -12,4 +12,4 @@ Companion plan: `phase-8-5-bottom-nav-plan.md`.
 
 ## Status
 
-**Complete** (2026-05-01). Next: **Phase 8.6**.
+**Complete** (2026-05-01). Followed by Phase 8.6 (search); Cycle 8 closed. Next implementation phase: **9.1**.

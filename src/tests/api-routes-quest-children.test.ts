@@ -146,7 +146,15 @@ describe("quest children route", () => {
 
   it("creates child quest on valid POST", async () => {
     mockGetAuthSession.mockResolvedValue({ user: { id: validUserId } });
-    mockQuestFindOne.mockResolvedValue({ _id: validParentId, parentQuestId: null, isDaily: false });
+    mockQuestFindOne
+      .mockResolvedValueOnce({ _id: validParentId, parentQuestId: null, isDaily: false })
+      .mockReturnValueOnce({
+        sort: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            lean: vi.fn().mockResolvedValue({ order: 0 }),
+          }),
+        }),
+      });
     mockQuestCreate.mockResolvedValue({
       _id: "child-id-1",
       title: "Child quest",

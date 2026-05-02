@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
+import { levelFromTotalXp } from "@/lib/xp";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
+import { CompletionLogModel } from "@/models/CompletionLog";
 import { QuestModel } from "@/models/Quest";
+import { UserModel } from "@/models/User";
 
 const cadenceSchema = z
   .object({
@@ -110,6 +114,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
 const deleteQuestBodySchema = z.object({
   confirmTitle: z.string().trim().min(1).max(120),
+  /** Required when the quest has child quests (subtasks). */
+  childDisposition: z.enum(["reparent-to-root", "cascade-delete"]).optional(),
 });
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -151,7 +157,82 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
       return NextResponse.json({ error: "Title does not match" }, { status: 400 });
     }
 
-    await QuestModel.deleteOne({ _id: id, createdBy: userId });
+    const childCount = await QuestModel.countDocuments({
+      parentQuestId: quest._id,
+      createdBy: userId,
+    });
+    if (childCount > 0 && !parsedBody.data.childDisposition) {
+      logger.warn("api.quests.delete.subtasks_need_disposition", { questId: id, childCount });
+      return NextResponse.json(
+        {
+          error:
+            "This quest has subtasks. Choose whether to detach them (make top-level) or delete them with the parent.",
+          code: "SUBTASKS_REQUIRE_DISPOSITION",
+          childCount,
+        },
+        { status: 400 },
+      );
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const dbSession = await mongoose.startSession();
+
+    try {
+      await dbSession.withTransaction(async () => {
+        if (childCount > 0 && parsedBody.data.childDisposition === "reparent-to-root") {
+          await QuestModel.updateMany(
+            { parentQuestId: quest._id, createdBy: userId },
+            { $set: { parentQuestId: null } },
+          ).session(dbSession);
+        }
+
+        if (childCount > 0 && parsedBody.data.childDisposition === "cascade-delete") {
+          const children = await QuestModel.find({ parentQuestId: quest._id, createdBy: userId })
+            .select("_id")
+            .session(dbSession)
+            .lean();
+          const userForChildren = await UserModel.findById(userObjectId).session(dbSession);
+          if (!userForChildren) {
+            throw new Error("User not found");
+          }
+          let xpRemovedChildren = 0;
+          for (const ch of children) {
+            const logs = await CompletionLogModel.find({
+              questId: ch._id,
+              userId: userObjectId,
+            }).session(dbSession);
+            for (const log of logs) {
+              xpRemovedChildren += log.xpEarned;
+            }
+            await CompletionLogModel.deleteMany({ questId: ch._id, userId: userObjectId }).session(dbSession);
+            await QuestModel.deleteOne({ _id: ch._id, createdBy: userId }).session(dbSession);
+          }
+          userForChildren.totalXp = Math.max(0, userForChildren.totalXp - xpRemovedChildren);
+          userForChildren.level = levelFromTotalXp(userForChildren.totalXp);
+          await userForChildren.save({ session: dbSession });
+        }
+
+        const user = await UserModel.findById(userObjectId).session(dbSession);
+        if (!user) {
+          throw new Error("User not found");
+        }
+        let xpRemovedParent = 0;
+        const parentLogs = await CompletionLogModel.find({
+          questId: quest._id,
+          userId: userObjectId,
+        }).session(dbSession);
+        for (const log of parentLogs) {
+          xpRemovedParent += log.xpEarned;
+        }
+        await CompletionLogModel.deleteMany({ questId: quest._id, userId: userObjectId }).session(dbSession);
+        user.totalXp = Math.max(0, user.totalXp - xpRemovedParent);
+        user.level = levelFromTotalXp(user.totalXp);
+        await user.save({ session: dbSession });
+        await QuestModel.deleteOne({ _id: id, createdBy: userId }).session(dbSession);
+      });
+    } finally {
+      await dbSession.endSession();
+    }
 
     logger.info("api.quests.delete.success", { questId: id });
     return NextResponse.json({ ok: true });

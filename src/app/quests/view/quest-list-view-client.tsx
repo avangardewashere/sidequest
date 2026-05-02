@@ -49,7 +49,7 @@ const QuestListRow = memo(function QuestListRow({
   listTab: QuestListTab;
   activeTag: string | null;
   onTagClick: (tag: string) => void;
-  onComplete: (questId: string) => void;
+  onComplete: (questId: string, childCount?: number) => void;
 }) {
   const habit = isHabitQuest(quest);
   const cadence = normalizeQuestCadence(quest);
@@ -126,7 +126,7 @@ const QuestListRow = memo(function QuestListRow({
               >
                 Edit
               </Link>
-              <Button type="button" variant="primary" size="sm" onClick={() => onComplete(quest._id)}>
+              <Button type="button" variant="primary" size="sm" onClick={() => onComplete(quest._id, childCount)}>
                 Complete
               </Button>
             </>
@@ -248,7 +248,14 @@ export default function QuestListViewClient() {
   }, [reloadQuestList]);
 
   const handleComplete = useCallback(
-    (questId: string) => {
+    (questId: string, childCount?: number) => {
+      if (childCount && childCount > 0) {
+        const cascade = window.confirm(
+          "Also complete active one-off subtasks under this quest? Cancel completes only this quest.",
+        );
+        void completeQuest(questId, { cascadeCompleteChildren: cascade });
+        return;
+      }
       void completeQuest(questId);
     },
     [completeQuest],

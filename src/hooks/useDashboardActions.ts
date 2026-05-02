@@ -93,9 +93,9 @@ export function useDashboardActions({
     setFeedback("Login failed. Check your credentials.");
   }
 
-  async function completeQuest(questId: string) {
+  async function completeQuest(questId: string, options?: { cascadeCompleteChildren?: boolean }) {
     setFeedback("");
-    const result = await completeQuestById(questId);
+    const result = await completeQuestById(questId, options);
     const { ok, data, message } = result;
     if (!ok) {
       setFeedback(message ?? data?.error ?? "Could not complete quest right now.");

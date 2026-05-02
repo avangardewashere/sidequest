@@ -1,13 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockGetAuthSession = vi.fn();
-const mockConnectToDatabase = vi.fn();
-const mockStartSession = vi.fn();
-const mockQuestFindOne = vi.fn();
-const mockUserFindById = vi.fn();
-const mockMilestoneFindOne = vi.fn();
-const mockMilestoneCreate = vi.fn();
-const mockCompletionCreate = vi.fn();
+const {
+  mockGetAuthSession,
+  mockConnectToDatabase,
+  mockStartSession,
+  mockQuestFindOne,
+  mockQuestCountDocuments,
+  mockUserFindById,
+  mockMilestoneFindOne,
+  mockMilestoneCreate,
+  mockCompletionCreate,
+} = vi.hoisted(() => ({
+  mockGetAuthSession: vi.fn(),
+  mockConnectToDatabase: vi.fn(),
+  mockStartSession: vi.fn(),
+  mockQuestFindOne: vi.fn(),
+  mockQuestCountDocuments: vi.fn(),
+  mockUserFindById: vi.fn(),
+  mockMilestoneFindOne: vi.fn(),
+  mockMilestoneCreate: vi.fn(),
+  mockCompletionCreate: vi.fn(),
+}));
 
 vi.mock("@/lib/auth", () => ({
   getAuthSession: mockGetAuthSession,
@@ -32,6 +45,7 @@ vi.mock("mongoose", async (importOriginal) => {
 vi.mock("@/models/Quest", () => ({
   QuestModel: {
     findOne: mockQuestFindOne,
+    countDocuments: mockQuestCountDocuments,
   },
 }));
 
@@ -105,6 +119,9 @@ describe("quest complete route cadence behavior", () => {
     };
     mockQuestFindOne.mockReturnValue({
       session: vi.fn().mockResolvedValue(habitQuest),
+    });
+    mockQuestCountDocuments.mockReturnValue({
+      session: vi.fn().mockResolvedValue(0),
     });
     mockUserFindById.mockReturnValue({
       session: vi.fn().mockResolvedValue({

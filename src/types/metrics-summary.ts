@@ -11,11 +11,29 @@ export type CategoryPoint = {
   xpTotal: number;
 };
 
+export type HabitStreakRow = {
+  questId: string;
+  title: string;
+  streak: number;
+};
+
+export type WeeklyXpRow = {
+  weekStart: string;
+  weekLabel: string;
+  xp: number;
+};
+
 export type MetricsSummary = {
   range: MetricsRange;
   rangeDays: number;
   completionsByDay: DailyPoint[];
   xpByDay: DailyPoint[];
+  /** Habit-only completion counts per day (subset of all completions). */
+  habitCompletionsByDay: DailyPoint[];
+  /** Longest consecutive-day streak per habit quest in the selected range. */
+  habitsTopByStreak: HabitStreakRow[];
+  /** Total XP from all completions, summed by UTC week (Monday start). */
+  weeklyXpByWeek: WeeklyXpRow[];
   byCategory: CategoryPoint[];
   streakHistory: {
     current: number;

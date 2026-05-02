@@ -26,8 +26,10 @@ import {
   deleteQuestNote,
   fetchQuestChildren,
   fetchQuestHistory,
+  fetchQuestInsights,
   fetchQuestsLinkedFrom,
   getQuestById,
+  reorderChildQuests,
   searchQuests,
   undoQuestCompletion,
   updateQuestTags,
@@ -36,6 +38,7 @@ import { normalizeQuestCadence, streakFromLogs, type CompletionHistoryPoint } fr
 import { formatCadenceShort } from "@/lib/format-cadence-label";
 import { isHabitQuest } from "@/lib/quest-selectors";
 import type { Quest, QuestLinkKind, QuestNote } from "@/types/dashboard";
+import type { QuestInsightsHabitPayload, QuestInsightsWeekRow } from "@/types/quest-insights";
 
 function formatDueLabel(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -105,6 +108,9 @@ export default function QuestDetailClient() {
   const [selectedHabitUndoDate, setSelectedHabitUndoDate] = useState<string | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
   const [completeBusy, setCompleteBusy] = useState(false);
+  const [insights, setInsights] = useState<QuestInsightsHabitPayload | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [reorderBusy, setReorderBusy] = useState(false);
 
   const reload = useCallback(async () => {
     if (!sessionUserId || !questId) {
@@ -181,6 +187,30 @@ export default function QuestDetailClient() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (!questId || !quest || !isHabitQuest(quest)) {
+      setInsights(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      setInsightsLoading(true);
+      const res = await fetchQuestInsights(questId, { weeks: 12 });
+      if (cancelled) {
+        return;
+      }
+      if (res.ok && res.data?.habit === true) {
+        setInsights(res.data);
+      } else {
+        setInsights(null);
+      }
+      setInsightsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [questId, quest, completions.length]);
 
   useEffect(() => {
     if (linkSearchDebounceRef.current) {
@@ -321,6 +351,29 @@ export default function QuestDetailClient() {
     await reload();
   }
 
+  async function handleReorderChild(index: number, direction: -1 | 1) {
+    if (!quest || reorderBusy) return;
+    const target = index + direction;
+    if (target < 0 || target >= children.length) {
+      return;
+    }
+    const next = [...children];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved);
+    const orderedChildIds = next.map((c) => c._id);
+    setReorderBusy(true);
+    try {
+      const res = await reorderChildQuests(quest._id, orderedChildIds);
+      if (!res.ok || !res.data) {
+        pushToast(actionResultToToast(res, { fallbackErrorTitle: "Reorder failed" }));
+        return;
+      }
+      setChildren(res.data.children);
+    } finally {
+      setReorderBusy(false);
+    }
+  }
+
   async function handleCreateChild() {
     if (!quest || !newChildTitle.trim()) return;
     setChildBusy(true);
@@ -347,9 +400,16 @@ export default function QuestDetailClient() {
 
   async function handleComplete() {
     if (!quest) return;
+    let cascadeCompleteChildren = false;
+    const activeOneOffChildren = children.filter((c) => c.status === "active" && !isHabitQuest(c));
+    if (activeOneOffChildren.length > 0) {
+      cascadeCompleteChildren = window.confirm(
+        `Also complete ${activeOneOffChildren.length} active one-off subtask(s)? Cancel completes only this quest.`,
+      );
+    }
     setCompleteBusy(true);
     try {
-      const res = await completeQuestById(quest._id);
+      const res = await completeQuestById(quest._id, { cascadeCompleteChildren });
       if (!res.ok) {
         pushToast(actionResultToToast(res, { fallbackErrorTitle: "Complete failed" }));
         return;
@@ -580,6 +640,72 @@ export default function QuestDetailClient() {
           </Card>
         ) : null}
 
+        {habit ? (
+          <Card variant="surface" className="space-y-3 p-4">
+            <h2 className="text-sm font-semibold">Insights</h2>
+            {insightsLoading ? (
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                Loading insights…
+              </p>
+            ) : insights ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
+                      Current streak
+                    </p>
+                    <p className="text-lg font-semibold">{insights.currentStreak}</p>
+                  </div>
+                  <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
+                      Longest streak
+                    </p>
+                    <p className="text-lg font-semibold">{insights.longestStreak}</p>
+                  </div>
+                  <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
+                      Busiest weekday (UTC)
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {insights.bestDayOfWeek ? `${insights.bestDayOfWeek.label} (${insights.bestDayOfWeek.count})` : "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[280px] text-left text-xs">
+                    <thead style={{ color: "var(--color-text-tertiary)" }}>
+                      <tr>
+                        <th className="py-1 pr-2">Week start (UTC)</th>
+                        <th className="py-1 pr-2">Completions</th>
+                        <th className="py-1 pr-2">XP</th>
+                        <th className="py-1">Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {insights.weeks.slice(-8).map((w: QuestInsightsWeekRow) => (
+                        <tr key={w.weekStart}>
+                          <td className="py-1 pr-2 font-medium">{w.weekStart}</td>
+                          <td className="py-1 pr-2">{w.completions}</td>
+                          <td className="py-1 pr-2">{w.xpTotal}</td>
+                          <td className="py-1">{w.completionRate}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                  Weekly rate compares completions to a 7-day baseline (5 for weekday-only cadence). Container parents do
+                  not award XP on completion; subtask XP still rolls up normally.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                No insights available.
+              </p>
+            )}
+          </Card>
+        ) : null}
+
         <Card variant="surface" className="p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Subtasks</h2>
@@ -593,11 +719,35 @@ export default function QuestDetailClient() {
             </p>
           ) : (
             <ul className="space-y-2">
-              {children.map((c) => (
-                <li key={c._id}>
+              {children.map((c, index) => (
+                <li key={c._id} className="flex items-center gap-2">
+                  <div className="flex shrink-0 flex-col gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 min-w-8 px-1 text-xs"
+                      disabled={reorderBusy || index === 0}
+                      onClick={() => void handleReorderChild(index, -1)}
+                      aria-label="Move subtask up"
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 min-w-8 px-1 text-xs"
+                      disabled={reorderBusy || index === children.length - 1}
+                      onClick={() => void handleReorderChild(index, 1)}
+                      aria-label="Move subtask down"
+                    >
+                      ↓
+                    </Button>
+                  </div>
                   <Link
                     href={`/quests/${c._id}`}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                    className="flex min-w-0 flex-1 items-center justify-between rounded-lg border px-3 py-2 text-sm"
                     style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-elevated)" }}
                   >
                     <span className={c.status === "completed" ? "text-[var(--color-text-tertiary)] line-through" : ""}>

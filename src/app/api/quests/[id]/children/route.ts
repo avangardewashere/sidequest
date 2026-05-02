@@ -43,7 +43,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       createdBy: userId,
       parentQuestId: parentQuest._id,
     })
-      .sort({ createdAt: -1 })
+      .sort({ order: 1, createdAt: -1 })
       .exec();
 
     logger.info("api.quests.children.list.success", { parentId: id, count: children.length });
@@ -101,6 +101,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     const difficulty = parsed.data.difficulty as QuestDifficulty;
+    const maxOrderDoc = await QuestModel.findOne({
+      createdBy: userId,
+      parentQuestId: parentQuest._id,
+    })
+      .sort({ order: -1 })
+      .select("order")
+      .lean();
+    const nextOrder = (typeof maxOrderDoc?.order === "number" ? maxOrderDoc.order : -1) + 1;
+
     const quest = await QuestModel.create({
       title: parsed.data.title,
       description: parsed.data.description,
@@ -111,6 +120,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       cadence: { kind: "oneoff" },
       createdBy: userId,
       parentQuestId: parentQuest._id,
+      order: nextOrder,
     });
 
     logger.info("api.quests.children.create.success", {

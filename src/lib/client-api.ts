@@ -25,6 +25,7 @@ import {
   type TodayHabitSurfacePayload,
 } from "@/types/today-dashboard";
 import type { MetricsRange, MetricsSummary } from "@/types/metrics-summary";
+import type { QuestInsightsResponse } from "@/types/quest-insights";
 import type { QuestLinkedFromHit, QuestSearchHit, QuestSearchKind, QuestSearchResult } from "@/types/quest-search";
 
 type DashboardData = {
@@ -471,6 +472,49 @@ export async function fetchQuestHistory(
   );
 }
 
+export async function fetchQuestInsights(
+  questId: string,
+  params?: { weeks?: number },
+): Promise<ActionResult<QuestInsightsResponse>> {
+  const q = new URLSearchParams();
+  if (params?.weeks != null) {
+    q.set("weeks", String(params.weeks));
+  }
+  const qs = q.toString();
+  const url = qs ? `/api/quests/${questId}/insights?${qs}` : `/api/quests/${questId}/insights`;
+  return runAction<QuestInsightsResponse>(
+    () => fetch(url),
+    (json) => {
+      const payload = json as QuestInsightsResponse | null;
+      if (!payload || typeof payload.habit !== "boolean") {
+        return null;
+      }
+      return payload;
+    },
+  );
+}
+
+export async function reorderChildQuests(
+  parentQuestId: string,
+  orderedChildIds: string[],
+): Promise<ActionResult<{ children: Quest[] }>> {
+  return runAction<{ children: Quest[] }>(
+    () =>
+      fetch(`/api/quests/${parentQuestId}/children/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedChildIds }),
+      }),
+    (json) => {
+      const children = (json as { children?: Quest[] } | null)?.children;
+      if (!Array.isArray(children)) {
+        return null;
+      }
+      return { children };
+    },
+  );
+}
+
 export function normalizeQuestCadenceForClient(
   quest: Pick<Quest, "cadence" | "isDaily">,
 ): QuestCadence {
@@ -486,23 +530,34 @@ export function normalizeQuestCadenceForClient(
 export async function deleteQuestById(
   questId: string,
   confirmTitle: string,
+  options?: { childDisposition?: "reparent-to-root" | "cascade-delete" },
 ): Promise<ActionResult> {
   return runAction(
     () =>
       fetch(`/api/quests/${questId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmTitle }),
+        body: JSON.stringify({
+          confirmTitle,
+          ...(options?.childDisposition ? { childDisposition: options.childDisposition } : {}),
+        }),
       }),
     () => null,
   );
 }
 
-export async function completeQuestById(questId: string): Promise<ActionResult<CompleteQuestResponse>> {
+export async function completeQuestById(
+  questId: string,
+  options?: { cascadeCompleteChildren?: boolean },
+): Promise<ActionResult<CompleteQuestResponse>> {
   return runAction<CompleteQuestResponse>(
     () =>
       fetch(`/api/quests/${questId}/complete`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cascadeCompleteChildren: options?.cascadeCompleteChildren === true,
+        }),
       }),
     (json) => (json as CompleteQuestResponse | null) ?? {},
   );

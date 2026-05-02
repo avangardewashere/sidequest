@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { QuestModel } from "@/models/Quest";
@@ -7,12 +8,17 @@ import { UserModel } from "@/models/User";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
 import { applyQuestCompletion, getMilestoneBonus, replayStreakFromCompletionLogs } from "@/lib/progression";
+import { xpEarnedForQuestCompletion } from "@/lib/quest-xp-rollup";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { levelFromTotalXp } from "@/lib/xp";
 import { isHabitCadence, normalizeQuestCadence, toUtcDateKey } from "@/lib/cadence";
 
 class ApiConflictError extends Error {}
 class ApiNotFoundError extends Error {}
+
+const completeQuestBodySchema = z.object({
+  cascadeCompleteChildren: z.boolean().optional(),
+});
 
 export async function PATCH(
   request: Request,
@@ -28,6 +34,17 @@ export async function PATCH(
   }
 
   const { id } = await context.params;
+  let requestBody: z.infer<typeof completeQuestBodySchema> = {};
+  try {
+    const raw = await request.json();
+    const parsed = completeQuestBodySchema.safeParse(raw);
+    if (parsed.success) {
+      requestBody = parsed.data;
+    }
+  } catch {
+    requestBody = {};
+  }
+  const cascadeCompleteChildren = requestBody.cascadeCompleteChildren === true;
   await connectToDatabase();
   const dbSession = await mongoose.startSession();
 
@@ -42,6 +59,7 @@ export async function PATCH(
         };
         xpGained: number;
         milestoneReward: { streakMilestone: number; bonusXp: number } | null;
+        cascadeCompletedOneoffCount?: number;
       }
     | undefined;
 
@@ -76,12 +94,19 @@ export async function PATCH(
 
       await quest.save({ session: dbSession });
 
+      const childCount = await QuestModel.countDocuments({
+        parentQuestId: quest._id,
+        createdBy: userId,
+      }).session(dbSession);
+      const hasChildren = childCount > 0;
+      const xpAward = xpEarnedForQuestCompletion(hasChildren, quest.xpReward ?? 0);
+
       const progression = applyQuestCompletion({
         totalXp: user.totalXp,
         currentStreak: user.currentStreak,
         longestStreak: user.longestStreak,
         lastCompletedAt: user.lastCompletedAt,
-        xpGained: quest.xpReward,
+        xpGained: xpAward,
       });
 
       user.totalXp = progression.totalXp;
@@ -124,7 +149,7 @@ export async function PATCH(
           {
             questId: quest._id,
             userId: user._id,
-            xpEarned: quest.xpReward,
+            xpEarned: xpAward,
             difficulty: quest.difficulty,
             completedAt,
             completionDate,
@@ -132,6 +157,44 @@ export async function PATCH(
         ],
         { session: dbSession },
       );
+
+      let cascadeCompletedOneoffCount = 0;
+      let cascadeXpExtra = 0;
+      if (cascadeCompleteChildren && hasChildren) {
+        const children = await QuestModel.find({
+          parentQuestId: quest._id,
+          createdBy: userId,
+          status: "active",
+        }).session(dbSession);
+        for (const child of children) {
+          const childCadence = normalizeQuestCadence(child);
+          if (isHabitCadence(childCadence.kind)) {
+            continue;
+          }
+          child.status = "completed";
+          child.completedAt = completedAt;
+          await child.save({ session: dbSession });
+          const childXp = xpEarnedForQuestCompletion(false, child.xpReward);
+          user.totalXp += childXp;
+          user.level = levelFromTotalXp(user.totalXp);
+          await CompletionLogModel.create(
+            [
+              {
+                questId: child._id,
+                userId: user._id,
+                xpEarned: childXp,
+                difficulty: child.difficulty,
+                completedAt,
+                completionDate,
+              },
+            ],
+            { session: dbSession },
+          );
+          cascadeXpExtra += childXp;
+          cascadeCompletedOneoffCount += 1;
+        }
+        await user.save({ session: dbSession });
+      }
 
       responsePayload = {
         quest,
@@ -141,8 +204,9 @@ export async function PATCH(
           currentStreak: user.currentStreak,
           longestStreak: user.longestStreak,
         },
-        xpGained: quest.xpReward,
+        xpGained: xpAward + cascadeXpExtra,
         milestoneReward,
+        ...(cascadeCompletedOneoffCount > 0 ? { cascadeCompletedOneoffCount } : {}),
       };
     });
 

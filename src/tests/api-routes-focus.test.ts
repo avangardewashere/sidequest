@@ -65,6 +65,8 @@ describe("focus metrics summary integration", () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     mockQuestAggregate.mockResolvedValueOnce([]);
     mockFocusAggregate.mockResolvedValueOnce([{ _id: null, durationSecTotal: 3600 }]);

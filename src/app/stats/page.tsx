@@ -19,6 +19,7 @@ import {
   YAxis,
 } from "recharts";
 import { levelFromTotalXp } from "@/lib/xp";
+import { CalendarHeatmap, type HeatmapCell } from "@/components/ui/calendar-heatmap";
 import { ChartShell, ThemedChartTooltip } from "@/components/stats/chart-shell";
 import { RangeSwitcher } from "@/components/stats/range-switcher";
 import { StatCard } from "@/components/stats/stat-card";
@@ -157,6 +158,23 @@ export default function StatsPage() {
       })),
     [xpLineData],
   );
+
+  const habitHeatmapCells = useMemo<HeatmapCell[]>(() => {
+    const pts = data?.habitCompletionsByDay ?? [];
+    const max = Math.max(0, ...pts.map((p) => p.value));
+    if (max === 0) {
+      return [];
+    }
+    return pts
+      .filter((p) => p.value > 0)
+      .map((p) => ({
+        date: p.date,
+        intensity: Math.min(4, Math.round((4 * p.value) / max)),
+      }));
+  }, [data?.habitCompletionsByDay]);
+
+  const hasWeeklyXp = useMemo(() => (data?.weeklyXpByWeek ?? []).some((w) => w.xp > 0), [data?.weeklyXpByWeek]);
+  const hasHabitTop = useMemo(() => (data?.habitsTopByStreak ?? []).length > 0, [data?.habitsTopByStreak]);
 
   useEffect(() => {
     let active = true;
@@ -409,6 +427,57 @@ export default function StatsPage() {
           sparkline={avgCompletionsSparkline}
         />
       </section>
+
+      {!isLoading && data ? (
+        <section className="grid gap-4 lg:grid-cols-3">
+          <ChartShell
+            title="Top habits by streak (range)"
+            loading={false}
+            isEmpty={!hasHabitTop}
+            emptyMessage="No habit completions in this range yet."
+          >
+            <ul className="space-y-2 text-sm">
+              {(data.habitsTopByStreak ?? []).map((h) => (
+                <li key={h.questId} className="flex items-center justify-between gap-2">
+                  <Link href={`/quests/${h.questId}`} className="min-w-0 truncate font-medium underline">
+                    {h.title}
+                  </Link>
+                  <span style={{ color: "var(--color-text-secondary)" }}>{h.streak}d</span>
+                </li>
+              ))}
+            </ul>
+          </ChartShell>
+          <ChartShell
+            title="Habit completions (all habits)"
+            loading={false}
+            isEmpty={habitHeatmapCells.length === 0}
+            emptyMessage="No habit activity in this range."
+          >
+            <CalendarHeatmap
+              cells={habitHeatmapCells}
+              numWeeks={Math.min(13, Math.max(1, Math.ceil(data.rangeDays / 7)))}
+            />
+          </ChartShell>
+          <ChartShell
+            title="XP by week (UTC Monday)"
+            loading={false}
+            isEmpty={!hasWeeklyXp}
+            emptyMessage="No XP from completions in this range."
+          >
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.weeklyXpByWeek ?? []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
+                  <XAxis dataKey="weekLabel" tick={{ fontSize: 10 }} />
+                  <YAxis width={36} tick={{ fontSize: 10 }} />
+                  <Tooltip content={<ThemedChartTooltip />} />
+                  <Bar dataKey="xp" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartShell>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-3">
         <ChartShell

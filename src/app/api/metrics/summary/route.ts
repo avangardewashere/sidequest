@@ -6,6 +6,11 @@ import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { FocusSessionModel } from "@/models/FocusSession";
 import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
+import {
+  aggregateHabitCompletionsByDay,
+  aggregateTopHabitsByStreak,
+  foldXpByWeek,
+} from "@/lib/metrics-habit-summary";
 import { QuestModel } from "@/models/Quest";
 import { UserModel } from "@/models/User";
 
@@ -27,6 +32,9 @@ type MetricsSummaryResponse = {
   rangeDays: number;
   completionsByDay: DailyPoint[];
   xpByDay: DailyPoint[];
+  habitCompletionsByDay: DailyPoint[];
+  habitsTopByStreak: Array<{ questId: string; title: string; streak: number }>;
+  weeklyXpByWeek: Array<{ weekStart: string; weekLabel: string; xp: number }>;
   byCategory: CategoryPoint[];
   streakHistory: {
     current: number;
@@ -283,6 +291,17 @@ export async function GET(request: Request) {
       date,
       value: xpByKey.get(date) ?? 0,
     }));
+
+    const [habitDayMap, habitsTopByStreak] = await Promise.all([
+      aggregateHabitCompletionsByDay(userObjectId, since),
+      aggregateTopHabitsByStreak(userObjectId, since, 8),
+    ]);
+    const habitCompletionsByDay: DailyPoint[] = dateKeys.map((date) => ({
+      date,
+      value: habitDayMap.get(date) ?? 0,
+    }));
+    const weeklyXpByWeek = foldXpByWeek(xpByDay);
+
     const byCategory = (categoryRows as CategoryPoint[]) ?? [];
 
     const stats = completionStats[0] ?? {
@@ -327,6 +346,9 @@ export async function GET(request: Request) {
       rangeDays,
       completionsByDay,
       xpByDay,
+      habitCompletionsByDay,
+      habitsTopByStreak,
+      weeklyXpByWeek,
       byCategory,
       streakHistory,
       kpis: {

@@ -13,6 +13,7 @@ import {
   actionResultToToast,
   createQuestLink,
   deleteQuestLink,
+  fetchQuestChildren,
   fetchTagSuggestions,
   getQuestById,
   normalizeQuestCadenceForClient,
@@ -58,7 +59,10 @@ export type QuestFormProps = {
   submitLabel: string;
   footer?: ReactNode;
   onSubmit: (values: QuestFormSnapshot) => Promise<void>;
-  onDeleteQuest?: (confirmTitle: string) => Promise<void>;
+  onDeleteQuest?: (
+    confirmTitle: string,
+    options?: { childDisposition?: "reparent-to-root" | "cascade-delete" },
+  ) => Promise<void>;
   /** Called after a link is created or removed so the parent can refresh `initialQuest`. */
   onLinksMutated?: () => void | Promise<void>;
 };
@@ -309,7 +313,18 @@ export function QuestForm({
     if (!onDeleteQuest || !canDelete) return;
     setSubmitting(true);
     try {
-      await onDeleteQuest(deleteConfirmTitle.trim());
+      let opts: { childDisposition?: "reparent-to-root" | "cascade-delete" } | undefined;
+      if (mode === "edit" && initialQuest?._id) {
+        const chRes = await fetchQuestChildren(initialQuest._id);
+        const n = chRes.ok ? (chRes.data?.children?.length ?? 0) : 0;
+        if (n > 0) {
+          const cascade = window.confirm(
+            `This quest has ${n} subtask(s). OK deletes the parent and all subtasks. Cancel detaches subtasks (top-level) then deletes the parent.`,
+          );
+          opts = { childDisposition: cascade ? "cascade-delete" : "reparent-to-root" };
+        }
+      }
+      await onDeleteQuest(deleteConfirmTitle.trim(), opts);
     } finally {
       setSubmitting(false);
     }

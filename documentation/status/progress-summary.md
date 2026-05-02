@@ -625,13 +625,13 @@ This chapter summarizes what was delivered in the latest implementation pass and
 
 ## 33) Cycle 8 — Phase 8.5 closeout (Bottom nav + Capture FAB)
 
-- Added [`AuthenticatedAppShell`](src/components/layout/authenticated-app-shell.tsx): sticky app bar (route title, disabled Search/Settings placeholders, **Sign out**), fixed [`BottomNav`](src/components/ui/bottom-nav.tsx), global **Capture** FAB + [`CaptureQuestSheet`](src/components/layout/capture-quest-sheet.tsx) using [`Sheet`](src/components/ui/sheet.tsx) (title + `TagInput` + `createQuest` one-off + `updateQuestTags`).
+- Added [`AuthenticatedAppShell`](src/components/layout/authenticated-app-shell.tsx): sticky app bar (route title, **Search** wired in Phase 8.6, **Settings** still a disabled placeholder, **Sign out**), fixed [`BottomNav`](src/components/ui/bottom-nav.tsx), global **Capture** FAB + [`CaptureQuestSheet`](src/components/layout/capture-quest-sheet.tsx) using [`Sheet`](src/components/ui/sheet.tsx) (title + `TagInput` + `createQuest` one-off + `updateQuestTags`).
 - Helpers: [`app-shell.ts`](src/lib/app-shell.ts) (`appShellTitle`, `shouldHideCaptureFab`, `dispatchCaptureCreated`); Today + quest list listen for `CAPTURE_CREATED_EVENT` to refresh; full create flow also dispatches after success.
 - Wrapped authenticated surfaces: [`page.tsx`](src/app/page.tsx), [`quests/view/page.tsx`](src/app/quests/view/page.tsx), [`quests/[id]/page.tsx`](src/app/quests/[id]/page.tsx), [`quests/create`](src/app/quests/create/page.tsx), [`quests/[id]/edit`](src/app/quests/[id]/edit/page.tsx), [`stats/page.tsx`](src/app/stats/page.tsx), [`you/page.tsx`](src/app/you/page.tsx).
 - Removed duplicate home chrome from [`today-focus-shell.tsx`](src/components/home/today-focus-shell.tsx) (`TodayFocusFab`, `TodayFocusTabBar`, `TodayFocusQuickAddSheet`); removed legacy `src/components/dashboard-nav.tsx` and bottom tab duplicates from quest list/detail.
 - Fourth tab remains **You** at `/you` (roadmap `/profile` not added).
 - Tests: [`app-shell.test.ts`](src/tests/app-shell.test.ts); updated [`quest-list-view-page.test.tsx`](src/tests/quest-list-view-page.test.tsx), [`you-preferences-section.test.tsx`](src/tests/you-preferences-section.test.tsx).
-- Documentation: `phase-8-5-bottom-nav-plan.md`, `phase-8-5-bottom-nav-tracker.md`; cycles **8.5 done** / **8.6 next**.
+- Documentation: `phase-8-5-bottom-nav-plan.md`, `phase-8-5-bottom-nav-tracker.md`; **Cycle 8** closed after 8.6; cycles **9.1 next** (see [`phase-9-1-cascade-xp-plan.md`](../plans/phase-9-1-cascade-xp-plan.md)).
 - Validation:
   - `npm run test:ci` passed (`45/45` files, `216/216` tests)
   - `npm run typecheck` passed
@@ -652,3 +652,30 @@ This chapter summarizes what was delivered in the latest implementation pass and
   - `npm run typecheck` passed
   - `npm run lint` passed
   - `npm run build` passed
+
+## 35) Cycle 9 readiness — Phase 9.1 next
+
+- **Cycle 8** documentation and roadmap wording are aligned with the product (`/you` vs `/profile`, Search live in shell, Settings deferred).
+- **Next implementation focus:** [Phase 9.1 in cycles plan](../plans/cycles-7-8-9-plan.md) with working notes in [`phase-9-1-cascade-xp-plan.md`](../plans/phase-9-1-cascade-xp-plan.md) and checklist [`phase-9-1-cascade-xp-tracker.md`](../plans/phase-9-1-cascade-xp-tracker.md) — parent/child completion prompts, delete vs re-parent vs cascade-delete, XP rules for parents with children (rollup from leaves), habit completion XP vs `MilestoneRewardLog` streak bonuses.
+- Start from the bullets under § Phase 9.1 in the cycles plan; no Cycle 8 gate remains open.
+
+## 36) Cycle 9 — Phase 9.1 closeout (Cascade & XP integrity)
+
+- **API:** `PATCH /api/quests/[id]/complete` accepts optional `cascadeCompleteChildren`; parents with any subtasks get **0** incremental XP on their own completion via `xpEarnedForQuestCompletion` (`src/lib/quest-xp-rollup.ts`); cascade completes **active one-off** children only (habit children skipped). Response may include `cascadeCompletedOneoffCount`.
+- **API:** `DELETE /api/quests/[id]` requires `childDisposition` when the quest has children (`reparent-to-root` clears `parentQuestId` on children; `cascade-delete` removes child quests and strips their completion XP); deleting any quest strips that quest’s completion logs and adjusts user XP inside a transaction.
+- **Client:** `deleteQuestById` / `completeQuestById` JSON bodies; quest edit danger zone and detail/list complete flows prompt for disposition / cascade.
+- **Tests:** `src/tests/quest-xp-rollup.test.ts`, `src/tests/quest-delete-route.test.ts`.
+- **Documentation:** `phase-9-1-cascade-xp-tracker.md` closed; cycles plan Phase **9.1** marked done.
+- **Validation:** `npm run test:ci` (`51` files, `230` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.1 closeout.
+- **Next:** Phase 9.2 (see §37).
+
+## 37) Cycle 9 — Phase 9.2 closeout (Habit progressions & insights)
+
+- **API:** `GET /api/quests/[id]/insights` (`weeks` query, default 12) — habit quests return streaks, best weekday (UTC), weekly completion/XP rows; one-offs return `habit: false` with a message. Pure helpers in `src/lib/quest-insights.ts`.
+- **API:** `Quest.order` on `Quest` schema; `GET/POST .../children` sorts by `order` then `createdAt`; new `PATCH /api/quests/[id]/children/reorder` with `{ orderedChildIds }`.
+- **Metrics:** `GET /api/metrics/summary` adds `habitsTopByStreak`, `habitCompletionsByDay`, `weeklyXpByWeek` (aggregations in `src/lib/metrics-habit-summary.ts`).
+- **Client:** `fetchQuestInsights`, `reorderChildQuests` in `src/lib/client-api.ts`; quest detail **Insights** card + subtask ↑/↓ reorder; Stats page habit strip (top habits, cross-habit heatmap, weekly XP bar chart).
+- **Tests:** `src/tests/quest-insights.test.ts`, `src/tests/quest-insights-route.test.ts`; children POST mock updated for max-order query.
+- **Documentation:** `phase-9-2-habit-insights-plan.md`, `phase-9-2-habit-insights-tracker.md`; cycles plan Phase **9.2** marked done.
+- **Validation:** `npm run test:ci` (`53` files, `238` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.2 closeout.
+- **Next:** Phase 9.3 — streak resilience.

@@ -391,7 +391,9 @@ describe("API route baseline tests", () => {
         .mockResolvedValueOnce([{ _id: "2026-04-20", value: 2 }])
         .mockResolvedValueOnce([{ _id: "2026-04-20", value: 40 }])
         .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 15, totalXpFromCompletions: 75, completionEvents: 3 }])
-        .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 25, totalXpFromCompletions: 75, completionEvents: 3 }]);
+        .mockResolvedValueOnce([{ _id: null, avgXpPerCompletion: 25, totalXpFromCompletions: 75, completionEvents: 3 }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
       mockQuestAggregate.mockResolvedValueOnce([{ category: "work", count: 3, xpTotal: 60 }]);
       mockFocusAggregate.mockResolvedValueOnce([{ _id: null, durationSecTotal: 1800 }]);
 
@@ -414,6 +416,9 @@ describe("API route baseline tests", () => {
       expect(json.kpis.focusMinutesLast7d).toBe(30);
       expect(json.previousPeriod.totalCompletions).toBe(3);
       expect(json.last7Days.questsCreated).toBe(10);
+      expect(json.habitCompletionsByDay).toHaveLength(7);
+      expect(json.habitsTopByStreak).toEqual([]);
+      expect(Array.isArray(json.weeklyXpByWeek)).toBe(true);
     });
 
     it("supports range=30d with zero-filled arrays", async () => {
@@ -422,6 +427,8 @@ describe("API route baseline tests", () => {
       mockQuestCountDocuments.mockResolvedValue(0);
       mockMilestoneCountDocuments.mockResolvedValue(0);
       mockCompletionAggregate
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])

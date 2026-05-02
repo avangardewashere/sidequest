@@ -87,6 +87,8 @@ const questSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    /** Sibling order under the same parent (lower first). */
+    order: { type: Number, default: 0 },
     completedAt: { type: Date, default: null },
   },
   { timestamps: true },
@@ -97,6 +99,7 @@ questSchema.index({ createdBy: 1, category: 1, status: 1, createdAt: -1 });
 questSchema.index({ createdBy: 1, isDaily: 1, dailyKey: 1 });
 questSchema.index({ createdBy: 1, "cadence.kind": 1, status: 1, createdAt: -1 });
 questSchema.index({ createdBy: 1, parentQuestId: 1, status: 1 });
+questSchema.index({ createdBy: 1, parentQuestId: 1, order: 1 });
 questSchema.index(
   { createdBy: 1, dailyKey: 1, title: 1 },
   { unique: true, partialFilterExpression: { isDaily: true } },
