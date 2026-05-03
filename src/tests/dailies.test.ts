@@ -13,7 +13,7 @@ describe("daily quest generation", () => {
     expect(first).toHaveLength(3);
     expect(new Set(first.map((q) => q.title)).size).toBe(3);
     first.forEach((quest) => {
-      expect(quest.isDaily).toBe(true);
+      expect(quest.cadence).toEqual({ kind: "daily" });
       expect(quest.dailyKey).toBe("2026-04-24");
       expect(quest.xpReward).toBeGreaterThan(0);
     });

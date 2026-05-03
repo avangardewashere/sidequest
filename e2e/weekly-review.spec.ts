@@ -57,6 +57,9 @@ test("stats page shows weekly review card", async ({ page }) => {
           summaryHeadline: "You're building momentum.",
           summaryMessage: "2 more completions to reach your weekly target this week.",
         },
+        reflectionWeekStartUtc: "2026-04-20",
+        currentWeekReflection: null,
+        priorWeekReflection: null,
       }),
     );
   });

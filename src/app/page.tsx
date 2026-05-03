@@ -169,7 +169,11 @@ export default function Home() {
               {mode === "register" ? "Create account" : "Login"}
             </button>
           </form>
-          {feedback ? <p className="mt-3 text-sm text-emerald-400">{feedback}</p> : null}
+          {feedback ? (
+            <p className="mt-3 text-sm font-medium" style={{ color: "var(--color-success)" }}>
+              {feedback}
+            </p>
+          ) : null}
         </div>
       </main>
     );

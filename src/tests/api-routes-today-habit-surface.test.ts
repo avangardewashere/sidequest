@@ -4,6 +4,7 @@ const mockGetAuthSession = vi.fn();
 const mockConnectToDatabase = vi.fn();
 const mockQuestFind = vi.fn();
 const mockCompletionFind = vi.fn();
+const mockWeeklyReflectionFindOne = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   getAuthSession: mockGetAuthSession,
@@ -30,6 +31,11 @@ const route = await import("@/app/api/today/habit-surface/route");
 describe("GET /api/today/habit-surface", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockWeeklyReflectionFindOne.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null),
+      }),
+    });
     mockGetAuthSession.mockResolvedValue({ user: { id: "507f1f77bcf86cd799439011" } });
     mockConnectToDatabase.mockResolvedValue(undefined);
     mockQuestFind.mockReturnValue({
@@ -61,5 +67,6 @@ describe("GET /api/today/habit-surface", () => {
     expect(json.habitsDue).toEqual([]);
     expect(json.atRisk).toEqual([]);
     expect(json.captured).toEqual([]);
+    expect(json.mondayReflectionCallout).toBeNull();
   });
 });

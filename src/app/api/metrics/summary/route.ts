@@ -228,14 +228,14 @@ export async function GET(request: Request) {
       }),
       QuestModel.countDocuments({
         createdBy: userId,
-        isDaily: true,
         createdAt: { $gte: new Date(now.getTime() - (7 - 1) * 24 * 60 * 60 * 1000) },
+        $or: [{ "cadence.kind": "daily" }, { isDaily: true }],
       }),
       QuestModel.countDocuments({
         createdBy: userId,
-        isDaily: true,
         status: "completed",
         completedAt: { $gte: new Date(now.getTime() - (7 - 1) * 24 * 60 * 60 * 1000) },
+        $or: [{ "cadence.kind": "daily" }, { isDaily: true }],
       }),
       MilestoneRewardLogModel.countDocuments({
         userId: userObjectId,

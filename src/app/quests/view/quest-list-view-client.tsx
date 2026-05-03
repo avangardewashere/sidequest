@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { HabitChip } from "@/components/ui/habit-chip";
 import { StreakFlame } from "@/components/ui/streak-flame";
 import { TagChip, type TagChipTone } from "@/components/ui/tag-chip";
@@ -273,6 +274,11 @@ export default function QuestListViewClient() {
     [quests, listTab, activeTag],
   );
 
+  const emptyBecauseFilters = useMemo(
+    () => quests.length > 0 && visibleQuests.length === 0,
+    [quests.length, visibleQuests.length],
+  );
+
   const rows = useMemo(
     () =>
       visibleQuests.map((quest) => (
@@ -326,7 +332,7 @@ export default function QuestListViewClient() {
           className="sticky top-0 z-20 -mx-6 border-b px-6 py-3 backdrop-blur-md"
           style={{
             borderColor: "var(--color-border-subtle)",
-            background: "rgba(250, 250, 247, 0.92)",
+            background: "color-mix(in srgb, var(--color-bg-base) 88%, transparent)",
           }}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-3">
@@ -415,26 +421,50 @@ export default function QuestListViewClient() {
           ) : visibleQuests.length ? (
             rows
           ) : (
-            <div
-              className="rounded-xl border p-4 text-sm"
-              style={{
-                borderColor: "var(--color-border-subtle)",
-                background: "var(--color-bg-surface)",
-                color: "var(--color-text-secondary)",
-              }}
+            <EmptyState
+              icon={emptyBecauseFilters ? "🔎" : "📜"}
+              title={emptyBecauseFilters ? "No quests match your filters" : "No quests in this list yet"}
+              description={
+                emptyBecauseFilters
+                  ? "Try another tab, clear the tag chip filter, or choose “All” statuses above."
+                  : "Create something from Today or use capture — active quests land here."
+              }
             >
-              No quests match your current filters.
-            </div>
+              {emptyBecauseFilters ? (
+                <>
+                  {activeTag ? (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setTagFilter(null)}>
+                      Clear tag
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setListTab("all")}>
+                    Show all tabs
+                  </Button>
+                </>
+              ) : (
+                <Link
+                  href="/"
+                  className="rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:brightness-95"
+                  style={{
+                    borderColor: "var(--color-primary-hover)",
+                    background: "var(--color-primary)",
+                    color: "var(--color-primary-on-accent)",
+                  }}
+                >
+                  Go to Today
+                </Link>
+              )}
+            </EmptyState>
           )}
         </section>
 
         {feedback ? (
           <div
-            className="rounded-md border px-4 py-3"
+            className="rounded-md border px-4 py-3 text-sm"
             style={{
-              borderColor: "#74d99c",
-              background: "#dff8e8",
-              color: "#1a6a39",
+              borderColor: "var(--color-border-default)",
+              background: "var(--color-success-subtle)",
+              color: "var(--color-success)",
             }}
           >
             {feedback}

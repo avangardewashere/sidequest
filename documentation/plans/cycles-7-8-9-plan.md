@@ -220,21 +220,24 @@ Status: **done** (see `phase-9-2-habit-insights-tracker.md`).
 
 **Next:** Phase 9.3.
 
-### Phase 9.3 — Streak resilience (3 days)
+### Phase 9.3 — Streak resilience (3 days) ✓ DONE
 
-- Streak freeze tokens (existing `MilestoneRewardLog` extended with `kind: 'streak-freeze'`; user balance derived).
-- Grace-day policy: opt-in setting allowing 1 missed cadence period per week without breaking the streak.
-- "Recover streak" UX after a miss: prompt the user to spend a token within 24h to keep the streak.
-- New endpoint: `POST /api/quests/[id]/streak/recover` — validates token balance, rewrites streak, logs the spend.
+- Streak freeze tokens in separate `StreakFreezeLog` (`grant` / `spend`); balance = grants − spends; one grant when a new global streak milestone bonus is awarded.
+- Grace-day policy: opt-in `streakGraceEnabled` — once per UTC week, exactly a two-day gap (skipped only yesterday) bridges global streak on next completion (`streakGraceWeekUtc` tracks consumption).
+- Recover streak UX: spend a token within 48h after UTC midnight of the missed day; inserts zero-XP `CompletionLog` for yesterday (UTC), replays global streak from logs.
+- `POST /api/quests/[id]/streak/recover`; `GET /api/quests/[id]` includes `streakRecover` meta for habits; profile/progression expose `streakFreezeBalance` + grace toggle.
 
-### Phase 9.4 — Reflection layer & weekly review (3 days)
+**Next:** Phase 9.4.
 
-- Weekly review surface (Sunday default, configurable): prompt user with "what went well / didn't / next week" — answers stored as a special `note.kind = 'reflection'`.
-- Reflection feed inside detail page filterable from notes section.
-- New route: `/review/weekly` — single-page review flow with prefilled stats from the prior week.
-- Reflection notes feed into the `8.3` Today surface as "last week's takeaways" callout on Mondays.
+### Phase 9.4 — Reflection layer & weekly review (3 days) ✓ DONE
 
-### Phase 9.5 — Polish, animations, dark theme, sweep (4 days)
+- Global weekly prompts persisted in **`WeeklyReflection`** (unique `userId` + `weekStartUtc` Monday UTC); `GET`/`POST /api/review/weekly` extends rolling 7-day stats with current/prior week payloads.
+- Quest notes **`kind`**: `note` | `reflection`; detail page **All / Reflections** filter and **Add reflection**; `NoteCard` optional tag.
+- **`/review/weekly`** page (authenticated shell) + Stats link to full review; Today home shows **last week’s takeaway** on **UTC Mondays** when prior-week reflection exists (`mondayReflectionCallout` on `GET /api/today/habit-surface`).
+
+**Next:** Phase 9.5 (**done** — see `phase-9-5-polish-theme-tracker.md`).
+
+### Phase 9.5 — Polish, animations, dark theme, sweep (4 days) ✓ DONE
 
 - Micro-animations: confetti on milestone completions, flame pulse on streak threshold crossings, ring fill on parent-quest progress changes.
 - Empty-state copy + lightweight illustrations across list / detail / today / stats / profile.
@@ -242,7 +245,9 @@ Status: **done** (see `phase-9-2-habit-insights-tracker.md`).
 - Sweep zinc remnants from Home / Stats / auth pages — full design-token migration. Remove dead `--background`/`--foreground` legacy tokens after the sweep is verified.
 - Remove deprecated `isDaily` writes; reads continue to normalize during a deprecation window.
 
-### Phase 9.6 — PWA shell minimum (3 days)
+**Next:** Phase 9.6 (**done** — see `phase-9-6-pwa-shell-tracker.md`) or broader post–Cycle 9 work.
+
+### Phase 9.6 — PWA shell minimum (3 days) ✓ DONE
 
 - `public/manifest.json` with name/short_name/icons (192/512/maskable)/theme_color/display=standalone.
 - Viewport + theme-color meta in `layout.tsx`.

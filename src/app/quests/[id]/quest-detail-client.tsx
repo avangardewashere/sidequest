@@ -29,6 +29,7 @@ import {
   fetchQuestInsights,
   fetchQuestsLinkedFrom,
   getQuestById,
+  recoverStreak,
   reorderChildQuests,
   searchQuests,
   undoQuestCompletion,
@@ -36,6 +37,7 @@ import {
 } from "@/lib/client-api";
 import { normalizeQuestCadence, streakFromLogs, type CompletionHistoryPoint } from "@/lib/cadence";
 import { formatCadenceShort } from "@/lib/format-cadence-label";
+import { completionToastCopy } from "@/lib/formatters";
 import { isHabitQuest } from "@/lib/quest-selectors";
 import type { Quest, QuestLinkKind, QuestNote } from "@/types/dashboard";
 import type { QuestInsightsHabitPayload, QuestInsightsWeekRow } from "@/types/quest-insights";
@@ -59,6 +61,7 @@ function normalizeNote(n: QuestNote): QuestNote {
       typeof n.createdAt === "string"
         ? n.createdAt
         : new Date(n.createdAt as unknown as Date).toISOString(),
+    kind: n.kind === "reflection" ? "reflection" : "note",
   };
 }
 
@@ -111,6 +114,8 @@ export default function QuestDetailClient() {
   const [insights, setInsights] = useState<QuestInsightsHabitPayload | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [reorderBusy, setReorderBusy] = useState(false);
+  const [recoverBusy, setRecoverBusy] = useState(false);
+  const [noteFilter, setNoteFilter] = useState<"all" | "reflection">("all");
 
   const reload = useCallback(async () => {
     if (!sessionUserId || !questId) {
@@ -294,11 +299,11 @@ export default function QuestDetailClient() {
     }
   }
 
-  async function handleAddNote() {
+  async function submitNote(kind: "note" | "reflection") {
     if (!quest || !newNoteBody.trim()) return;
     setNoteBusy(true);
     try {
-      const res = await createQuestNote(quest._id, newNoteBody.trim());
+      const res = await createQuestNote(quest._id, newNoteBody.trim(), { kind });
       if (!res.ok) {
         pushToast(actionResultToToast(res, { fallbackErrorTitle: "Note failed" }));
         return;
@@ -309,6 +314,14 @@ export default function QuestDetailClient() {
       setNoteBusy(false);
     }
   }
+
+  const filteredNotes = useMemo(() => {
+    const notes = quest?.notes ?? [];
+    if (noteFilter === "reflection") {
+      return notes.filter((n) => n.kind === "reflection");
+    }
+    return notes;
+  }, [quest?.notes, noteFilter]);
 
   async function handleDeleteNote(noteId: string) {
     if (!quest) return;
@@ -398,6 +411,26 @@ export default function QuestDetailClient() {
     }
   }
 
+  async function handleRecoverStreak() {
+    if (!quest || !quest.streakRecover?.eligible) return;
+    setRecoverBusy(true);
+    try {
+      const res = await recoverStreak(quest._id);
+      if (!res.ok || !res.data) {
+        pushToast(actionResultToToast(res, { fallbackErrorTitle: "Recover failed" }));
+        return;
+      }
+      pushToast({
+        tone: "success",
+        title: "Streak recovered",
+        message: `Filled UTC day ${res.data.missedDateKey} (no XP).`,
+      });
+      await reload();
+    } finally {
+      setRecoverBusy(false);
+    }
+  }
+
   async function handleComplete() {
     if (!quest) return;
     let cascadeCompleteChildren = false;
@@ -414,7 +447,12 @@ export default function QuestDetailClient() {
         pushToast(actionResultToToast(res, { fallbackErrorTitle: "Complete failed" }));
         return;
       }
-      pushToast({ tone: "success", title: "Completed", message: "" });
+      const copy = res.data ? completionToastCopy(res.data) : { title: "Completed", message: "" };
+      pushToast({ tone: "success", title: copy.title, message: copy.message });
+      if (res.data?.milestoneReward && typeof document !== "undefined") {
+        document.body.classList.add("sq-milestone-celebration");
+        window.setTimeout(() => document.body.classList.remove("sq-milestone-celebration"), 2200);
+      }
       await reload();
     } finally {
       setCompleteBusy(false);
@@ -612,6 +650,17 @@ export default function QuestDetailClient() {
                     {undoBusy ? "…" : "Undo day"}
                   </Button>
                 ) : null}
+                {habit && quest.status === "active" && quest.streakRecover?.eligible ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={recoverBusy}
+                    onClick={() => void handleRecoverStreak()}
+                  >
+                    {recoverBusy ? "…" : "Recover streak (1 token)"}
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
@@ -784,28 +833,68 @@ export default function QuestDetailClient() {
         </Card>
 
         <Card variant="surface" className="space-y-4 p-4">
-          <h2 className="text-sm font-semibold">Notes</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Notes</h2>
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                variant={noteFilter === "all" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setNoteFilter("all")}
+              >
+                All
+              </Button>
+              <Button
+                type="button"
+                variant={noteFilter === "reflection" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setNoteFilter("reflection")}
+              >
+                Reflections
+              </Button>
+            </div>
+          </div>
           <div className="space-y-3">
-            {(quest.notes ?? []).map((n) => (
+            {filteredNotes.map((n) => (
               <NoteCard
                 key={n.id}
                 createdAtLabel={new Date(n.createdAt).toLocaleString()}
+                tag={n.kind === "reflection" ? "Reflection" : undefined}
                 body={n.body}
                 onDelete={() => void handleDeleteNote(n.id)}
               />
             ))}
           </div>
-          <textarea
-            value={newNoteBody}
-            onChange={(e) => setNewNoteBody(e.target.value)}
-            rows={3}
-            className="w-full rounded-md border px-3 py-2 text-sm"
-            style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
-            placeholder="Add a note…"
-          />
-          <Button type="button" variant="secondary" size="sm" disabled={noteBusy} onClick={() => void handleAddNote()}>
-            {noteBusy ? "Adding…" : "Add note"}
-          </Button>
+          <form
+            className="space-y-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submitNote("note");
+            }}
+          >
+            <textarea
+              value={newNoteBody}
+              onChange={(e) => setNewNoteBody(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--color-border-default)", background: "var(--color-bg-surface)" }}
+              placeholder="Add a note…"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" variant="secondary" size="sm" disabled={noteBusy}>
+                {noteBusy ? "Adding…" : "Add note"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={noteBusy}
+                onClick={() => void submitNote("reflection")}
+              >
+                {noteBusy ? "Adding…" : "Add reflection"}
+              </Button>
+            </div>
+          </form>
         </Card>
 
         <Card variant="surface" className="space-y-3 p-4">

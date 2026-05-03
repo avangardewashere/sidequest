@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
     reminderTimeLocal: { type: String, default: null },
     reminderDays: { type: [Number], default: [1, 2, 3, 4, 5] },
     reminderLastFiredOn: { type: String, default: null },
+    /** Opt-in: one global streak "grace" skip per UTC week (skip yesterday only). */
+    streakGraceEnabled: { type: Boolean, default: false },
+    /** UTC Monday date key (YYYY-MM-DD) for the week when grace was last consumed. */
+    streakGraceWeekUtc: { type: String, default: null },
   },
   {
     timestamps: true,

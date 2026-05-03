@@ -4,6 +4,10 @@ const mockGetAuthSession = vi.fn();
 const mockConnectToDatabase = vi.fn();
 const mockUserFindById = vi.fn();
 const mockCompletionCount = vi.fn();
+const { mockWeeklyFindOne, mockWeeklyFindOneAndUpdate } = vi.hoisted(() => ({
+  mockWeeklyFindOne: vi.fn(),
+  mockWeeklyFindOneAndUpdate: vi.fn(),
+}));
 
 vi.mock("@/lib/auth", () => ({
   getAuthSession: mockGetAuthSession,
@@ -25,6 +29,13 @@ vi.mock("@/models/CompletionLog", () => ({
   },
 }));
 
+vi.mock("@/models/WeeklyReflection", () => ({
+  WeeklyReflectionModel: {
+    findOne: mockWeeklyFindOne,
+    findOneAndUpdate: mockWeeklyFindOneAndUpdate,
+  },
+}));
+
 const reviewWeeklyRoute = await import("@/app/api/review/weekly/route");
 
 describe("weekly review route", () => {
@@ -32,6 +43,12 @@ describe("weekly review route", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockWeeklyFindOne.mockReturnValue({
+      lean: vi.fn().mockResolvedValue(null),
+    });
+    mockWeeklyFindOneAndUpdate.mockReturnValue({
+      lean: vi.fn().mockResolvedValue(null),
+    });
   });
 
   it("GET /api/review/weekly requires auth", async () => {
@@ -55,6 +72,9 @@ describe("weekly review route", () => {
     expect(json.weeklyReview.completionsLast7d).toBe(3);
     expect(json.weeklyReview.weeklyTarget).toBe(5);
     expect(json.weeklyReview.progressPct).toBe(60);
+    expect(typeof json.reflectionWeekStartUtc).toBe("string");
+    expect(json.currentWeekReflection).toBeNull();
+    expect(json.priorWeekReflection).toBeNull();
   });
 
   it("GET /api/review/weekly applies encouragement-style branching", async () => {
@@ -71,5 +91,39 @@ describe("weekly review route", () => {
     expect(response.status).toBe(200);
     expect(json.weeklyReview.encouragementStyle).toBe("celebration");
     expect(json.weeklyReview.summaryHeadline).toContain("energy");
+  });
+
+  it("POST /api/review/weekly saves reflection", async () => {
+    mockGetAuthSession.mockResolvedValue({ user: { id: validUserId } });
+    mockUserFindById.mockResolvedValue({
+      onboardingWeeklyTarget: 5,
+      onboardingEncouragementStyle: "gentle",
+    });
+    mockWeeklyFindOneAndUpdate.mockReturnValue({
+      lean: vi.fn().mockResolvedValue({
+        weekStartUtc: "2026-01-05",
+        wentWell: "Good",
+        didntGoWell: "",
+        nextWeekFocus: "More",
+        updatedAt: new Date("2026-01-07T10:00:00.000Z"),
+      }),
+    });
+
+    const response = await reviewWeeklyRoute.POST(
+      new Request("http://localhost/api/review/weekly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          weekStartUtc: "2026-01-05",
+          wentWell: "Good",
+          didntGoWell: "",
+          nextWeekFocus: "More",
+        }),
+      }),
+    );
+    const json = await response.json();
+    expect(response.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.reflection.wentWell).toBe("Good");
   });
 });

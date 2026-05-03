@@ -5,6 +5,8 @@ import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { levelFromTotalXp } from "@/lib/xp";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
+import { isHabitCadence, normalizeQuestCadence } from "@/lib/cadence";
+import { countStreakFreezeBalance, evaluateHabitStreakRecover } from "@/lib/streak-freeze";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { QuestModel } from "@/models/Quest";
 import { UserModel } from "@/models/User";
@@ -60,8 +62,36 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Quest not found" }, { status: 404 });
     }
 
+    const cadence = normalizeQuestCadence(quest);
+    let streakRecover:
+      | {
+          eligible: boolean;
+          missedDateKey?: string;
+          freezeBalance: number;
+          reason?: string;
+        }
+      | undefined;
+    if (isHabitCadence(cadence.kind)) {
+      const freezeBalance = await countStreakFreezeBalance(userId);
+      const ev = evaluateHabitStreakRecover({
+        lastCompletedDate: quest.lastCompletedDate,
+        now: new Date(),
+      });
+      if (ev.ok && freezeBalance >= 1) {
+        streakRecover = { eligible: true, missedDateKey: ev.missedDateKey, freezeBalance };
+      } else if (ev.ok && freezeBalance < 1) {
+        streakRecover = { eligible: false, reason: "no_tokens", freezeBalance };
+      } else {
+        streakRecover = {
+          eligible: false,
+          reason: ev.ok ? undefined : ev.reason,
+          freezeBalance,
+        };
+      }
+    }
+
     logger.info("api.quests.get.success", { questId: id });
-    return NextResponse.json({ quest });
+    return NextResponse.json({ quest, streakRecover });
   } catch (error: unknown) {
     logRequestException(logger, "api.request.exception", error, { handler: "quests.id.GET" });
     return NextResponse.json({ error: "Failed to get quest" }, { status: 500 });

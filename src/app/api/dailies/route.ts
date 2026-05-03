@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { buildDailyQuestSet, getUtcDailyKey } from "@/lib/dailies";
+import { DAILY_KEY_QUEST_MATCH } from "@/lib/daily-key-quests";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { QuestModel } from "@/models/Quest";
 
@@ -22,8 +23,8 @@ export async function GET(request: Request) {
 
     let dailyQuests = await QuestModel.find({
       createdBy: userId,
-      isDaily: true,
       dailyKey,
+      ...DAILY_KEY_QUEST_MATCH,
     }).sort({ createdAt: 1 });
 
     if (dailyQuests.length === 0) {
@@ -34,9 +35,9 @@ export async function GET(request: Request) {
           updateOne: {
             filter: {
               createdBy: userObjectId,
-              isDaily: true,
               dailyKey,
               title: item.title,
+              ...DAILY_KEY_QUEST_MATCH,
             },
             update: {
               $setOnInsert: {
@@ -54,8 +55,8 @@ export async function GET(request: Request) {
       );
       dailyQuests = await QuestModel.find({
         createdBy: userId,
-        isDaily: true,
         dailyKey,
+        ...DAILY_KEY_QUEST_MATCH,
       }).sort({ createdAt: 1 });
     }
 

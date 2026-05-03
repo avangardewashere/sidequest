@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TodayFocusHabitSurfaceSections } from "@/components/home/today-focus-habit-surface-sections";
 import { TodayFocusHeader } from "@/components/home/today-focus-header";
@@ -29,6 +30,7 @@ import {
   readLastCompletionDateKey,
   shouldShowStreakRisk,
 } from "@/lib/retention-cues";
+import { completionToastCopy } from "@/lib/formatters";
 import {
   buildTodayHeaderData,
   profileToTodayXpData,
@@ -37,6 +39,12 @@ import {
   snapshotToTodayStats,
 } from "@/lib/today-dashboard-mappers";
 import { emptyTodayHabitSurface, type TodayDashboardSnapshot } from "@/types/today-dashboard";
+
+function flashMilestoneCelebration() {
+  if (typeof document === "undefined") return;
+  document.body.classList.add("sq-milestone-celebration");
+  window.setTimeout(() => document.body.classList.remove("sq-milestone-celebration"), 2200);
+}
 
 const EMPTY_SNAPSHOT: TodayDashboardSnapshot = {
   profile: null,
@@ -164,11 +172,16 @@ export function TodayFocusShell() {
           pushToast(toast);
           return;
         }
+        const payload = result.data;
+        const toastCopy = payload ? completionToastCopy(payload) : { title: "Quest completed", message: "Progress and stats were updated." };
         pushToast({
           tone: "success",
-          title: "Quest completed",
-          message: "Progress and stats were updated.",
+          title: toastCopy.title,
+          message: toastCopy.message,
         });
+        if (payload?.milestoneReward) {
+          flashMilestoneCelebration();
+        }
         markCompletionToday();
         setCompletionDateKey(localDateKey());
         setOptimisticDoneIds(new Set());
@@ -324,6 +337,29 @@ export function TodayFocusShell() {
               onCompleteHabit={handleCompleteTask}
             />
             <TodayFocusHeader data={header} onMenuClick={handleMenuClick} onSearchClick={handleSearchClick} />
+            {snapshot.habitSurface.mondayReflectionCallout ? (
+              <div className="px-4 pt-3">
+                <Link
+                  href="/review/weekly"
+                  className="block rounded-xl border px-3 py-3 text-left text-sm transition-opacity hover:opacity-95"
+                  style={{
+                    borderColor: "var(--color-border-default)",
+                    background: "var(--color-bg-surface)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-tertiary)" }}>
+                    Last week’s takeaway
+                  </p>
+                  <p className="mt-1 line-clamp-3" style={{ color: "var(--color-text-secondary)" }}>
+                    {snapshot.habitSurface.mondayReflectionCallout.preview}
+                  </p>
+                  <span className="mt-2 inline-block text-xs font-medium underline" style={{ color: "var(--color-primary)" }}>
+                    Weekly review
+                  </span>
+                </Link>
+              </div>
+            ) : null}
             <TodayFocusXpStats xp={xp} stats={stats} />
             {streakAtRisk ? (
               <div className="px-4 pt-2">

@@ -4,6 +4,7 @@ export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from ".
 export { CalendarHeatmap, type CalendarHeatmapProps, type HeatmapCell } from "./calendar-heatmap";
 export { Card, type CardProps, type CardVariant } from "./card";
 export { CadencePicker, type CadencePickerProps } from "./cadence-picker";
+export { EmptyState, type EmptyStateProps } from "./empty-state";
 export { FormField, type FormFieldProps } from "./form-field";
 export { HabitChip, type HabitChipProps } from "./habit-chip";
 export { LinkPicker, type LinkPickerOption, type LinkPickerProps } from "./link-picker";

@@ -12,8 +12,8 @@ export function StreakFlame({ streak, className = "", style, ...rest }: StreakFl
   return (
     <div
       className={[
-        "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-semibold tabular-nums",
-        milestone ? "motion-safe:animate-pulse" : "",
+        "sq-streak-flame inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-semibold tabular-nums",
+        milestone ? "motion-safe:sq-streak-milestone-pop motion-safe:animate-pulse" : "",
         className,
       ]
         .filter(Boolean)

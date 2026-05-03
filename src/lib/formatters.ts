@@ -13,3 +13,20 @@ export function getCompletionFeedback(data: CompleteQuestResponse): string {
   }
   return `Quest complete! +${data.xpGained ?? 0} XP`;
 }
+
+/** Toast copy for completion API payloads (avoids duplicating “Quest complete” in title + body). */
+export function completionToastCopy(data: CompleteQuestResponse): { title: string; message: string } {
+  if (data.milestoneReward && typeof data.xpGained === "number") {
+    return {
+      title: `${data.milestoneReward.streakMilestone}-day streak milestone`,
+      message: `+${data.xpGained} XP earned · +${data.milestoneReward.bonusXp} streak bonus`,
+    };
+  }
+  return {
+    title: "Quest completed",
+    message:
+      typeof data.xpGained === "number"
+        ? `+${data.xpGained} XP`
+        : "Progress and stats were updated.",
+  };
+}

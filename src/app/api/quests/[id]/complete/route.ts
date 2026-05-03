@@ -7,7 +7,9 @@ import { QuestModel } from "@/models/Quest";
 import { UserModel } from "@/models/User";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { MilestoneRewardLogModel } from "@/models/MilestoneRewardLog";
+import { StreakFreezeLogModel } from "@/models/StreakFreezeLog";
 import { applyQuestCompletion, getMilestoneBonus, replayStreakFromCompletionLogs } from "@/lib/progression";
+import { graceAdjustedLastCompletedAt } from "@/lib/streak-freeze";
 import { xpEarnedForQuestCompletion } from "@/lib/quest-xp-rollup";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { levelFromTotalXp } from "@/lib/xp";
@@ -101,11 +103,22 @@ export async function PATCH(
       const hasChildren = childCount > 0;
       const xpAward = xpEarnedForQuestCompletion(hasChildren, quest.xpReward ?? 0);
 
+      const grace = graceAdjustedLastCompletedAt({
+        lastCompletedAt: user.lastCompletedAt,
+        streakGraceEnabled: Boolean(user.streakGraceEnabled),
+        streakGraceWeekUtc: user.streakGraceWeekUtc ?? null,
+        now: completedAt,
+      });
+      const streakLastAt = grace.effectiveLastCompletedAt ?? user.lastCompletedAt;
+      if (grace.consumeGraceWeek) {
+        user.streakGraceWeekUtc = grace.consumeGraceWeek;
+      }
+
       const progression = applyQuestCompletion({
         totalXp: user.totalXp,
         currentStreak: user.currentStreak,
         longestStreak: user.longestStreak,
-        lastCompletedAt: user.lastCompletedAt,
+        lastCompletedAt: streakLastAt,
         xpGained: xpAward,
       });
 
@@ -273,6 +286,17 @@ async function removeMilestoneBonusNearCompletion(
     return 0;
   }
   await MilestoneRewardLogModel.deleteOne({ _id: mil._id }).session(dbSession);
+  const freezeGrant = await StreakFreezeLogModel.findOne({
+    userId,
+    kind: "grant",
+    streakMilestone: mil.streakMilestone,
+    createdAt: { $gte: from, $lte: to },
+  })
+    .session(dbSession)
+    .lean();
+  if (freezeGrant?._id) {
+    await StreakFreezeLogModel.deleteOne({ _id: freezeGrant._id }).session(dbSession);
+  }
   return mil.bonusXp;
 }
 
@@ -342,6 +366,15 @@ export async function DELETE(
         const anchorCompletedAt =
           log.completedAt instanceof Date ? log.completedAt : new Date(log.completedAt);
         await CompletionLogModel.deleteOne({ _id: log._id }).session(dbSession);
+
+        if (log.xpEarned === 0) {
+          await StreakFreezeLogModel.deleteOne({
+            userId: userObjectId,
+            kind: "spend",
+            questId: quest._id,
+            recoveryForDateKey: dateParam,
+          }).session(dbSession);
+        }
 
         const bonusRemoved = await removeMilestoneBonusNearCompletion(userObjectId, anchorCompletedAt, dbSession);
         user.totalXp = Math.max(0, user.totalXp - xpRemoved - bonusRemoved);

@@ -1,17 +1,12 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
- * SideQuest design tokens — Phase 7.1
+ * SideQuest design tokens — Phase 7.1 + Phase 9.5 dark palette
  *
- * Source: Stitch mockups (cycles-7-8-9-plan.md, phase-7-1-design-tokens-plan.md).
- * Light theme only this phase; dark theme deferred to Phase 9.2.
+ * Tailwind v4 emits `@theme` tokens onto `:root`. Semantic colors use CSS
+ * variables so `prefers-color-scheme: dark` overrides stay consistent.
  *
- * Tailwind v4 auto-emits every `@theme` token onto `:root` AND generates the
- * matching utility (bg-X, text-X, p-X, rounded-X, font-X, …). So `bg-canvas`
- * and `var(--color-canvas)` both resolve from a single source of truth here.
- *
- * Legacy `--background` / `--foreground` tokens from Cycle 0 stay untouched so
- * existing zinc-themed pages keep rendering identically. Cycle 9.2 sweeps them.
+ * Legacy `--background` / `--foreground` alias body chrome; both themes set them.
  * ------------------------------------------------------------------------- */
 
 :root {
@@ -152,8 +147,79 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground: #f2f1ed;
+    --color-bg-base: #121211;
+    --color-bg-surface: #1c1c19;
+    --color-bg-elevated: #252522;
+    --color-border-subtle: #33322e;
+    --color-border-default: #454440;
+    --color-text-primary: #f2f1ed;
+    --color-text-secondary: #b5b3ab;
+    --color-text-tertiary: #8a887f;
+
+    --color-primary: #8b8bf2;
+    --color-primary-hover: #a4a4f7;
+    --color-primary-subtle: #2a2942;
+    --color-primary-on-accent: #141418;
+
+    --color-secondary: #f0a070;
+    --color-secondary-subtle: #3d2418;
+    --color-secondary-on-accent: #141418;
+    --color-secondary-strong: #ffc49a;
+
+    --color-success: #4ade80;
+    --color-success-subtle: #142e1e;
+    --color-warning: #fbbf24;
+    --color-warning-subtle: #3a2e0f;
+    --color-info: #60a5fa;
+    --color-danger: #f87171;
+    --color-danger-subtle: #3f1818;
+
+    --background: var(--color-bg-base);
+    --foreground: var(--color-text-primary);
+
+    --color-canvas: #121211;
+    --color-primary-strong: #b4b4ff;
+    --color-ember: #ffc49a;
+    --color-ember-subtle: #3d2418;
   }
+}
+
+@keyframes sq-milestone-glow {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes sq-streak-milestone-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sq-streak-milestone-pop {
+    animation: sq-streak-milestone-pop 0.85s ease-in-out 2;
+  }
+}
+
+body.sq-milestone-celebration::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: radial-gradient(circle at 50% 18%, rgba(139, 139, 242, 0.28), transparent 58%);
+  animation: sq-milestone-glow 2.1s ease forwards;
 }
 
 body {

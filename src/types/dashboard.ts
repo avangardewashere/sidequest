@@ -10,6 +10,8 @@ export type QuestNote = {
   id: string;
   body: string;
   createdAt: string;
+  /** Defaults to `note` when omitted (legacy notes). */
+  kind?: "note" | "reflection";
 };
 
 export type QuestLinkKind = "related" | "blocks" | "depends-on";
@@ -43,6 +45,13 @@ export type Quest = {
   completedAt?: string | null;
   /** ISO timestamp when present on API payloads (e.g. list + habit-surface). */
   createdAt?: string;
+  /** Present on `GET /api/quests/[id]` for habit quests (streak recover eligibility). */
+  streakRecover?: {
+    eligible: boolean;
+    missedDateKey?: string;
+    freezeBalance: number;
+    reason?: string;
+  };
 };
 
 export type Profile = {
@@ -53,6 +62,9 @@ export type Profile = {
   longestStreak: number;
   xpIntoLevel: number;
   xpForNextLevel: number;
+  /** From progression/profile APIs when present. */
+  streakFreezeBalance?: number;
+  streakGraceEnabled?: boolean;
 };
 
 export type AuthMode = "login" | "register";

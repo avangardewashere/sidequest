@@ -11,8 +11,15 @@ import {
 } from "@/lib/cadence";
 import { isHabitQuest } from "@/lib/quest-selectors";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
+import {
+  currentWeekMondayUtcKey,
+  isUtcMonday,
+  previousWeekMondayUtcKey,
+  reflectionPreview,
+} from "@/lib/reflection-week";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { QuestModel } from "@/models/Quest";
+import { WeeklyReflectionModel } from "@/models/WeeklyReflection";
 import type { Quest } from "@/types/dashboard";
 import type { TodayHabitSurfacePayload, TodayHabitSurfaceRow } from "@/types/today-dashboard";
 
@@ -36,7 +43,11 @@ function questFromLean(doc: LeanQuest): Quest {
         : due
           ? String(due)
           : null,
-    isDaily: Boolean(doc.isDaily),
+    isDaily:
+      normalizeQuestCadence({
+        cadence: doc.cadence as Quest["cadence"],
+        isDaily: Boolean(doc.isDaily),
+      }).kind === "daily",
     dailyKey: doc.dailyKey != null ? String(doc.dailyKey) : null,
     parentQuestId: doc.parentQuestId ? String(doc.parentQuestId) : null,
     cadence: doc.cadence as Quest["cadence"] | undefined,
@@ -136,10 +147,35 @@ export async function GET(req: Request) {
 
     const atRisk: TodayHabitSurfaceRow[] = habitsDue.filter((r) => r.streak >= 3);
 
+    let mondayReflectionCallout: TodayHabitSurfacePayload["mondayReflectionCallout"] = null;
+    if (isUtcMonday(now)) {
+      const thisMonday = currentWeekMondayUtcKey(now);
+      const priorMonday = previousWeekMondayUtcKey(thisMonday);
+      const priorReflection = await WeeklyReflectionModel.findOne({
+        userId: userObjectId,
+        weekStartUtc: priorMonday,
+      })
+        .select("wentWell didntGoWell nextWeekFocus")
+        .lean();
+      if (priorReflection) {
+        const pieces = [priorReflection.wentWell, priorReflection.didntGoWell, priorReflection.nextWeekFocus]
+          .map((s) => (typeof s === "string" ? s.trim() : ""))
+          .filter(Boolean);
+        const preview =
+          reflectionPreview(pieces[0] ?? "") ||
+          reflectionPreview(pieces[1] ?? "") ||
+          reflectionPreview(pieces[2] ?? "");
+        if (preview) {
+          mondayReflectionCallout = { weekStartUtc: priorMonday, preview };
+        }
+      }
+    }
+
     const payload: TodayHabitSurfacePayload = {
       habitsDue,
       atRisk,
       captured,
+      mondayReflectionCallout,
     };
 
     logger.info("api.today.habitSurface.success", {

@@ -8,6 +8,7 @@ import { QuestModel } from "@/models/Quest";
 
 const createNoteSchema = z.object({
   body: z.string().trim().min(1).max(4096),
+  kind: z.enum(["note", "reflection"]).optional().default("note"),
 });
 
 function hasHtml(value: string) {
@@ -53,6 +54,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       id: new mongoose.Types.ObjectId(),
       body: parsed.data.body,
       createdAt: new Date(),
+      kind: parsed.data.kind,
     };
     quest.notes.push(note as never);
     await quest.save();

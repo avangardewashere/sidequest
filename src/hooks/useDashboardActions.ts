@@ -9,7 +9,7 @@ import {
   loginWithCredentials,
   registerUser,
 } from "@/lib/client-api";
-import { getCompletionFeedback, getProgressPct } from "@/lib/formatters";
+import { completionToastCopy, getCompletionFeedback, getProgressPct } from "@/lib/formatters";
 import type { AuthMode, Profile, Quest } from "@/types/dashboard";
 
 type UseDashboardActionsParams = {
@@ -108,11 +108,16 @@ export function useDashboardActions({
     }
 
     setFeedback(getCompletionFeedback(data ?? {}));
+    const copy = completionToastCopy(data ?? {});
     pushToast({
       tone: "success",
-      title: "Quest completed",
-      message: "Rewards were applied to your profile.",
+      title: copy.title,
+      message: copy.message,
     });
+    if (data?.milestoneReward && typeof document !== "undefined") {
+      document.body.classList.add("sq-milestone-celebration");
+      window.setTimeout(() => document.body.classList.remove("sq-milestone-celebration"), 2200);
+    }
     await loadData();
     await onAfterQuestMutation?.();
   }

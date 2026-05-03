@@ -4,6 +4,7 @@ import type { PipelineStage } from "mongoose";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
+import { DAILY_KEY_QUEST_MATCH } from "@/lib/daily-key-quests";
 import { QuestModel } from "@/models/Quest";
 import { getXpReward, QuestDifficulty } from "@/lib/xp";
 
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
     } else if (parsed.data.status === "completed") {
       filter.status = "completed";
     } else if (parsed.data.status === "daily") {
-      filter.isDaily = true;
+      Object.assign(filter, DAILY_KEY_QUEST_MATCH);
     }
     if (parsed.data.category !== "all") {
       filter.category = parsed.data.category;

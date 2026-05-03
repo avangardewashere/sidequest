@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
+import { normalizeQuestCadence } from "@/lib/cadence";
 import { QuestModel } from "@/models/Quest";
 import { getXpReward, QuestDifficulty } from "@/lib/xp";
 
@@ -95,7 +96,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return NextResponse.json({ error: "Child quests cannot have their own children" }, { status: 400 });
     }
 
-    if (parentQuest.isDaily) {
+    if (normalizeQuestCadence(parentQuest).kind === "daily") {
       logger.warn("api.validation.daily_parent_disallowed", { parentId: id });
       return NextResponse.json({ error: "Daily quests cannot be parent quests" }, { status: 400 });
     }

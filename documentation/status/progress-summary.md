@@ -678,4 +678,36 @@ This chapter summarizes what was delivered in the latest implementation pass and
 - **Tests:** `src/tests/quest-insights.test.ts`, `src/tests/quest-insights-route.test.ts`; children POST mock updated for max-order query.
 - **Documentation:** `phase-9-2-habit-insights-plan.md`, `phase-9-2-habit-insights-tracker.md`; cycles plan Phase **9.2** marked done.
 - **Validation:** `npm run test:ci` (`53` files, `238` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.2 closeout.
-- **Next:** Phase 9.3 — streak resilience.
+- **Next (at sign-off):** Phase 9.3 — streak resilience (**done**, see §38). **Current next:** Phase 9.5.
+
+## 38) Cycle 9 — Phase 9.3 closeout (Streak resilience)
+
+- **Data:** `StreakFreezeLog` collection (`grant` on new streak milestone bonus alongside `MilestoneRewardLog`; `spend` on recover with `recoveryForDateKey` for undo); User fields `streakGraceEnabled`, `streakGraceWeekUtc`.
+- **Lib:** `src/lib/streak-freeze.ts` — grace bridge, recover eligibility (48h UTC window), balance helper with optional transaction session.
+- **API:** `PATCH` complete applies grace-adjusted `lastCompletedAt` before `applyQuestCompletion`; undo removes matching freeze grant (milestone window) and refund spend for zero-XP recover rows. `POST /api/quests/[id]/streak/recover` transaction: completion (0 XP), spend log, quest `lastCompletedDate`, user streak replay. `GET /api/quests/[id]` adds `streakRecover` for habits. `GET/PATCH /api/you/profile` and `GET /api/progression` expose `streakFreezeBalance` and `streakGraceEnabled`.
+- **Client:** `getQuestById` merges `streakRecover`; `recoverStreak`; You page streak section + grace checkbox; quest detail **Recover streak (1 token)** when eligible.
+- **Tests:** `src/tests/streak-freeze.test.ts`, `src/tests/streak-recover-route.test.ts`; profile and progression tests updated for freeze balance mock.
+- **Documentation:** `phase-9-3-streak-resilience-plan.md`, `phase-9-3-streak-resilience-tracker.md`; cycles plan Phase **9.3** marked done.
+- **Validation:** `npm run test:ci` (`55` files, `252` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.3 closeout.
+- **Next:** Phase 9.4 — reflection layer & weekly review (**done**, see §39).
+
+## 39) Cycle 9 — Phase 9.4 closeout (Reflection layer & weekly review)
+
+- **Data:** `WeeklyReflection` collection (`wentWell`, `didntGoWell`, `nextWeekFocus`, `weekStartUtc` Monday UTC); `Quest` embedded notes gain optional `kind` (`note` | `reflection`).
+- **Lib:** `src/lib/reflection-week.ts` — current/previous Monday keys, UTC Monday check, preview helper.
+- **API:** `GET /api/review/weekly` adds `reflectionWeekStartUtc`, `currentWeekReflection`, `priorWeekReflection`; `POST` upserts reflection. `GET /api/today/habit-surface` adds `mondayReflectionCallout` when UTC Monday and prior week has saved text. `POST /api/quests/[id]/notes` accepts `kind`.
+- **Client:** `fetchWeeklyReview` / `saveWeeklyReflection`; `/review/weekly` page; Stats CTA; quest detail notes filter + reflection add; Today callout card.
+- **Tests:** `src/tests/reflection-week.test.ts`; extended `api-routes-review`, `api-routes-today-habit-surface`; e2e mocks include new weekly GET fields.
+- **Documentation:** `phase-9-4-reflection-weekly-review-plan.md`, `phase-9-4-reflection-weekly-review-tracker.md`; cycles plan Phase **9.4** marked done.
+- **Validation:** `npm run test:ci` (`56` files, `258` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.4 closeout.
+- **Next:** Phase 9.5 — polish, animations, dark theme, sweep (**done**, see §40).
+
+## 40) Cycle 9 — Phase 9.5–9.6 closeout (Polish & PWA shell)
+
+- **Theme:** `prefers-color-scheme: dark` semantic palette in `globals.css`; body/auth/list chrome uses design tokens (including auth success feedback and list sticky header `color-mix` backdrop).
+- **Motion:** `completionToastCopy` + milestone glow (`sq-milestone-celebration`) on streak bonuses; `StreakFlame` milestone pop; `ProgressRing` stroke transition.
+- **Empty UX:** shared `EmptyState` on quest list; milestone-oriented completion toasts on Today, dashboard actions, and quest detail.
+- **`isDaily` writes:** Daily rollups use `cadence.kind: "daily"` + `dailyKey` only; queries/index partial filter accept legacy `isDaily` rows; habit-surface and API routes use cadence-aware checks (`daily-key-quests` helper, `normalizeQuestCadence` for parents/children).
+- **PWA:** `public/manifest.json`, `public/icon-192.png` & `public/icon-512.png`, `public/sw.js` (shell precache + API cache-first), `ServiceWorkerRegistrar` + `InstallAppBanner` (30-day dismissal), `viewport.themeColor` + `metadata.manifest` in `layout.tsx`.
+- **Documentation:** `phase-9-5-polish-theme-plan.md`, `phase-9-5-polish-theme-tracker.md`, `phase-9-6-pwa-shell-plan.md`, `phase-9-6-pwa-shell-tracker.md`; cycles plan Phase **9.5** and **9.6** marked done.
+- **Validation:** `npm run test:ci` (`56` files, `258` tests), `npm run typecheck`, `npm run lint`, `npm run build` — all passing at Phase 9.5–9.6 closeout.

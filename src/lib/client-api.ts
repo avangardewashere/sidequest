@@ -41,7 +41,21 @@ export type YouProfile = {
   totalXp: number;
   currentStreak: number;
   longestStreak: number;
+  streakFreezeBalance: number;
+  streakGraceEnabled: boolean;
   reminders: ReminderSettings;
+};
+
+export type RecoverStreakResponse = {
+  ok: true;
+  quest: Quest;
+  missedDateKey: string;
+  progression: {
+    currentStreak: number;
+    longestStreak: number;
+    lastCompletedAt: string | null;
+  };
+  streakFreezeBalance: number;
 };
 
 export type ReminderSettings = {
@@ -74,6 +88,21 @@ export type WeeklyReview = {
   encouragementStyle: "gentle" | "direct" | "celebration";
   summaryHeadline: string;
   summaryMessage: string;
+};
+
+export type WeeklyReflectionPayload = {
+  weekStartUtc: string;
+  wentWell: string;
+  didntGoWell: string;
+  nextWeekFocus: string;
+  updatedAt: string;
+};
+
+export type WeeklyReviewApiResponse = {
+  weeklyReview: WeeklyReview;
+  reflectionWeekStartUtc: string;
+  currentWeekReflection: WeeklyReflectionPayload | null;
+  priorWeekReflection: WeeklyReflectionPayload | null;
 };
 
 export type HistoricalReviewWeek = {
@@ -355,7 +384,13 @@ export async function fetchTodayDashboard(): Promise<TodayDashboardSnapshot> {
     Array.isArray((habitSurfaceData as { atRisk: unknown }).atRisk) &&
     Array.isArray((habitSurfaceData as { captured: unknown }).captured)
   ) {
-    habitSurface = habitSurfaceData as TodayHabitSurfacePayload;
+    const h = habitSurfaceData as Partial<TodayHabitSurfacePayload>;
+    habitSurface = {
+      habitsDue: h.habitsDue ?? [],
+      atRisk: h.atRisk ?? [],
+      captured: h.captured ?? [],
+      mondayReflectionCallout: h.mondayReflectionCallout ?? null,
+    };
   }
 
   return {
@@ -407,8 +442,31 @@ export async function getQuestById(questId: string): Promise<Quest | null> {
   if (!response.ok) {
     return null;
   }
-  const data = (await parseJsonSafe(response)) as { quest?: Quest } | null;
-  return data?.quest ?? null;
+  const data = (await parseJsonSafe(response)) as {
+    quest?: Quest;
+    streakRecover?: Quest["streakRecover"];
+  } | null;
+  if (!data?.quest) {
+    return null;
+  }
+  return { ...data.quest, streakRecover: data.streakRecover };
+}
+
+export async function recoverStreak(questId: string): Promise<ActionResult<RecoverStreakResponse>> {
+  return runAction<RecoverStreakResponse>(
+    () =>
+      fetch(`/api/quests/${questId}/streak/recover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }),
+    (json) => {
+      const body = json as Partial<RecoverStreakResponse> | null;
+      if (!body?.ok || !body.quest || !body.missedDateKey || !body.progression) {
+        return null;
+      }
+      return body as RecoverStreakResponse;
+    },
+  );
 }
 
 export async function updateQuestById(
@@ -680,16 +738,19 @@ export async function updateQuestTags(questId: string, tags: string[]): Promise<
 export async function createQuestNote(
   questId: string,
   body: string,
+  options?: { kind?: "note" | "reflection" },
 ): Promise<ActionResult<{ note: QuestNote }>> {
   return runAction<{ note: QuestNote }>(
     () =>
       fetch(`/api/quests/${questId}/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body, kind: options?.kind ?? "note" }),
       }),
     (json) => {
-      const raw = (json as { note?: { id?: unknown; body?: string; createdAt?: unknown } } | null)?.note;
+      const raw = (json as {
+        note?: { id?: unknown; body?: string; createdAt?: unknown; kind?: string };
+      } | null)?.note;
       if (!raw?.body) {
         return null;
       }
@@ -699,10 +760,13 @@ export async function createQuestNote(
           : raw.createdAt
             ? new Date(raw.createdAt as Date).toISOString()
             : new Date().toISOString();
+      const kind =
+        raw.kind === "reflection" || raw.kind === "note" ? raw.kind : ("note" as const);
       const note: QuestNote = {
         id: typeof raw.id === "string" ? raw.id : String(raw.id),
         body: raw.body,
         createdAt,
+        kind,
       };
       return { note };
     },
@@ -757,15 +821,43 @@ export async function fetchMetricsSummary(range: MetricsRange): Promise<ActionRe
   );
 }
 
-export async function fetchWeeklyReview(): Promise<ActionResult<{ weeklyReview: WeeklyReview }>> {
-  return runAction<{ weeklyReview: WeeklyReview }>(
+export async function fetchWeeklyReview(): Promise<ActionResult<WeeklyReviewApiResponse>> {
+  return runAction<WeeklyReviewApiResponse>(
     () => fetch("/api/review/weekly"),
     (json) => {
-      const weeklyReview = (json as { weeklyReview?: WeeklyReview } | null)?.weeklyReview;
-      if (!weeklyReview) {
+      const body = json as Partial<WeeklyReviewApiResponse> | null;
+      if (!body?.weeklyReview || typeof body.reflectionWeekStartUtc !== "string") {
         return null;
       }
-      return { weeklyReview };
+      return {
+        weeklyReview: body.weeklyReview,
+        reflectionWeekStartUtc: body.reflectionWeekStartUtc,
+        currentWeekReflection: body.currentWeekReflection ?? null,
+        priorWeekReflection: body.priorWeekReflection ?? null,
+      };
+    },
+  );
+}
+
+export async function saveWeeklyReflection(payload: {
+  weekStartUtc?: string;
+  wentWell: string;
+  didntGoWell: string;
+  nextWeekFocus: string;
+}): Promise<ActionResult<{ ok: true; reflection: WeeklyReflectionPayload }>> {
+  return runAction<{ ok: true; reflection: WeeklyReflectionPayload }>(
+    () =>
+      fetch("/api/review/weekly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    (json) => {
+      const body = json as { ok?: boolean; reflection?: WeeklyReflectionPayload } | null;
+      if (!body?.ok || !body.reflection) {
+        return null;
+      }
+      return { ok: true, reflection: body.reflection };
     },
   );
 }
@@ -854,6 +946,7 @@ export async function updateYouProfile(payload: {
   reminderTimeLocal?: string | null;
   reminderDays?: number[];
   reminderLastFiredOn?: string | null;
+  streakGraceEnabled?: boolean;
 }): Promise<ActionResult<{ profile: YouProfile }>> {
   return runAction<{ profile: YouProfile }>(
     () =>

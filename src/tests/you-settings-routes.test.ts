@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { mockCountStreakFreezeBalance } = vi.hoisted(() => ({
+  mockCountStreakFreezeBalance: vi.fn().mockResolvedValue(2),
+}));
+
+vi.mock("@/lib/streak-freeze", () => ({
+  countStreakFreezeBalance: mockCountStreakFreezeBalance,
+}));
+
 const mockGetAuthSession = vi.fn();
 const mockConnectToDatabase = vi.fn();
 const mockUserFindById = vi.fn();
@@ -32,6 +40,7 @@ const passwordRoute = await import("@/app/api/you/password/route");
 describe("you settings API routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCountStreakFreezeBalance.mockResolvedValue(2);
   });
 
   it("GET /api/you/profile requires auth", async () => {
@@ -44,12 +53,14 @@ describe("you settings API routes", () => {
     const save = vi.fn().mockResolvedValue(undefined);
     mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
     mockUserFindById.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439099",
       email: "u1@sidequest.test",
       displayName: "Old",
       level: 2,
       totalXp: 200,
       currentStreak: 3,
       longestStreak: 7,
+      streakGraceEnabled: false,
       remindersEnabled: false,
       reminderTimeLocal: null,
       reminderDays: [1, 2, 3, 4, 5],
@@ -85,12 +96,14 @@ describe("you settings API routes", () => {
     const save = vi.fn().mockResolvedValue(undefined);
     mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
     mockUserFindById.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439099",
       email: "u1@sidequest.test",
       displayName: "User",
       level: 2,
       totalXp: 200,
       currentStreak: 3,
       longestStreak: 7,
+      streakGraceEnabled: false,
       remindersEnabled: false,
       reminderTimeLocal: null,
       reminderDays: [1, 2, 3, 4, 5],
@@ -113,6 +126,36 @@ describe("you settings API routes", () => {
     expect(json.profile.reminders.enabled).toBe(true);
     expect(json.profile.reminders.timeLocal).toBe("19:30");
     expect(json.profile.reminders.days).toEqual([1, 3, 5]);
+  });
+
+  it("PATCH /api/you/profile updates streak grace opt-in", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    mockGetAuthSession.mockResolvedValue({ user: { id: "u1" } });
+    mockUserFindById.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439099",
+      email: "u1@sidequest.test",
+      displayName: "User",
+      level: 2,
+      totalXp: 200,
+      currentStreak: 3,
+      longestStreak: 7,
+      streakGraceEnabled: false,
+      remindersEnabled: false,
+      reminderTimeLocal: null,
+      reminderDays: [1, 2, 3, 4, 5],
+      reminderLastFiredOn: null,
+      save,
+    });
+    const response = await profileRoute.PATCH(
+      new Request("http://localhost/api/you/profile", {
+        method: "PATCH",
+        body: JSON.stringify({ streakGraceEnabled: true }),
+      }),
+    );
+    const json = await response.json();
+    expect(response.status).toBe(200);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(json.profile.streakGraceEnabled).toBe(true);
   });
 
   it("PATCH /api/you/password rejects wrong current password", async () => {

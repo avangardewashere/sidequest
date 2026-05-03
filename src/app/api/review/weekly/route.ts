@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
+import {
+  currentWeekMondayUtcKey,
+  previousWeekMondayUtcKey,
+} from "@/lib/reflection-week";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { CompletionLogModel } from "@/models/CompletionLog";
 import { UserModel } from "@/models/User";
+import { WeeklyReflectionModel } from "@/models/WeeklyReflection";
 
 type EncouragementStyle = "gentle" | "direct" | "celebration";
 
@@ -63,6 +69,32 @@ function summaryCopy(style: EncouragementStyle, completionsLast7d: number, weekl
   };
 }
 
+function serializeReflection(doc: {
+  weekStartUtc: string;
+  wentWell: string;
+  didntGoWell: string;
+  nextWeekFocus: string;
+  updatedAt?: Date;
+}) {
+  return {
+    weekStartUtc: doc.weekStartUtc,
+    wentWell: doc.wentWell,
+    didntGoWell: doc.didntGoWell,
+    nextWeekFocus: doc.nextWeekFocus,
+    updatedAt:
+      doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : new Date().toISOString(),
+  };
+}
+
+const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+const postWeeklyReflectionSchema = z.object({
+  weekStartUtc: z.string().regex(dateKeyRegex).optional(),
+  wentWell: z.string().max(4000).default(""),
+  didntGoWell: z.string().max(4000).default(""),
+  nextWeekFocus: z.string().max(4000).default(""),
+});
+
 export async function GET(request: Request) {
   const logger = createRequestLogger(request);
   logger.info("api.request.start", { handler: "review.weekly.GET" });
@@ -95,6 +127,21 @@ export async function GET(request: Request) {
     const encouragementStyle = normalizeStyle(user.onboardingEncouragementStyle);
     const copy = summaryCopy(encouragementStyle, completionsLast7d, weeklyTarget);
 
+    const userOid = new mongoose.Types.ObjectId(userId);
+    const reflectionWeekStartUtc = currentWeekMondayUtcKey(now);
+    const priorWeekStartUtc = previousWeekMondayUtcKey(reflectionWeekStartUtc);
+
+    const [currentDoc, priorDoc] = await Promise.all([
+      WeeklyReflectionModel.findOne({
+        userId: userOid,
+        weekStartUtc: reflectionWeekStartUtc,
+      }).lean(),
+      WeeklyReflectionModel.findOne({
+        userId: userOid,
+        weekStartUtc: priorWeekStartUtc,
+      }).lean(),
+    ]);
+
     logger.info("api.review.weekly.success", { userId });
     return NextResponse.json({
       weeklyReview: {
@@ -106,9 +153,71 @@ export async function GET(request: Request) {
         encouragementStyle,
         ...copy,
       },
+      reflectionWeekStartUtc,
+      currentWeekReflection: currentDoc ? serializeReflection(currentDoc as never) : null,
+      priorWeekReflection: priorDoc ? serializeReflection(priorDoc as never) : null,
     });
   } catch (error) {
     logRequestException(logger, "api.request.exception", error, { handler: "review.weekly.GET" });
     return NextResponse.json({ error: "Failed to fetch weekly review" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  const logger = createRequestLogger(request);
+  logger.info("api.request.start", { handler: "review.weekly.POST" });
+
+  try {
+    const session = await getAuthSession();
+    const userId = session?.user?.id;
+    if (!userId) {
+      logger.warn("api.auth.unauthorized", { handler: "review.weekly.POST" });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const raw = await request.json().catch(() => null);
+    const parsed = postWeeklyReflectionSchema.safeParse(raw ?? {});
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+    const weekStartUtc = parsed.data.weekStartUtc ?? currentWeekMondayUtcKey(now);
+    const userOid = new mongoose.Types.ObjectId(userId);
+
+    const doc = await WeeklyReflectionModel.findOneAndUpdate(
+      { userId: userOid, weekStartUtc },
+      {
+        $set: {
+          wentWell: parsed.data.wentWell.trim(),
+          didntGoWell: parsed.data.didntGoWell.trim(),
+          nextWeekFocus: parsed.data.nextWeekFocus.trim(),
+        },
+        $setOnInsert: {
+          userId: userOid,
+          weekStartUtc,
+        },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
+    ).lean();
+
+    if (!doc) {
+      return NextResponse.json({ error: "Failed to save reflection" }, { status: 500 });
+    }
+
+    logger.info("api.review.weekly.saved", { userId, weekStartUtc });
+    return NextResponse.json({
+      ok: true,
+      reflection: serializeReflection(doc as never),
+    });
+  } catch (error) {
+    logRequestException(logger, "api.request.exception", error, { handler: "review.weekly.POST" });
+    return NextResponse.json({ error: "Failed to save weekly reflection" }, { status: 500 });
   }
 }

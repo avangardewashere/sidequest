@@ -37,12 +37,15 @@ export type TodayHabitSurfacePayload = {
   habitsDue: TodayHabitSurfaceRow[];
   atRisk: TodayHabitSurfaceRow[];
   captured: Quest[];
+  /** Present when UTC Monday and user saved a reflection for the prior ISO week. */
+  mondayReflectionCallout: { weekStartUtc: string; preview: string } | null;
 };
 
 export const emptyTodayHabitSurface: TodayHabitSurfacePayload = {
   habitsDue: [],
   atRisk: [],
   captured: [],
+  mondayReflectionCallout: null,
 };
 
 /**

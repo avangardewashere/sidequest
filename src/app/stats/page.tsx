@@ -292,7 +292,14 @@ export default function StatsPage() {
       ) : null}
 
       {!weeklyReviewLoading && !weeklyReviewError && weeklyReview ? (
-        <WeeklyReviewCard review={weeklyReview} />
+        <div className="space-y-2">
+          <WeeklyReviewCard review={weeklyReview} />
+          <p className="text-center text-sm">
+            <Link href="/review/weekly" className="font-medium underline" style={{ color: "var(--color-primary)" }}>
+              Open full weekly review & reflection
+            </Link>
+          </p>
+        </div>
       ) : null}
 
       {historicalReviewLoading ? (

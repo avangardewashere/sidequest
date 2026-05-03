@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { mockCountStreakFreezeBalance } = vi.hoisted(() => ({
+  mockCountStreakFreezeBalance: vi.fn().mockResolvedValue(0),
+}));
+
+vi.mock("@/lib/streak-freeze", () => ({
+  countStreakFreezeBalance: mockCountStreakFreezeBalance,
+}));
+
 const mockConnectToDatabase = vi.fn();
 const mockGetAuthSession = vi.fn();
 const mockStartSession = vi.fn();
@@ -86,6 +94,7 @@ const metricsSummaryRoute = await import("@/app/api/metrics/summary/route");
 describe("API route baseline tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCountStreakFreezeBalance.mockResolvedValue(0);
   });
 
   describe("POST /api/auth/register", () => {
@@ -351,6 +360,8 @@ describe("API route baseline tests", () => {
       expect(json.profile.level).toBe(2);
       expect(json.profile.xpIntoLevel).toBeTypeOf("number");
       expect(json.profile.xpForNextLevel).toBeTypeOf("number");
+      expect(json.profile.streakFreezeBalance).toBe(0);
+      expect(json.profile.streakGraceEnabled).toBe(false);
     });
 
     it("returns 404 when user profile is missing", async () => {

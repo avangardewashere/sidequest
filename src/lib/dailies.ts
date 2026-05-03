@@ -48,7 +48,7 @@ export function buildDailyQuestSet(userId: string, dailyKey: string) {
     title: template.title,
     difficulty: template.difficulty,
     xpReward: getXpReward(template.difficulty),
-    isDaily: true,
+    cadence: { kind: "daily" as const },
     dailyKey,
   }));
 }

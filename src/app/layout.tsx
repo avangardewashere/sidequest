@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/session-provider";
 import { OfflineBanner } from "@/components/feedback/offline-banner";
 import { ToastProvider } from "@/components/feedback/toast-provider";
+import { InstallAppBanner } from "@/components/pwa/install-app-banner";
+import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-register";
 import { Locator } from "nextjs-locator";
 
 const geistSans = Geist({
@@ -28,6 +30,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SideQuest",
   description: "Gamified quest-style todo app",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "SideQuest",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#121211" },
+  ],
 };
 
 export default function RootLayout({
@@ -45,6 +60,8 @@ export default function RootLayout({
         <AuthSessionProvider>
           <ToastProvider>
             <OfflineBanner />
+            <ServiceWorkerRegistrar />
+            <InstallAppBanner />
             {children}
           </ToastProvider>
         </AuthSessionProvider>

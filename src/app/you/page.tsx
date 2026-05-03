@@ -76,6 +76,7 @@ export default function YouPage() {
     encouragementStyle: "gentle",
   });
   const [preferencesSaving, setPreferencesSaving] = useState(false);
+  const [streakGraceSaving, setStreakGraceSaving] = useState(false);
 
   const canSubmitPassword = useMemo(() => {
     return (
@@ -126,6 +127,25 @@ export default function YouPage() {
       cancelled = true;
     };
   }, [pushToast]);
+
+  async function handleStreakGraceToggle(next: boolean) {
+    if (!profile || streakGraceSaving) return;
+    setStreakGraceSaving(true);
+    try {
+      const result = await updateYouProfile({ streakGraceEnabled: next });
+      pushToast(
+        actionResultToToast(result, {
+          successTitle: "Streak settings updated",
+          fallbackErrorTitle: "Could not update streak setting",
+        }),
+      );
+      if (result.ok && result.data) {
+        setProfile(result.data.profile);
+      }
+    } finally {
+      setStreakGraceSaving(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -321,7 +341,42 @@ export default function YouPage() {
               <p style={{ color: "var(--color-text-secondary)" }}>{profile.email}</p>
               <p>Level {profile.level} · {profile.totalXp} XP</p>
               <p>Streak {profile.currentStreak}d · Best {profile.longestStreak}d</p>
+              <p style={{ color: "var(--color-text-secondary)" }}>
+                Streak freeze tokens: {profile.streakFreezeBalance}
+              </p>
             </div>
+          )}
+        </section>
+
+        <section className="mt-4 rounded-2xl border p-4" style={{ borderColor: "var(--color-border-subtle)" }}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
+            Streak resilience
+          </h2>
+          <p className="mt-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Earn a freeze token when you hit a global streak milestone (same moments as bonus XP). Spend one from a habit
+            detail to fill yesterday (UTC) if you missed exactly one day — within 48 hours after that missed day.
+          </p>
+          {isLoading || !profile ? (
+            <p className="mt-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Loading…
+            </p>
+          ) : (
+            <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm" style={{ color: "var(--color-text-primary)" }}>
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={profile.streakGraceEnabled}
+                disabled={streakGraceSaving}
+                onChange={(e) => void handleStreakGraceToggle(e.target.checked)}
+              />
+              <span>
+                <span className="font-medium">UTC week grace skip</span>
+                <span className="mt-1 block" style={{ color: "var(--color-text-secondary)" }}>
+                  Once per UTC week, if your last completion was exactly two calendar days ago (you skipped only
+                  yesterday), your global streak still counts as consecutive when you complete today.
+                </span>
+              </span>
+            </label>
           )}
         </section>
 

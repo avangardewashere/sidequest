@@ -61,6 +61,9 @@ test("stats page shows historical review card under weekly review", async ({ pag
           summaryHeadline: "2 to goal.",
           summaryMessage: "You have 2 completions left to hit your weekly target.",
         },
+        reflectionWeekStartUtc: "2026-04-20",
+        currentWeekReflection: null,
+        priorWeekReflection: null,
       }),
     );
   });

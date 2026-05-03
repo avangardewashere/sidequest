@@ -75,6 +75,9 @@ test("stats page renders the event analytics card with derived metrics", async (
           summaryHeadline: "2 to goal.",
           summaryMessage: "You have 2 completions left to hit your weekly target.",
         },
+        reflectionWeekStartUtc: "2026-04-20",
+        currentWeekReflection: null,
+        priorWeekReflection: null,
       }),
     );
   });

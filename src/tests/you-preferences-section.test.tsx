@@ -56,6 +56,8 @@ describe("You personalization preferences section", () => {
           totalXp: 200,
           currentStreak: 3,
           longestStreak: 7,
+          streakFreezeBalance: 0,
+          streakGraceEnabled: false,
           reminders: {
             enabled: false,
             timeLocal: null,

@@ -1,4 +1,5 @@
 import mongoose, { InferSchemaType, Model } from "mongoose";
+import { normalizeQuestCadence, type CadenceQuestLike } from "@/lib/cadence";
 
 const cadenceSchema = new mongoose.Schema(
   {
@@ -29,6 +30,11 @@ const questNoteSchema = new mongoose.Schema(
     },
     body: { type: String, required: true, trim: true, maxlength: 4096 },
     createdAt: { type: Date, required: true, default: Date.now },
+    kind: {
+      type: String,
+      enum: ["note", "reflection"],
+      default: "note",
+    },
   },
   { _id: false },
 );
@@ -102,7 +108,13 @@ questSchema.index({ createdBy: 1, parentQuestId: 1, status: 1 });
 questSchema.index({ createdBy: 1, parentQuestId: 1, order: 1 });
 questSchema.index(
   { createdBy: 1, dailyKey: 1, title: 1 },
-  { unique: true, partialFilterExpression: { isDaily: true } },
+  {
+    unique: true,
+    partialFilterExpression: {
+      dailyKey: { $exists: true, $type: "string" },
+      $or: [{ isDaily: true }, { "cadence.kind": "daily" }],
+    },
+  },
 );
 
 type QuestHierarchyValidationDoc = mongoose.Document & {
@@ -121,7 +133,9 @@ questSchema.pre("validate", async function validateQuestHierarchy(this: QuestHie
     return;
   }
 
-  const parent = await QuestModel.findById(this.parentQuestId).select("_id createdBy parentQuestId isDaily").lean();
+  const parent = await QuestModel.findById(this.parentQuestId)
+    .select("_id createdBy parentQuestId isDaily cadence")
+    .lean();
   if (!parent) {
     this.invalidate("parentQuestId", "Parent quest not found");
     return;
@@ -137,7 +151,7 @@ questSchema.pre("validate", async function validateQuestHierarchy(this: QuestHie
     return;
   }
 
-  if (parent.isDaily) {
+  if (normalizeQuestCadence(parent as CadenceQuestLike).kind === "daily") {
     this.invalidate("parentQuestId", "Daily quests cannot be parent quests");
   }
 });

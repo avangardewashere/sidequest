@@ -4,6 +4,7 @@ import { connectToDatabase } from "@/lib/db";
 import { createRequestLogger, logRequestException } from "@/lib/server-logger";
 import { UserModel } from "@/models/User";
 import { currentLevelProgress } from "@/lib/xp";
+import { countStreakFreezeBalance } from "@/lib/streak-freeze";
 
 export async function GET(request: Request) {
   const logger = createRequestLogger(request);
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
     }
 
     const levelProgress = currentLevelProgress(user.totalXp);
+    const streakFreezeBalance = await countStreakFreezeBalance(user._id);
 
     logger.info("api.progression.success", { userId });
     return NextResponse.json({
@@ -36,6 +38,8 @@ export async function GET(request: Request) {
         longestStreak: user.longestStreak,
         xpIntoLevel: levelProgress.xpIntoLevel,
         xpForNextLevel: levelProgress.xpForNextLevel,
+        streakFreezeBalance,
+        streakGraceEnabled: Boolean(user.streakGraceEnabled),
       },
     });
   } catch (error: unknown) {
